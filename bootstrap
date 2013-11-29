@@ -1,0 +1,24 @@
+IFS=":"
+# TODO check that $PROFILES isn't empty
+set $PROFILES
+shopt -s globstar
+
+for profile
+do
+  cd $profile
+  for file in **/*.symlink
+  do
+    file_no_symlink=`echo $file | rev | cut -c 9- | rev`
+    linkfile=$HOME/$file_no_symlink
+    echo "Found a file: $file"
+    if [ -f $linkfile ]
+    then
+      echo "File already exists!"
+    else
+      # TODO: mkdirs
+      parent=`dirname $linkfile`
+      `mkdir -p $parent`
+      ln -s $profile/$file $linkfile
+    fi
+  done
+done
