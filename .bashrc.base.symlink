@@ -33,6 +33,10 @@ export LESS="-R"
 alias txa="tmux attach -t"
 
 
+mkcd(){ mkdir -p $1; cd $1; }
+tmp(){ pushd `mktemp -d --tmpdir=/dev/shm`; }
+
+
 # Prompt
 parse_git_branch() {
     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
