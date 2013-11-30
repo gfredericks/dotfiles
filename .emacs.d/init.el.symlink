@@ -1,7 +1,9 @@
 ;; package stuff
 
-(add-to-list 'package-archives
-             '("marmalade" . "http://marmalade-repo.org/packages/"))
+(setq package-archives
+      '(("gnu" . "http://elpa.gnu.org/packages/")
+        ("marmalade" . "http://marmalade-repo.org/packages/")))
+
 (package-initialize)
 
 (setq my-packages
@@ -9,7 +11,6 @@
     clojure-test-mode
     cider
     align-cljlet
-    org ; this one is tricksy
     jabber
     clojurescript-mode
     markdown-mode
@@ -17,23 +18,23 @@
     haskell-mode
     magit))
 
-;; TODO: work out versioning. We want to make sure org-mode
-;; is at least 8.2.3c. package-installed-p will also take a
-;; "version list" (e.g., (version-to-list "8.2.3c"))
-
-(dolist (package-name my-packages)
-  (let ((refreshed nil))
+(let ((refreshed nil))
+  (dolist (package-name my-packages)
     (unless (package-installed-p package-name)
       (unless refreshed (package-refresh-contents))
       (setq refreshed t)
-      (package-install package-name))))
+      (package-install package-name)))
+
+  ;; special handling for org-mode which comes prepackaged with emacs but
+  ;; not in a new enough version.
+  (unless (package-installed-p 'org (version-to-list "8.2.3c"))
+    (unless refreshed (package-refresh-contents))
+    (package-install 'org)))
+
 
 (require 'clojurescript-mode)
 (require 'clojure-test-mode)
-(require 'unbound)
-(require 'htmlize)
 (require 'paredit)
-(require 'undo-tree)
 (require 'markdown-mode)
 (require 'align-cljlet)
 
@@ -62,12 +63,6 @@
 (setq backup-directory-alist '(("." . "/dev/shm/gary-emacs-backups/")))
 
 
-;; M-x byte-compile-file /home/gary/.emacs/rainbow-delimiters.el
-(require 'rainbow-delimiters)
-(add-hook 'clojure-mode-hook
-          (lambda () (paredit-mode +1)
-                     (show-paren-mode +1)
-                     (define-key clojure-mode-map (kbd "C-c C-a") 'align-cljlet)))
 ;; paredit bindings
 (defun paredit-custom ()
   "paredit-mode-hook"
@@ -212,4 +207,4 @@
 (dolist (file (directory-files user-emacs-directory
                                nil
                                "init\\..*\\.el"))
-  (load file))
+  (load (concat user-emacs-directory file)))
