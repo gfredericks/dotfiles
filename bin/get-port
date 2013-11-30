@@ -1,0 +1,28 @@
+#!/bin/sh
+# usage
+#
+# get-port <remote> <port-num>
+
+if [ $# -le 1 ]
+then
+	echo "usage: get-port <remote> <port-num> [<local-port>]"
+	exit 1
+fi
+
+REMOTE=$1
+PORT=$2
+
+# use autossh when available
+COMMAND=autossh
+hash autossh 2>/dev/null || { COMMAND=ssh; }
+
+if [ $# -eq 2 ]
+then
+	$COMMAND -nNT -L $PORT:localhost:$PORT $REMOTE
+elif [ $# -eq 3 ]
+then
+  LOCAL_PORT=$3
+  $COMMAND -nNT -L $LOCAL_PORT:localhost:$PORT $REMOTE
+else
+	echo "You must specify exactly two arguments"
+fi

@@ -1,4 +1,6 @@
-export PATH=$PATH:~/bin
+SELF=$(readlink -f $BASH_SOURCE)
+MYBIN=`dirname $SELF`/bin
+export PATH=$PATH:~/bin:$MYBIN
 
 alias lsl="ls -l"
 alias lsa="ls -a"

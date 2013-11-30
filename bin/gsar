@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+require 'pathname'
+
+if ARGV.length != 3
+  puts "Usage: gsar <dir> <matcher> <replacement>"
+  exit 1
+end
+
+dir, matcher, replacement = ARGV
+
+def s_to_re s
+  eval "/#{s}/" # hahahahhaaa
+end
+
+# TODO: Also check if any parent directories are hidden!
+#
+# e.g., wouldn't want it mucking around in the .git directory
+# accidentally...
+def hidden? filename
+  Pathname.new(filename).basename.to_s =~ /^\./
+end
+
+Dir.chdir dir do
+  filenames = `find . -type f`.split
+  filenames.each do |filename|
+    next if hidden? filename
+    if(`grep -P #{matcher.inspect} #{filename}`.length > 0)
+      s = File.read filename
+      puts filename
+      open(filename,'w'){|f|f.write(s.gsub(s_to_re(matcher), replacement))}
+    end
+  end
+end
