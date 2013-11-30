@@ -1,0 +1,215 @@
+;; package stuff
+
+(add-to-list 'package-archives
+             '("marmalade" . "http://marmalade-repo.org/packages/"))
+(package-initialize)
+
+(setq my-packages
+  '(clojure-mode
+    clojure-test-mode
+    cider
+    align-cljlet
+    org ; this one is tricksy
+    jabber
+    clojurescript-mode
+    markdown-mode
+    paredit
+    haskell-mode
+    magit))
+
+;; TODO: work out versioning. We want to make sure org-mode
+;; is at least 8.2.3c. package-installed-p will also take a
+;; "version list" (e.g., (version-to-list "8.2.3c"))
+
+(dolist (package-name my-packages)
+  (let ((refreshed nil))
+    (unless (package-installed-p package-name)
+      (unless refreshed (package-refresh-contents))
+      (setq refreshed t)
+      (package-install package-name))))
+
+(require 'clojurescript-mode)
+(require 'clojure-test-mode)
+(require 'unbound)
+(require 'htmlize)
+(require 'paredit)
+(require 'undo-tree)
+(require 'markdown-mode)
+(require 'align-cljlet)
+
+;; misc
+
+(menu-bar-mode -99)
+(setq erc-hide-list '("JOIN" "PART" "QUIT"))
+(setq-default indicate-empty-lines t)
+(setq-default tab-width 2)
+(setq-default indent-tabs-mode nil)
+
+;; line numbers
+(add-hook 'find-file-hook (lambda () (linum-mode 1)))
+(setq linum-format "%3d\u2502")
+
+;; whitespace
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+(setq ido-enable-flex-matching t)
+(setq ido-everywhere t)
+(ido-mode 1)
+(setq ido-max-directory-size 1000000)
+
+;; Put backup files in /dev/shm/emacs-backups
+(shell-command "mkdir -p /dev/shm/gary-emacs-backups && chmod 700 /dev/shm/gary-emacs-backups")
+(setq backup-directory-alist '(("." . "/dev/shm/gary-emacs-backups/")))
+
+
+;; M-x byte-compile-file /home/gary/.emacs/rainbow-delimiters.el
+(require 'rainbow-delimiters)
+(add-hook 'clojure-mode-hook
+          (lambda () (paredit-mode +1)
+                     (show-paren-mode +1)
+                     (define-key clojure-mode-map (kbd "C-c C-a") 'align-cljlet)))
+;; paredit bindings
+(defun paredit-custom ()
+  "paredit-mode-hook"
+  (define-key paredit-mode-map (kbd "C-x z") 'paredit-splice-sexp)
+  (define-key paredit-mode-map (kbd "M-)") 'paredit-forward-slurp-sexp)
+  (define-key paredit-mode-map (kbd "RET") 'newline-and-indent))
+(add-hook 'paredit-mode-hook 'paredit-custom)
+
+(defun latex-custom ()
+  "latex-mode-hook"
+  (define-key latex-mode-map (kbd "C-c e") 'latex-insert-item))
+(add-hook 'latex-mode-hook 'latex-custom)
+
+(global-set-key "\C-ca" 'org-agenda)
+(global-set-key "\C-cr" 'rename-buffer)
+(global-set-key "\C-cs" 'shell)
+(global-set-key "\C-cl" 'goto-line)
+(global-set-key "\C-cg" 'magit-status)
+(global-set-key "\C-cb" 'bury-buffer)
+;; (global-set-key "\C-cb" 'org-iswitchb)
+;; (global-set-key "\C-cl" 'org-store-link)
+;; (global-set-key "\C-cc" 'org-capture)
+
+;; magit!
+(require 'magit)
+
+;; Haskell?
+(add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode)
+(add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
+;;(add-hook 'haskell-mode-hook 'turn-on-haskell-indent)
+;;(add-hook 'haskell-mode-hook 'turn-on-haskell-simple-indent)
+
+;; JavaScript
+(setq js-indent-level 2)
+
+;; org-mode bindings
+(defun org-custom ()
+  "org-mode-hook"
+  (org-defkey org-mode-map (kbd "RET") 'newline-and-indent)
+  (org-defkey org-mode-map (kbd "C-c o e") 'org-insert-heading)
+  (org-defkey org-mode-map (kbd "C-c o f") 'org-insert-subheading)
+  (org-defkey org-mode-map (kbd "C-c o g") 'org-promote-subtree)
+  (org-defkey org-mode-map (kbd "C-c o d") 'org-demote-subtree)
+  (org-defkey org-mode-map (kbd "C-c o p") 'org-move-subtree-up)
+  (org-defkey org-mode-map (kbd "C-c o n") 'org-move-subtree-down))
+(add-hook 'org-mode-hook 'org-custom)
+
+
+;; General editing bindings
+(global-set-key (kbd "C-h") 'backward-delete-char-untabify)
+(global-set-key (kbd "C-c n") (lambda () (interactive) (other-window 2)))
+(global-set-key (kbd "C-c p") (lambda () (interactive) (other-window -1)))
+
+;; Because I've unshifted the numeric keys
+;; (global-set-key (kbd "C-x !") (key-binding (kbd "C-x 1")))
+;; (global-set-key (kbd "C-x @") (key-binding (kbd "C-x 2")))
+;; (global-set-key (kbd "C-x #") (key-binding (kbd "C-x 3")))
+;; (global-set-key (kbd "C-x $") (key-binding (kbd "C-x 4")))
+
+;; Scrolling. Someone on the internet suggested this might be less than
+;; ideal. I dunno why. Whatever.
+(setq scroll-step            1
+      scroll-conservatively  10000)
+
+(custom-set-variables
+  ;; custom-set-variables was added by Custom.
+  ;; If you edit it by hand, you could mess it up, so be careful.
+  ;; Your init file should contain only one such instance.
+  ;; If there is more than one, they won't work right.
+ '(erc-modules (quote (autoaway autojoin button completion fill irccontrols list match menu move-to-prompt netsplit networks noncommands readonly ring stamp track))))
+
+;; Some clojure stuff I pasted from
+;; https://github.com/mpenet/emax/blob/master/config/modes.el#L89
+(defmacro defclojureface (name color desc &optional others)
+  `(defface ,name '((((class color)) (:foreground ,color ,@others))) ,desc :group 'faces))
+
+;; (defclojureface clojure-parens "DimGrey" "Clojure parens")
+;; (defclojureface clojure-braces "yellow" "Clojure braces")
+(defclojureface clojure-brackets "blue" "Clojure brackets")
+(defclojureface clojure-keyword "#bfebbf" "Clojure keywords")
+;; (defclojureface clojure-java-call "#4bcf68" "Clojure Java calls")
+;; (defclojureface clojure-special "#b8bb00" "Clojure special")
+;; (defclojureface clojure-double-quote "#b8bb00" "Clojure special" (:background "unspecified"))
+(set-face-foreground 'font-lock-comment-face "red")
+(defun tweak-clojure-syntax ()
+  (dolist (x '((("#?['`]*(\\|)" . 'clojure-parens))
+               (("#?\\^?{\\|}" . 'clojure-brackets))
+               (("\\[\\|\\]" . 'clojure-braces))
+               ((":\\w+#?" . 'clojure-keyword))
+               (("#?\"" 0 'clojure-double-quote prepend))
+               (("nil\\|true\\|false\\|%[1-9]?" . 'clojure-special))
+               (("(\\(\\.[^ \n)]*\\|[^ \n)]+\\.\\|new\\)\\([ )\n]\\|$\\)" 1 'clojure-java-call))
+               ))
+    (font-lock-add-keywords nil x)))
+
+(add-hook 'clojure-mode-hook 'tweak-clojure-syntax)
+
+;; java
+
+(add-hook 'java-mode-hook (lambda ()
+          (setq c-basic-offset 2)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; org-babel + Clojure (stolen from stuartsierra's dotfiles)
+
+(when (locate-file "ob" load-path load-suffixes)
+  (require 'ob)
+  (require 'ob-tangle)
+  (add-to-list 'org-babel-tangle-lang-exts '("clojure" . "clj"))
+
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (clojure . t)))
+
+  (defun org-babel-execute:clojure (body params)
+    "Evaluate a block of Clojure code with Babel."
+    (let* ((result (nrepl-send-string-sync body (nrepl-current-ns)))
+           (value (plist-get result :value))
+           (out (plist-get result :stdout))
+           (out (when out
+                  (if (string= "\n" (substring out -1))
+                      (substring out 0 -1)
+                    out)))
+           (stdout (when out
+                     (mapconcat (lambda (line)
+                                  (concat ";; " line))
+                                (split-string out "\n")
+                                "\n"))))
+      (concat stdout
+              (when (and stdout (not (string= "\n" (substring stdout -1))))
+                "\n")
+              ";;=> " value)))
+
+  (provide 'ob-clojure)
+
+  (setq org-src-fontify-natively t)
+  (setq org-confirm-babel-evaluate nil))
+
+;; Load any ~/.emacs.d/init.*.el files
+(dolist (file (directory-files user-emacs-directory
+                               nil
+                               "init\\..*\\.el"))
+  (load file))
