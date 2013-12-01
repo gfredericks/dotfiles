@@ -50,3 +50,14 @@ PS1='[\[\033[01;32m\]\u@\h:\[\033[01;34m\]\w\[\033[00m\]\[\033[01;32m\]$(parse_g
 
 # Assemble ssh config from components
 cat ~/.ssh/config.* > ~/.ssh/config
+
+# Pasted from https://coderwall.com/p/_s_xda, a function that points the current env
+# to the ssh agent, after it presumably changes (most often tmux-related).
+fixssh() {
+  for key in SSH_AUTH_SOCK SSH_CONNECTION SSH_CLIENT; do
+    if (tmux show-environment | grep "^${key}" > /dev/null); then
+      value=`tmux show-environment | grep "^${key}" | sed -e "s/^[A-Z_]*=//"`
+      export ${key}="${value}"
+    fi
+  done
+}
