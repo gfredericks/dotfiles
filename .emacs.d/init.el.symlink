@@ -158,7 +158,11 @@
                ))
     (font-lock-add-keywords nil x)))
 
-(add-hook 'clojure-mode-hook 'tweak-clojure-syntax)
+(add-hook 'clojure-mode-hook
+          (lambda () (paredit-mode +1)
+                     (tweak-clojure-syntax)
+                     (show-paren-mode +1)
+                     (define-key clojure-mode-map (kbd "C-c C-a") 'align-cljlet)))
 
 ;; java
 
