@@ -48,7 +48,9 @@
 
 ;; line numbers
 (add-hook 'find-file-hook (lambda () (linum-mode 1)))
-(setq linum-format "%3d\u2502")
+;; See http://en.wikipedia.org/wiki/Box-drawing_character for other
+;; decent separator options
+(setq linum-format "%3d\u2551")
 
 ;; whitespace
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
