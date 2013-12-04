@@ -1,4 +1,8 @@
-source /etc/profile.d/nix.sh
+NIX_FILE=/etc/profile.d/nix.sh
+if [ -f "$NIX_FILE" ]
+then
+  source $NIX_FILE
+fi
 
 SELF=$(readlink -f $BASH_SOURCE)
 MYBIN=`dirname $SELF`/bin
