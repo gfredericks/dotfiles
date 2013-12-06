@@ -9,7 +9,7 @@ alias lsa="ls -a"
 alias lsla="ls -la"
 alias lslh="ls -lh"
 alias wcl="wc -l"
-
+alias rgrep="grep -r"
 
 # git shortcuts
 alias gs="git status"
