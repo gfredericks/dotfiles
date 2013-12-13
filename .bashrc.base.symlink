@@ -13,7 +13,7 @@ alias lsa="ls -a"
 alias lsla="ls -la"
 alias lslh="ls -lh"
 alias wcl="wc -l"
-
+alias rgrep="grep -r"
 
 # git shortcuts
 alias gs="git status"
@@ -54,6 +54,7 @@ PS1='[\[\033[01;32m\]\u@\h:\[\033[01;34m\]\w\[\033[00m\]\[\033[01;32m\]$(parse_g
 
 # Assemble ssh config from components
 cat ~/.ssh/config.* > ~/.ssh/config
+chmod 600 ~/.ssh/config
 
 # Pasted from https://coderwall.com/p/_s_xda, a function that points the current env
 # to the ssh agent, after it presumably changes (most often tmux-related).
