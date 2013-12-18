@@ -165,6 +165,8 @@
                      (tweak-clojure-syntax)
                      (show-paren-mode +1)
                      (define-key clojure-mode-map (kbd "C-c C-a") 'align-cljlet)))
+(dolist (macro '(fresh conde run run* for-all))
+  (put-clojure-indent macro 'defun))
 
 ;; java
 
