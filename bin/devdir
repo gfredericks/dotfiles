@@ -1,0 +1,6 @@
+# Outputs the first double-subdirectory under ~/dev that
+# matches the given pattern (with grep). For use with the
+# `d` function in the bashrc.
+
+DIR=`find ~/dev/* -maxdepth 1 -type d | grep '/' | grep $1 | head -1`
+echo $DIR

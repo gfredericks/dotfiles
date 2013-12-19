@@ -43,6 +43,7 @@ alias txa="tmux attach -t"
 
 mkcd(){ mkdir -p $1; cd $1; }
 tmp(){ pushd `mktemp -d --tmpdir=/dev/shm`; }
+d(){ cd `devdir $1`; }
 
 
 # Prompt
