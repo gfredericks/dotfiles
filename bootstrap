@@ -24,6 +24,7 @@ do
       if [ "$linkto" != "$existing" ]
       then
         echo "Warning! Existing dotfile is not the correct symlink: $linkfile"
+        echo "(Due to $linkto != $existing)"
         rm -f $SKIP_FILE
       fi
     else
