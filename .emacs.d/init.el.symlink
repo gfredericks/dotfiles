@@ -117,6 +117,7 @@
 (global-set-key (kbd "C-h") 'backward-delete-char-untabify)
 (global-set-key (kbd "C-c n") (lambda () (interactive) (other-window 2)))
 (global-set-key (kbd "C-c p") (lambda () (interactive) (other-window -1)))
+(global-set-key (kbd "C-c h") 'enlarge-window-horizontally)
 
 ;; Because I've unshifted the numeric keys
 ;; (global-set-key (kbd "C-x !") (key-binding (kbd "C-x 1")))
