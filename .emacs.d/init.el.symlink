@@ -137,8 +137,11 @@
   ;; If there is more than one, they won't work right.
  '(erc-modules (quote (autoaway autojoin button completion fill irccontrols list match menu move-to-prompt netsplit networks noncommands readonly ring stamp track))))
 
-;; Some clojure stuff I pasted from
-;; https://github.com/mpenet/emax/blob/master/config/modes.el#L89
+;;;;;;;;;;;;;
+;; CLOJURE ;;
+;;;;;;;;;;;;;
+
+;; Pasted from https://github.com/mpenet/emax/blob/master/config/modes.el#L89
 (defmacro defclojureface (name color desc &optional others)
   `(defface ,name '((((class color)) (:foreground ,color ,@others))) ,desc :group 'faces))
 
