@@ -164,10 +164,18 @@
                ))
     (font-lock-add-keywords nil x)))
 
+;; Auto-eval on save
+(defun reload-buffer-if-cider-running ()
+  (interactive)
+  (if (cider-connected-p)
+      (cider-load-current-buffer)))
+
+
 (add-hook 'clojure-mode-hook
           (lambda () (paredit-mode +1)
                      (tweak-clojure-syntax)
                      (show-paren-mode +1)
+                     (add-hook 'after-save-hook 'reload-buffer-if-cider-running nil 'make-local)
                      (define-key clojure-mode-map (kbd "C-c C-a") 'align-cljlet)))
 (dolist (macro '(fresh conde run run* for-all))
   (put-clojure-indent macro 'defun))
