@@ -137,8 +137,11 @@
   ;; If there is more than one, they won't work right.
  '(erc-modules (quote (autoaway autojoin button completion fill irccontrols list match menu move-to-prompt netsplit networks noncommands readonly ring stamp track))))
 
-;; Some clojure stuff I pasted from
-;; https://github.com/mpenet/emax/blob/master/config/modes.el#L89
+;;;;;;;;;;;;;
+;; CLOJURE ;;
+;;;;;;;;;;;;;
+
+;; Pasted from https://github.com/mpenet/emax/blob/master/config/modes.el#L89
 (defmacro defclojureface (name color desc &optional others)
   `(defface ,name '((((class color)) (:foreground ,color ,@others))) ,desc :group 'faces))
 
@@ -161,10 +164,18 @@
                ))
     (font-lock-add-keywords nil x)))
 
+;; Auto-eval on save
+(defun reload-buffer-if-cider-running ()
+  (interactive)
+  (if (and (cider-connected-p) (string= "(ns " (buffer-substring-no-properties 1 5)))
+      (cider-load-current-buffer)))
+
+
 (add-hook 'clojure-mode-hook
           (lambda () (paredit-mode +1)
                      (tweak-clojure-syntax)
                      (show-paren-mode +1)
+                     (add-hook 'after-save-hook 'reload-buffer-if-cider-running nil 'make-local)
                      (define-key clojure-mode-map (kbd "C-c C-a") 'align-cljlet)))
 (dolist (macro '(fresh conde run run* for-all))
   (put-clojure-indent macro 'defun))
