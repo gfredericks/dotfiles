@@ -177,7 +177,7 @@
                      (show-paren-mode +1)
                      (add-hook 'after-save-hook 'reload-buffer-if-cider-running nil 'make-local)
                      (define-key clojure-mode-map (kbd "C-c C-a") 'align-cljlet)))
-(dolist (macro '(fresh conde run run* for-all))
+(dolist (macro '(fresh conde run run* for-all for-map))
   (put-clojure-indent macro 'defun))
 
 ;; java
