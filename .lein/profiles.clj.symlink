@@ -2,6 +2,10 @@
                         [lein-pprint "1.1.1"]
                         [lein-release "1.0.5"]
                         [lein-try "0.4.1"]]
+              :repl-options {:init
+                             ;; how can we effect this without
+                             ;; precluding a local :repl-options?
+                             (require [com.gfredericks.repl :refer :all])}
               :dependencies [[com.gfredericks/repl-utils "0.1.1"]]}
              ;; A mechanism for adding to the :user profile outside of this
              ;; dotfiles repo; to suppress warnings about the profile not
