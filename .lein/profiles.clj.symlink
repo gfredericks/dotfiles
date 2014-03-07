@@ -6,7 +6,7 @@
                              ;; how can we effect this without
                              ;; precluding a local :repl-options?
                              (require '[com.gfredericks.repl :refer :all])}
-              :dependencies [[com.gfredericks/repl-utils "0.1.2"]]}
+              :dependencies [[com.gfredericks/repl-utils "0.1.3"]]}
              ;; A mechanism for adding to the :user profile outside of this
              ;; dotfiles repo; to suppress warnings about the profile not
              ;; existing, add a file containing {} to
