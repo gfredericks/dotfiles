@@ -1,5 +1,0 @@
-{:plugins [[lein-nodisassemble "0.1.2"]]
- :repl-options
- {:init (do
-          (println "(use 'no.disassemble)")
-          (use 'no.disassemble))}}
