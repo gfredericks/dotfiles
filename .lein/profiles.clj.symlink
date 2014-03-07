@@ -1,5 +1,6 @@
 {:user      [{:plugins [[lein-kibit "0.0.8"]
                         [lein-pprint "1.1.1"]
+                        [lein-release "1.0.5"]
                         [lein-try "0.4.1"]]
               :dependencies [[com.gfredericks/repl-utils "0.1.0"]]}
              ;; A mechanism for adding to the :user profile outside of this
