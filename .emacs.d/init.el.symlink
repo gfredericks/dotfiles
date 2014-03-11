@@ -16,6 +16,7 @@
     markdown-mode
     paredit
     haskell-mode
+    find-file-in-project
     magit))
 
 (let ((refreshed nil))
@@ -45,6 +46,10 @@
 (setq-default indicate-empty-lines t)
 (setq-default tab-width 2)
 (setq-default indent-tabs-mode nil)
+
+;; ffip
+(global-set-key (kbd "C-x f") 'find-file-in-project)
+(setq ffip-full-paths t)
 
 ;; line numbers
 (add-hook 'find-file-hook (lambda () (linum-mode 1)))
