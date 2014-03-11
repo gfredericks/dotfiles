@@ -2,10 +2,12 @@
                         [lein-pprint "1.1.1"]
                         [lein-release "1.0.5"]
                         [lein-try "0.4.1"]]
-              :repl-options {:init
+              :repl-options {:skip-default-init true
+                             :init
                              ;; how can we effect this without
                              ;; precluding a local :repl-options?
-                             (require '[com.gfredericks.repl :refer :all])}
+                             (do (require 'com.gfredericks.repl)
+                                 ((resolve 'com.gfredericks.repl/bootstrap-ns)))}
               :dependencies [[com.gfredericks/clj-usage-graph "0.1.3"]
                              [com.gfredericks/repl-utils "0.1.8"]]}
              ;; A mechanism for adding to the :user profile outside of this

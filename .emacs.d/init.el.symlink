@@ -164,6 +164,9 @@
                ))
     (font-lock-add-keywords nil x)))
 
+;; Tell cider not to require clojure.repl &c on startup
+(setq nrepl-repl-requires-sexp "()")
+
 ;; Auto-eval on save
 (defun reload-buffer-if-cider-running ()
   (interactive)
