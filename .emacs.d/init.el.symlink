@@ -17,6 +17,7 @@
     paredit
     haskell-mode
     find-file-in-project
+    refheap
     magit))
 
 (let ((refreshed nil))
