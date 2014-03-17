@@ -18,6 +18,7 @@
     haskell-mode
     find-file-in-project
     refheap
+    evil
     magit))
 
 (let ((refreshed nil))
