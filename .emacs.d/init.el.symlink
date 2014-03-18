@@ -18,6 +18,7 @@
     haskell-mode
     find-file-in-project
     refheap
+    evil
     magit))
 
 (let ((refreshed nil))
@@ -237,3 +238,6 @@
                                nil
                                "init\\..*\\.el"))
   (load (concat user-emacs-directory file)))
+
+;; Evil Mode
+(global-set-key (kbd "C-c e") 'evil-mode) ; easy toggle
