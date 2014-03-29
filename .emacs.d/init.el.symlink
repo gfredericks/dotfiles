@@ -185,6 +185,12 @@
           (lambda () (paredit-mode +1)
                      (tweak-clojure-syntax)
                      (show-paren-mode +1)
+
+                     ;; rebinding these two from C-c C-z since C-z is captured by my tmux
+                     (define-key cider-mode-map (kbd "C-c C-y") 'cider-switch-to-relevant-repl-buffer)
+                     (define-key cider-repl-mode-map (kbd "C-c C-y") 'cider-switch-to-last-clojure-buffer)
+
+
                      (add-hook 'after-save-hook 'reload-buffer-if-cider-running nil 'make-local)
                      (define-key clojure-mode-map (kbd "C-c C-a") 'align-cljlet)))
 (dolist (macro '(fresh conde run run* for-all for-map go go-loop for> doseq> fn> defn> defprotocol>))
