@@ -19,7 +19,8 @@
     find-file-in-project
     refheap
     evil
-    magit))
+    magit
+    ac-nrepl))
 
 (let ((refreshed nil))
   (dolist (package-name my-packages)
@@ -203,6 +204,7 @@
 (require 'ac-nrepl)
 (add-hook 'cider-repl-mode-hook 'ac-nrepl-setup)
 (add-hook 'cider-mode-hook 'ac-nrepl-setup)
+(add-hook 'cider-mode-hook 'auto-complete-mode)
 (eval-after-load "auto-complete"
   '(add-to-list 'ac-modes 'cider-repl-mode))
 (defun set-auto-complete-as-completion-at-point-function ()
