@@ -8,8 +8,14 @@
                              ;; HAX: comp-last-list makes this work even after
                              ;; concatting to other inits
                              ((comp last list)
-                              (require 'com.gfredericks.repl)
-                              ((resolve 'com.gfredericks.repl/bootstrap-ns)))
+                              (require 'com.gfredericks.repl.bootstrap)
+                              (require 'com.gfredericks.debug-repl)
+                              (alter-var-root (resolve 'com.gfredericks.repl.bootstrap/requires)
+                                              conj
+                                              '[com.gfredericks.debug-repl
+                                                :as debug-repl
+                                                :refer [break! unbreak!]])
+                              ((resolve 'clojure.core/&bs)))
                              :nrepl-middleware
                              [com.gfredericks.debug-repl/wrap-debug-repl
                               cider.nrepl.middleware.complete/wrap-complete
@@ -17,7 +23,7 @@
                               cider.nrepl.middleware.inspect/wrap-inspect]}
               :dependencies [[com.gfredericks/clj-usage-graph "0.1.3"]
                              [com.gfredericks/debug-repl "0.0.1"]
-                             [com.gfredericks/repl-utils "0.1.9"]]}
+                             [com.gfredericks/repl-utils "0.1.10"]]}
              ;; A mechanism for adding to the :user profile outside of this
              ;; dotfiles repo; to suppress warnings about the profile not
              ;; existing, add a file containing {} to
