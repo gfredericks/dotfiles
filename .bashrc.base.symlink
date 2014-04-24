@@ -26,6 +26,7 @@ alias gd="git diff"
 alias gr="git reset"
 alias grh="git reset HEAD"
 alias gpp="git pull && git push"
+alias gpddraagp="git pull --rebase && git push"
 
 # Navigation
 function ..(){ for ((j=${1:-1},i=0;i<j;i++));do builtin cd ..;done;}
