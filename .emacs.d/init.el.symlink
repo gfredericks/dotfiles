@@ -175,6 +175,21 @@
 ;; Tell cider not to require clojure.repl &c on startup
 (setq nrepl-repl-requires-sexp "()")
 
+;; Monkey-patch cider to print *out* to the repl even on C-u C-x C-e
+;; See: https://github.com/clojure-emacs/cider/pull/571
+(defun cider-interactive-eval-print-handler (buffer)
+  "Make a handler for evaluating and printing result in BUFFER."
+  (nrepl-make-response-handler buffer
+                               (lambda (buffer value)
+                                 (with-current-buffer buffer
+                                   (insert (format "\n%s" value))))
+                               (lambda (_buffer value)
+                                 (cider-repl-emit-interactive-output value))
+                               (lambda (_buffer err)
+                                 (message "%s" err))
+                               '()))
+
+
 ;; Auto-eval on save
 (defun reload-buffer-if-cider-running ()
   (interactive)
