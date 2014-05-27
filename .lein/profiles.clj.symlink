@@ -2,7 +2,7 @@
                         [lein-pprint "1.1.1"]
                         [lein-release "1.0.5"]
                         [lein-try "0.4.1"]
-                        [cider/cider-nrepl "0.1.0-SNAPSHOT"]]
+                        [cider/cider-nrepl "0.7.0-SNAPSHOT"]]
               :repl-options {:skip-default-init true
                              :init
                              ;; HAX: comp-last-list makes this work even after
