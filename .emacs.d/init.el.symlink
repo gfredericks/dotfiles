@@ -16,7 +16,7 @@
     markdown-mode
     paredit
     haskell-mode
-    find-file-in-project
+    ;; find-file-in-project ; see below
     refheap
     evil
     magit
@@ -34,6 +34,12 @@
   (unless (package-installed-p 'org (version-to-list "8.2.3c"))
     (unless refreshed (package-refresh-contents))
     (package-install 'org)))
+
+;; for things I've included in this repo
+(add-to-list 'load-path "~/.emacs.d/included/")
+;; I'm including this until the public repos have the
+;; latest version with ffip-prune-patterns
+(require 'find-file-in-project)
 
 
 (require 'clojurescript-mode)
@@ -53,6 +59,7 @@
 ;; ffip
 (global-set-key (kbd "C-x f") 'find-file-in-project)
 (setq ffip-full-paths t)
+(add-to-list 'ffip-prune-patterns "local")
 
 ;; line numbers
 (add-hook 'find-file-hook (lambda () (linum-mode 1)))
