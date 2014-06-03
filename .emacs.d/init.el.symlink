@@ -16,7 +16,7 @@
     markdown-mode
     paredit
     haskell-mode
-    ;; find-file-in-project ; see below
+    find-file-in-project
     refheap
     evil
     magit
@@ -36,14 +36,12 @@
     (package-install 'org)))
 
 ;; for things I've included in this repo
-(add-to-list 'load-path "~/.emacs.d/included/")
-;; I'm including this until the public repos have the
-;; latest version with ffip-prune-patterns
-(require 'find-file-in-project)
+;; (add-to-list 'load-path "~/.emacs.d/included/")
 
 
 (require 'clojurescript-mode)
 (require 'clojure-test-mode)
+(require 'find-file-in-project)
 (require 'paredit)
 (require 'markdown-mode)
 (require 'align-cljlet)
