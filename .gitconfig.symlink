@@ -1,6 +1,7 @@
 [core]
   editor = nano
   excludesfile = ~/.gitignore_global
+  attributesfile = ~/.gitattributes
 [color]
   ui = auto
 [color "branch"]
@@ -33,3 +34,5 @@
 	default = matching
 [include]
   path = .gitconfig.local
+[diff "clojure"]
+  xfuncname = (^\\(.*|\\s*\\(defn.*)
