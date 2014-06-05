@@ -17,6 +17,7 @@
     paredit
     haskell-mode
     find-file-in-project
+    idle-highlight
     refheap
     evil
     magit
@@ -53,6 +54,10 @@
 (setq-default indicate-empty-lines t)
 (setq-default tab-width 2)
 (setq-default indent-tabs-mode nil)
+
+;; idle-highlight
+;; it highlights usages of the symbol under point
+(add-hook 'prog-mode-hook 'idle-highlight-mode)
 
 ;; ffip
 (global-set-key (kbd "C-x f") 'find-file-in-project)
