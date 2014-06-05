@@ -57,7 +57,7 @@
 
 ;; idle-highlight
 ;; it highlights usages of the symbol under point
-(add-hook 'prog-mode-hook 'idle-highlight-mode)
+(add-hook 'prog-mode-hook 'idle-highlight)
 
 ;; ffip
 (global-set-key (kbd "C-x f") 'find-file-in-project)
