@@ -13,7 +13,7 @@
                               #_cider.nrepl.middleware.trace/wrap-trace]}
               :dependencies [[com.gfredericks/clj-usage-graph "0.1.3"]
                              [com.gfredericks/debug-repl "0.0.1"]
-                             [com.gfredericks/repl-utils "0.1.15"]]}
+                             [com.gfredericks/repl-utils "0.1.16"]]}
              ;; A mechanism for adding to the :user profile outside of this
              ;; dotfiles repo; to suppress warnings about the profile not
              ;; existing, add a file containing {} to
