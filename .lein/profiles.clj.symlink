@@ -1,6 +1,5 @@
 {:user      [{:plugins [[lein-kibit "0.0.8"]
                         [lein-pprint "1.1.1"]
-                        [lein-release "1.0.5"]
                         [lein-try "0.4.1"]
                         [com.gfredericks/dot-slash "0.1.0"]
                         #_[cider/cider-nrepl "0.7.0-SNAPSHOT"]]
