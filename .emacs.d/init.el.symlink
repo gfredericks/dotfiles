@@ -14,6 +14,7 @@
     jabber
     clojurescript-mode
     markdown-mode
+    multiple-cursors
     paredit
     haskell-mode
     find-file-in-project
@@ -90,6 +91,12 @@
   (define-key paredit-mode-map (kbd "M-)") 'paredit-forward-slurp-sexp)
   (define-key paredit-mode-map (kbd "RET") 'newline-and-indent))
 (add-hook 'paredit-mode-hook 'paredit-custom)
+
+;; multiple-cursors
+(global-set-key (kbd "C-c m e") 'mc/edit-lines)
+(global-set-key (kbd "C-c m n") 'mc/mark-next-like-this)
+(global-set-key (kbd "C-c m p") 'mc/mark-previous-like-this)
+
 
 (defun latex-custom ()
   "latex-mode-hook"
