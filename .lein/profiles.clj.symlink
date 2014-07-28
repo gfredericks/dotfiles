@@ -2,6 +2,7 @@
                         [lein-pprint "1.1.1"]
                         [lein-try "0.4.1"]
                         [com.gfredericks/dot-slash "0.1.0"]
+                        [lein-oneoff "0.3.1"]
                         #_[cider/cider-nrepl "0.7.0-SNAPSHOT"]]
               :dot-slash {:vars [[clojure.repl apropos doc pst source]
                                  [com.gfredericks.debug-repl break! unbreak!]
