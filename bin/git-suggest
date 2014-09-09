@@ -1,0 +1,20 @@
+# Creates a random new branch from the current commit, pushes it to
+# `origin` and resets `master` back to `origin/master`.
+
+CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
+RAND_HEX=`uuidgen | cut -c 1-8`
+BRANCH_NAME=suggestion-$RAND_HEX
+
+git checkout -b $BRANCH_NAME
+
+git push -u origin $BRANCH_NAME:$BRANCH_NAME
+
+git checkout $CURRENT_BRANCH
+
+if [ -z $(git status --porcelain) ];
+then
+  echo "git reset --hard origin/$CURRENT_BRANCH"
+  git reset --hard origin/$CURRENT_BRANCH
+else
+  echo "Dirty working directory, not resetting."
+fi
