@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+
+require 'digest/sha1'
+require 'zlib'
+
+$prefix = ARGV[0]
+
+def current_sha
+  `git log --format="%H" -n 1`.strip
+end
+
+def filename(id)
+  ".git/objects/#{id[0...2]}/#{id[2..-1]}"
+end
+
+def read_object(id)
+  Zlib::Inflate.inflate(File.read(filename(id)))
+end
+
+def write_object(id, bytes)
+  `mkdir -p .git/objects/#{id[0...2]}` # boo
+  File.open(filename(id),'w') do |f|
+    f.write(Zlib::Deflate.deflate(bytes))
+  end
+end
+
+# mutates the object header
+def fix_header s
+  if s =~ /^commit (\d+)\0/
+    len = $1.to_i
+    actual = s.length - $&.length
+    if len != actual
+      s[7...(7 + $1.length)] = actual.to_s
+    end
+  else
+    raise "POOP"
+  end
+end
+
+def run(prefix)
+  sha = current_sha
+  contents = read_object(sha)
+  while sha !~ /^#{prefix}/
+
+    if contents[-64..-1] =~ /^[\t ]{64}$/
+      contents[-64..-1] = ""
+    end
+
+    64.times do
+      contents << ["\t"," "][rand(2)]
+    end
+
+    fix_header contents
+
+    sha = Digest::SHA1.hexdigest contents
+  end
+  if sha != current_sha
+    write_object sha, contents
+    puts "git reset #{sha}"
+    `git reset #{sha}`
+  end
+  puts "Done: #{current_sha}"
+end
+
+run($prefix)
