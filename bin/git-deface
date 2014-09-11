@@ -1,9 +1,15 @@
 #!/usr/bin/env ruby
 
+# git-deface
+# Author: Gary Fredericks
+#
+# A script that tweaks the latest commit in a git repo until
+# the sha matches the provided regex.
+
 require 'digest/sha1'
 require 'zlib'
 
-$prefix = ARGV[0]
+USAGE = "Usage: git-deface <regex>"
 
 def current_sha
   `git log --format="%H" -n 1`.strip
@@ -37,10 +43,10 @@ def fix_header s
   end
 end
 
-def run(prefix)
+def run(pred)
   sha = current_sha
   contents = read_object(sha)
-  while sha !~ /^#{prefix}/
+  while !pred.call(sha)
 
     if contents[-64..-1] =~ /^[\t ]{64}$/
       contents[-64..-1] = ""
@@ -62,4 +68,8 @@ def run(prefix)
   puts "Done: #{current_sha}"
 end
 
-run($prefix)
+if re = ARGV[0]
+  run lambda {|sha| sha =~ /#{re}/}
+else
+  puts USAGE
+end
