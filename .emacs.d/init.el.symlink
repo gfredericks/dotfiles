@@ -165,6 +165,8 @@
        \\subject{{{{beamersubject}}}}\n"
 
      ("\\section{%s}" . "\\section*{%s}")
+     ("\\subsection\{%s\}" . "\\subsection*\{%s\}")
+     ("\\subsubsection\{%s\}" . "\\subsubsection*\{%s\}")
 
      ("\\begin{frame}[fragile]\\frametitle{%s}"
        "\\end{frame}"
