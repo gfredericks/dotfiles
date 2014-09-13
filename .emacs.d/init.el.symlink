@@ -12,7 +12,6 @@
     cider
     align-cljlet
     jabber
-    clojurescript-mode
     markdown-mode
     multiple-cursors
     paredit
@@ -41,7 +40,6 @@
 ;; (add-to-list 'load-path "~/.emacs.d/included/")
 
 
-(require 'clojurescript-mode)
 (require 'clojure-test-mode)
 (require 'find-file-in-project)
 (require 'paredit)
