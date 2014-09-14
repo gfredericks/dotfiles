@@ -141,28 +141,7 @@
   (setq org-latex-classes nil))
 (add-to-list 'org-latex-classes
   '("beamer"
-     "\\documentclass[11pt]{beamer}\n
-      \\mode<{{{beamermode}}}>\n
-      \\usetheme{{{{beamertheme}}}}\n
-      \\usecolortheme{{{{beamercolortheme}}}}\n
-      \\beamertemplateballitem\n
-      \\setbeameroption{show notes}
-      \\usepackage[utf8]{inputenc}\n
-      \\usepackage[T1]{fontenc}\n
-      \\usepackage{hyperref}\n
-      \\usepackage{color}
-      \\usepackage{listings}
-      \\lstset{numbers=none,language=[ISO]C++,tabsize=4,
-  frame=single,
-  basicstyle=\\small,
-  showspaces=false,showstringspaces=false,
-  showtabs=false,
-  keywordstyle=\\color{blue}\\bfseries,
-  commentstyle=\\color{red},
-  }\n
-      \\usepackage{verbatim}\n
-      \\institute{{{{beamerinstitute}}}}\n
-       \\subject{{{{beamersubject}}}}\n"
+    "\\documentclass\[presentation\]\{beamer\}"
 
      ("\\section{%s}" . "\\section*{%s}")
      ("\\subsection\{%s\}" . "\\subsection*\{%s\}")
@@ -172,6 +151,16 @@
        "\\end{frame}"
        "\\begin{frame}[fragile]\\frametitle{%s}"
        "\\end{frame}")))
+(require 'ox-latex)
+(add-to-list 'org-latex-packages-alist '("" "minted"))
+(add-to-list 'org-latex-packages-alist '("" "listings"))
+(setq org-latex-listings 'minted)
+
+(setq org-latex-pdf-process
+            '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+              "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+              "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"))
+
 
 
 ;; General editing bindings
