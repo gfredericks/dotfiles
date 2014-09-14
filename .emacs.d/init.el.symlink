@@ -154,6 +154,9 @@
 (require 'ox-beamer)
 (add-to-list 'org-latex-packages-alist '("" "minted"))
 (add-to-list 'org-latex-packages-alist '("" "listings"))
+(setq org-latex-minted-options
+      '(("frame" "single")
+        ("linenos" "")))
 (setq org-latex-listings 'minted)
 
 (setq org-latex-pdf-process
