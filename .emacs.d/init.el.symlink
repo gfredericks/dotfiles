@@ -151,7 +151,7 @@
        "\\end{frame}"
        "\\begin{frame}[fragile]\\frametitle{%s}"
        "\\end{frame}")))
-(require 'ox-latex)
+(require 'ox-beamer)
 (add-to-list 'org-latex-packages-alist '("" "minted"))
 (add-to-list 'org-latex-packages-alist '("" "listings"))
 (setq org-latex-listings 'minted)
