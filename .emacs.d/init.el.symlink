@@ -321,6 +321,11 @@
                                   (concat ";; " line))
                                 (split-string err "\n")
                                 "\n")))
+           (formatted-value (when value
+                              (mapconcat (lambda (line)
+                                           (concat ";;   " line))
+                                         (split-string value "\n")
+                                         "\n")))
            (output (concat stdout
                            (when (and stdout (not (string= "\n" (substring stdout -1))))
                              "\n")
@@ -330,7 +335,7 @@
                          (not (string= "" output))
                          (not (string= "\n" (substring output -1))))
                 "\n")
-              (when value (concat ";;=> " value)))))
+              (when value (concat ";;=> " (substring formatted-value 5))))))
 
   (provide 'ob-clojure)
 
