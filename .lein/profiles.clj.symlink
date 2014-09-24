@@ -21,17 +21,12 @@
                              [com.gfredericks/debug-repl "0.0.1"]
                              [com.gfredericks/repl-utils "0.1.20"]
                              [mvxcvi/puget "0.6.3"]
-                             [mvxcvi/whidbey "0.3.2"]]
+                             [mvxcvi/whidbey "0.3.3"]]
               :injections [(do (require 'puget.printer)
                                (alter-var-root
                                 #'puget.printer/*options*
                                 puget.printer/merge-options
-                                {:width 100, :print-color false})
-                               ;; using this instead of :nrepl-context
-                               ;; so it works with cider too
-                               (alter-var-root
-                                #'clojure.tools.nrepl.middleware.render-values/print-renderer
-                                (constantly puget.printer/pprint-str)))]
+                                {:width 80, :print-color false}))]
               :aliases {"dct" ["do" "clean," "test"]}}
              ;; A mechanism for adding to the :user profile outside of this
              ;; dotfiles repo; to suppress warnings about the profile not
