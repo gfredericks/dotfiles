@@ -10,7 +10,7 @@
                                  [com.gfredericks.repl add-dep dir pp bg bg-deref]]}
               :repl-options {:nrepl-middleware
                              [com.gfredericks.debug-repl/wrap-debug-repl
-                              clojure.tools.nrepl.middleware.render-values/render-values
+                              clojure.tools.nrepl.middleware.render-values/render-values]}
               :dependencies [[com.gfredericks/clj-usage-graph "0.1.3"]
                              [com.gfredericks/debug-repl "0.0.1"]
                              [com.gfredericks/repl-utils "0.1.20"]
