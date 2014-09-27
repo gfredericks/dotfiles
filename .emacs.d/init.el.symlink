@@ -8,7 +8,6 @@
 
 (setq my-packages
   '(clojure-mode
-    clojure-test-mode
     cider
     align-cljlet
     jabber
@@ -40,7 +39,8 @@
 ;; (add-to-list 'load-path "~/.emacs.d/included/")
 
 
-(require 'clojure-test-mode)
+(require 'clojure-mode)
+(require 'cider)
 (require 'find-file-in-project)
 (require 'paredit)
 (require 'markdown-mode)
