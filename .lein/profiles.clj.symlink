@@ -2,7 +2,6 @@
                         [lein-lein "0.1.0"]
                         [lein-oneoff "0.3.1"]
                         [lein-pprint "1.1.1"]
-                        [lein-try "0.4.1"]
                         [com.gfredericks/dot-slash "0.1.0"]
                         [cider/cider-nrepl "0.7.0"]]
               :dot-slash {:vars [[clojure.repl apropos doc pst source]
@@ -21,13 +20,15 @@
                                 #'puget.printer/*options*
                                 puget.printer/merge-options
                                 {:width 80, :print-color false}))]
-              :aliases {"dct" ["do" "clean," "test"]}}
+              :aliases {"dct" ["do" "clean," "test"]
+                        "try" ["with-profile" "+lein-try" "try"]}}
              :nrepl-53
              ;; A mechanism for adding to the :user profile outside of this
              ;; dotfiles repo; to suppress warnings about the profile not
              ;; existing, add a file containing {} to
              ;; ~/.lein/profiles.d/local-user
              :local-user]
+ :lein-try {:plugins [[lein-try "0.4.1"]]}
  :bytecode  {:plugins [[lein-nodisassemble "0.1.2"]]
              :repl-options
              {:init (do
