@@ -22,6 +22,7 @@
              ;; ~/.lein/profiles.d/local-user
              :local-user]
  :whidbey {:plugins [[com.gfredericks.forks.mvxcvi/whidbey "0.3.3-p3"]]
+           :puget-options {:print-color false}
            :injections [(do (require 'clojure.tools.nrepl.middleware.pr-values)
                             ;; make pr-values a noop
                             (alter-var-root #'clojure.tools.nrepl.middleware.pr-values/pr-values
