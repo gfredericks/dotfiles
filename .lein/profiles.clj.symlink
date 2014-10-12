@@ -32,8 +32,8 @@
  :bytecode  {:plugins [[lein-nodisassemble "0.1.2"]]
              :repl-options
              {:init (do
-                      (println "(use 'no.disassemble)")
-                      (use 'no.disassemble))}}
+                      (use 'no.disassemble))
+              :welcome (do (println "\n\nI just did (use 'no.disassemble) for you.\n\nYou're welcome."))}}
  :slim      {:jvm-opts ["-Xmx250m"]}
  ;; monkeypatching these changes until they're merged/released:
  ;; https://github.com/gfredericks/tools.nrepl/commit/6aeb632738c5bb35d83e99a87cc552936ac806c3
