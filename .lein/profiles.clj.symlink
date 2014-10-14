@@ -36,6 +36,9 @@
  :slim      {:jvm-opts ["-Xmx250m"]}
  ;; monkeypatching these changes until they're merged/released:
  ;; https://github.com/gfredericks/tools.nrepl/commit/6aeb632738c5bb35d83e99a87cc552936ac806c3
+ ;;
+ ;; Alternatively this could be made into a vanilla fork release if we
+ ;; patch leiningen to make it easier to use a forked nrepl.
  :nrepl-53  {:injections
              [(do (require 'clojure.tools.nrepl.middleware)
                   (binding [*ns* (the-ns 'clojure.tools.nrepl.middleware)]
