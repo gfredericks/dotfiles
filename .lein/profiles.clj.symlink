@@ -21,12 +21,8 @@
              ;; existing, add a file containing {} to
              ;; ~/.lein/profiles.d/local-user
              :local-user]
- :whidbey {:plugins [[com.gfredericks.forks.mvxcvi/whidbey "0.3.3-p3"]]
-           :puget-options {:print-color false}
-           :injections [(do (require 'clojure.tools.nrepl.middleware.pr-values)
-                            ;; make pr-values a noop
-                            (alter-var-root #'clojure.tools.nrepl.middleware.pr-values/pr-values
-                                            (constantly identity)))]}
+ :whidbey {:plugins [[mvxcvi/whidbey "0.4.1"]]
+           :puget-options {:print-color false}}
  :lein-try {:plugins [[lein-try "0.4.1"]]}
  :bytecode  {:plugins [[lein-nodisassemble "0.1.2"]]
              :repl-options
