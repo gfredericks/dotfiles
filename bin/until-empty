@@ -1,0 +1,20 @@
+#
+# Usage: until-empty secs cmd...
+# Runs cmd as often as specified until the output is empty.
+#
+
+USAGE="Usage: $0 secs cmd..."
+
+if [ "$#" == "0" ]; then
+  echo $USAGE
+  exit 1
+fi
+
+SECS=$1
+shift
+OUTPUT=`$@`
+while [ -n "$OUTPUT" ]
+do
+  sleep $SECS
+  OUTPUT=`$@`
+done
