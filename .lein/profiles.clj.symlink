@@ -21,12 +21,8 @@
              ;; existing, add a file containing {} to
              ;; ~/.lein/profiles.d/local-user
              :local-user]
- :whidbey {:plugins [[com.gfredericks.forks.mvxcvi/whidbey "0.3.3-p3"]]
-           :puget-options {:print-color false}
-           :injections [(do (require 'clojure.tools.nrepl.middleware.pr-values)
-                            ;; make pr-values a noop
-                            (alter-var-root #'clojure.tools.nrepl.middleware.pr-values/pr-values
-                                            (constantly identity)))]}
+ :whidbey {:plugins [[mvxcvi/whidbey "0.4.1"]]
+           :puget-options {:print-color false}}
  :lein-try {:plugins [[lein-try "0.4.1"]]}
  :bytecode  {:plugins [[lein-nodisassemble "0.1.2"]]
              :repl-options
@@ -36,6 +32,9 @@
  :slim      {:jvm-opts ["-Xmx250m"]}
  ;; monkeypatching these changes until they're merged/released:
  ;; https://github.com/gfredericks/tools.nrepl/commit/6aeb632738c5bb35d83e99a87cc552936ac806c3
+ ;;
+ ;; Alternatively this could be made into a vanilla fork release if we
+ ;; patch leiningen to make it easier to use a forked nrepl.
  :nrepl-53  {:injections
              [(do (require 'clojure.tools.nrepl.middleware)
                   (binding [*ns* (the-ns 'clojure.tools.nrepl.middleware)]
