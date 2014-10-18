@@ -3,7 +3,8 @@
                         [lein-oneoff "0.3.1"]
                         [lein-pprint "1.1.1"]
                         [com.gfredericks/dot-slash "0.1.0"]
-                        [cider/cider-nrepl "0.7.0"]]
+                        [cider/cider-nrepl "0.7.0"]
+                        [com.gfredericks/corncob-cigar "0.1.0"]]
               :dot-slash {:vars [[clojure.repl apropos doc pst source]
                                  [com.gfredericks.debug-repl break! unbreak!]
                                  [com.gfredericks.repl add-dep dir pp bg bg-deref]]}
@@ -16,6 +17,7 @@
                         "try" ["with-profile" "+lein-try" "try"]}}
              :nrepl-53
              :whidbey
+             :lib-dev
              ;; A mechanism for adding to the :user profile outside of this
              ;; dotfiles repo; to suppress warnings about the profile not
              ;; existing, add a file containing {} to
@@ -23,6 +25,18 @@
              :local-user]
  :whidbey {:plugins [[mvxcvi/whidbey "0.4.1"]]
            :puget-options {:print-color false}}
+ :lib-dev {:release-tasks [["vcs" "assert-committed"]
+                           ["change" "version"
+                            "leiningen.release/bump-version" "release"]
+                           ["gsub-version"]
+                           ["vcs" "commit"]
+                           ["vcs-tag-no-sign"]
+                           #_["vcs" "tag"]
+                           ["deploy"]
+                           ["change" "version" "leiningen.release/bump-version"]
+                           ["vcs" "commit"]
+                           ["vcs" "push"]]
+           :gsub-version/files #{"README.md"}}
  :lein-try {:plugins [[lein-try "0.4.1"]]}
  :bytecode  {:plugins [[lein-nodisassemble "0.1.2"]]
              :repl-options
