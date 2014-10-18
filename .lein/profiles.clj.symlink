@@ -25,7 +25,8 @@
              :local-user]
  :whidbey {:plugins [[mvxcvi/whidbey "0.4.1"]]
            :puget-options {:print-color false}}
- :lib-dev {:release-tasks [["vcs" "assert-committed"]
+ :lib-dev {:release-tasks [["clean"]
+                           ["vcs" "assert-committed"]
                            ["change" "version"
                             "leiningen.release/bump-version" "release"]
                            ["gsub-version"]
