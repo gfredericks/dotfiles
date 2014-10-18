@@ -112,6 +112,7 @@
 
 ;; magit!
 (require 'magit)
+(set-face-background 'magit-item-highlight "white")
 
 ;; Haskell?
 (add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode)
