@@ -1,0 +1,14 @@
+USAGE="Usage: $0 seconds cmd..."
+
+if [ "$#" == "0" ]; then
+  echo $USAGE
+  exit 1
+fi
+
+SECS=$1
+shift
+while :
+do
+  $@
+  sleep $SECS
+done
