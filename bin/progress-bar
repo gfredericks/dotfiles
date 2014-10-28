@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+
+# Reads decreasing positive integers from stdin and prints estimates
+# about when it will reach zero. Exits on zero.
+
+DECAY=0.9
+
+def duration_s secs
+  if secs < 60
+    "#{secs} seconds"
+  elsif secs < 3600
+    "#{secs / 60} minutes, #{duration_s(secs % 60)}"
+  else
+    "#{secs / 3600} hours, #{duration_s(secs % 3600)}"
+  end
+end
+
+last_num = gets.to_i
+last_t = Time.new.to_i
+rate = 0.0
+
+while last_num > 0
+  next_num = gets.to_i
+  next_t = Time.new.to_i
+  delta = next_num - last_num
+  delta_t = last_t - next_t
+  per_sec = delta.to_f / delta_t
+  rate = DECAY * rate + per_sec * (1 - DECAY)
+  if rate == 0
+    puts "#{next_num} -- an eternity"
+  else
+    est_secs_left = (next_num / rate).to_i
+    puts "#{next_num} -- #{duration_s(est_secs_left)}"
+  end
+  last_num = next_num
+  last_t = next_t
+end
+
+puts "DONE!"
