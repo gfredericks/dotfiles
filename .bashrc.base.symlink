@@ -15,6 +15,7 @@ alias lslh="ls -lh"
 alias wcl="wc -l"
 alias rgrep="grep -r"
 alias today="date +%Y-%m-%d"
+alias jqu="jq --unbuffered"
 
 # git shortcuts
 alias gs="git status"

@@ -376,7 +376,7 @@
 ;; Load any ~/.emacs.d/init.*.el files
 (dolist (file (directory-files user-emacs-directory
                                nil
-                               "init\\..*\\.el"))
+                               "^init\\..*\\.el"))
   (load (concat user-emacs-directory file)))
 
 ;; Evil Mode
