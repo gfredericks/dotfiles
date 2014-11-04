@@ -38,6 +38,9 @@
                            ["vcs" "commit"]
                            ["vcs" "push"]]
            :gsub-version/files #{"README.md"}}
+ :replog {:dependencies [[com.gfredericks/replog "0.1.0-SNAPSHOT"]]
+          :repl-options {:nrepl-middleware
+                         [com.gfredericks.replog/wrap-history]}}
  :lein-try {:plugins [[lein-try "0.4.1"]]}
  :bytecode  {:plugins [[lein-nodisassemble "0.1.2"]]
              :repl-options
