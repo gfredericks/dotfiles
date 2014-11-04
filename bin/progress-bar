@@ -26,12 +26,15 @@ while last_num > 0
   delta_t = last_t - next_t
   per_sec = delta.to_f / delta_t
   rate = DECAY * rate + per_sec * (1 - DECAY)
-  if rate == 0
-    puts "#{next_num} -- an eternity"
-  else
-    est_secs_left = (next_num / rate).to_i
-    puts "#{next_num} -- #{duration_s(est_secs_left)}"
-  end
+  remaining, eta =
+    if rate == 0
+      ["an eternity", "heat death"]
+    else
+      est_secs_left = (next_num / rate).to_i
+      eta = (Time.new + est_secs_left)
+      [duration_s(est_secs_left), eta.to_s]
+    end
+  puts "%10d | %40s | %s" % [next_num, remaining, eta]
   last_num = next_num
   last_t = next_t
 end
