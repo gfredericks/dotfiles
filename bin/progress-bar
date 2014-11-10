@@ -5,6 +5,14 @@
 
 DECAY=0.9
 
+def update_rate(old_rate, new_rate)
+  if old_rate == nil
+    new_rate
+  else
+    DECAY * old_rate + (1 - DECAY) * new_rate
+  end
+end
+
 def duration_s secs
   if secs < 60
     "#{secs} seconds"
@@ -17,7 +25,7 @@ end
 
 last_num = gets.to_i
 last_t = Time.new.to_i
-rate = 0.0
+rate = nil
 
 while last_num > 0
   next_num = gets.to_i
@@ -25,7 +33,7 @@ while last_num > 0
   delta = next_num - last_num
   delta_t = last_t - next_t
   per_sec = delta.to_f / delta_t
-  rate = DECAY * rate + per_sec * (1 - DECAY)
+  rate = update_rate(rate, per_sec)
   remaining, eta =
     if rate == 0
       ["an eternity", "heat death"]
