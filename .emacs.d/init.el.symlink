@@ -284,7 +284,8 @@
           (lambda () (define-key cider-mode-map (kbd "C-c C-y") 'cider-switch-to-relevant-repl-buffer)))
 
 (dolist (macro '(fresh conde run run* for-all for-map go go-loop
-                 for> doseq> fn> defn> defprotocol> gen-for fnk))
+                 for> doseq> fn> defn> defprotocol> gen-for fnk
+                 letfn> domonad))
   (put-clojure-indent macro 'defun))
 
 
