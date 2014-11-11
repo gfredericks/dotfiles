@@ -134,6 +134,8 @@
   (org-defkey org-mode-map (kbd "C-c o p") 'org-move-subtree-up)
   (org-defkey org-mode-map (kbd "C-c o n") 'org-move-subtree-down))
 (add-hook 'org-mode-hook 'org-custom)
+;; Allows calling narrow-to-region without confirmation
+(put 'narrow-to-region 'disabled nil)
 
 ;; Using beamer with org-mode;
 ;; Pasted and modified from
@@ -266,7 +268,9 @@
 ;; Auto-eval on save
 (defun reload-buffer-if-cider-running ()
   (interactive)
-  (if (and (cider-connected-p) (string= "(ns " (buffer-substring-no-properties 1 5)))
+  (if (and (cider-connected-p)
+           (string= "(ns " (buffer-substring-no-properties 1 5))
+           (string-match "\\.clj$" (buffer-name)))
       (cider-load-current-buffer)))
 
 
@@ -285,7 +289,7 @@
 
 (dolist (macro '(fresh conde run run* for-all for-map go go-loop
                  for> doseq> fn> defn> defprotocol> gen-for fnk
-                 letfn> domonad))
+                 macrolet bg letfn> domonad))
   (put-clojure-indent macro 'defun))
 
 
