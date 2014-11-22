@@ -134,6 +134,10 @@
   (org-defkey org-mode-map (kbd "C-c o p") 'org-move-subtree-up)
   (org-defkey org-mode-map (kbd "C-c o n") 'org-move-subtree-down))
 (add-hook 'org-mode-hook 'org-custom)
+;; so the org agenda doesn't give me this weird 3/4 window
+(setq org-agenda-window-setup nil)
+
+
 ;; Allows calling narrow-to-region without confirmation
 (put 'narrow-to-region 'disabled nil)
 
