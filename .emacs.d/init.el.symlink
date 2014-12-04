@@ -38,6 +38,8 @@
 ;; for things I've included in this repo
 ;; (add-to-list 'load-path "~/.emacs.d/included/")
 
+;; modes by file extension
+(add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
 
 (require 'clojure-mode)
 (require 'cider)
