@@ -10,6 +10,7 @@
                              clojure.repl/pst clojure.repl/source
                              com.gfredericks.debug-repl/break!
                              com.gfredericks.debug-repl/unbreak!
+                             com.gfredericks.debug-repl/unbreak!!
                              com.gfredericks.repl/add-dep
                              com.gfredericks.repl/dir
                              com.gfredericks.repl/pp
