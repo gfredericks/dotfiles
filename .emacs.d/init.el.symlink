@@ -38,6 +38,8 @@
 ;; for things I've included in this repo
 ;; (add-to-list 'load-path "~/.emacs.d/included/")
 
+;; modes by file extension
+(add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
 
 (require 'clojure-mode)
 (require 'cider)
@@ -102,10 +104,15 @@
 (add-hook 'latex-mode-hook 'latex-custom)
 
 (global-set-key "\C-ca" 'org-agenda)
+(global-set-key "\C-coj" 'org-clock-goto)
 (global-set-key "\C-cr" 'rename-buffer)
 (global-set-key "\C-cs" 'shell)
 (global-set-key "\C-cg" 'magit-status)
 (global-set-key "\C-cb" 'bury-buffer)
+(global-set-key "\C-cotir" 'org-table-insert-row)
+(global-set-key "\C-cotic" 'org-table-insert-column)
+(global-set-key "\C-cotdr" 'org-table-kill-row)
+(global-set-key "\C-cotdc" 'org-table-delete-column)
 ;; (global-set-key "\C-cb" 'org-iswitchb)
 ;; (global-set-key "\C-cl" 'org-store-link)
 ;; (global-set-key "\C-cc" 'org-capture)
@@ -134,8 +141,11 @@
   (org-defkey org-mode-map (kbd "C-c o p") 'org-move-subtree-up)
   (org-defkey org-mode-map (kbd "C-c o n") 'org-move-subtree-down))
 (add-hook 'org-mode-hook 'org-custom)
+
 ;; so the org agenda doesn't give me this weird 3/4 window
 (setq org-agenda-window-setup nil)
+
+(setq org-log-done 'note)
 
 
 ;; Allows calling narrow-to-region without confirmation
