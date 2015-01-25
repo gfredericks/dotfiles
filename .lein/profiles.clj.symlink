@@ -13,6 +13,7 @@
                              com.gfredericks.debug-repl/unbreak!!
                              com.gfredericks.repl/add-dep
                              com.gfredericks.repl/dir
+                             com.gfredericks.repl/mexpand-all
                              com.gfredericks.repl/pp
                              com.gfredericks.repl/bg
                              com.gfredericks.repl/bg-deref]}
@@ -20,7 +21,8 @@
                              [com.gfredericks.debug-repl/wrap-debug-repl]}
               :dependencies [[com.gfredericks/clj-usage-graph "0.1.3"]
                              [com.gfredericks/debug-repl "0.0.6"]
-                             [com.gfredericks/repl-utils "0.1.21"]]
+                             [com.gfredericks/repl-utils "0.1.22"]
+                             [org.clojure/tools.nrepl "0.2.7"]]
               :aliases {"dct" ["do" "clean," "test"]
                         "try" ["with-profile" "+lein-try" "try"]}}
              :whidbey
