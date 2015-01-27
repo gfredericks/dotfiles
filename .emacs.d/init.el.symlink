@@ -109,6 +109,10 @@
 (global-set-key "\C-cs" 'shell)
 (global-set-key "\C-cg" 'magit-status)
 (global-set-key "\C-cb" 'bury-buffer)
+(global-set-key "\C-cotir" 'org-table-insert-row)
+(global-set-key "\C-cotic" 'org-table-insert-column)
+(global-set-key "\C-cotdr" 'org-table-kill-row)
+(global-set-key "\C-cotdc" 'org-table-delete-column)
 ;; (global-set-key "\C-cb" 'org-iswitchb)
 ;; (global-set-key "\C-cl" 'org-store-link)
 ;; (global-set-key "\C-cc" 'org-capture)
@@ -391,7 +395,7 @@
   (load (concat user-emacs-directory file)))
 
 ;; Evil Mode
-(global-set-key (kbd "C-c e") 'evil-mode) ; easy toggle
+;; (global-set-key (kbd "C-c e") 'evil-mode) ; easy toggle
 
 
 ;; XML we all like XML right
