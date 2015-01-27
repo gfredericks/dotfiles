@@ -4,7 +4,7 @@
                         [lein-pprint "1.1.1"]
                         [com.palletops/lein-shorthand "0.4.0"]
                         [cider/cider-nrepl "0.7.0"]
-                        [com.gfredericks/corncob-cigar "0.1.1"]
+                        [com.gfredericks/corncob-cigar "0.1.2"]
                         [com.gfredericks/nrepl-53-monkeypatch "0.1.0"]]
               :shorthand {. [clojure.repl/apropos clojure.repl/doc
                              clojure.repl/pst clojure.repl/source
@@ -22,7 +22,12 @@
                              [com.gfredericks/debug-repl "0.0.6"]
                              [com.gfredericks/repl-utils "0.1.21"]]
               :aliases {"dct" ["do" "clean," "test"]
-                        "try" ["with-profile" "+lein-try" "try"]}}
+                        "try" ["with-profile" "+lein-try" "try"]
+                        "deploy-fork-clojars"
+                        ["with-profile"
+                         "+clojars-releases"
+                         "deploy-fork"]}
+              :deploy-fork {:group-id-prefix "com.gfredericks.forks"}}
              :whidbey
              :lib-dev
              ;; A mechanism for adding to the :user profile outside of this
@@ -32,6 +37,7 @@
              :local-user]
  :whidbey {:plugins [[mvxcvi/whidbey "0.4.1"]]
            :puget-options {:print-color false}}
+ :clojars-releases {:deploy-repositories [["releases" :clojars]]}
  :lib-dev {:release-tasks [["clean"]
                            ["vcs" "assert-committed"]
                            ["change" "version"
