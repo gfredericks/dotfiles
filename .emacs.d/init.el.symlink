@@ -395,7 +395,7 @@
   (load (concat user-emacs-directory file)))
 
 ;; Evil Mode
-(global-set-key (kbd "C-c e") 'evil-mode) ; easy toggle
+;; (global-set-key (kbd "C-c e") 'evil-mode) ; easy toggle
 
 
 ;; XML we all like XML right
