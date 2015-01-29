@@ -17,7 +17,8 @@
                              com.gfredericks.repl/pp
                              com.gfredericks.repl.bg/bg
                              com.gfredericks.repl.bg/bg-deref
-                             robert.hooke/add-hook]}
+                             robert.hooke/add-hook
+                             robert.hooke/remove-hook]}
               :injections [(do (require 'puget.printer)
                                (defmethod puget.printer/format-doc :user/pprints-as-pr-str
                                  [v]
