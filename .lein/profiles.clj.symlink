@@ -13,7 +13,7 @@
                              com.gfredericks.debug-repl/unbreak!!
                              com.gfredericks.repl/add-dep
                              com.gfredericks.repl/dir
-                             com.gfredericks.repl/mexpand-all
+                             com.gfredericks.repl.mexpand/mexpand-all
                              com.gfredericks.repl/pp
                              com.gfredericks.repl.bg/bg
                              com.gfredericks.repl.bg/bg-deref
@@ -28,7 +28,7 @@
                              [com.gfredericks.debug-repl/wrap-debug-repl]}
               :dependencies [[com.gfredericks/debug-repl "0.0.6"]
                              [robert/hooke "1.3.0"]
-                             [com.gfredericks/repl-utils "0.2.0"]
+                             [com.gfredericks/repl-utils "0.2.1"]
                              [org.clojure/tools.nrepl "0.2.7"]]
               :aliases {"dct" ["do" "clean," "test"]
                         "try" ["with-profile" "+lein-try" "try"]
