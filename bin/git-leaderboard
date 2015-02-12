@@ -1,1 +1,6 @@
+# Usage: call `git leaderboard` in any git repo
+#
+# Prints a list of the best committers of that repo next to their best
+# SHAs
+
 git log --format="%H %an" | sort | sort -k 2 | uniq -f 2 | sort | nl -w 2 | head
