@@ -19,11 +19,6 @@
                              com.gfredericks.repl.bg/bg-deref
                              robert.hooke/add-hook
                              robert.hooke/remove-hook]}
-              :injections [(do (require 'puget.printer)
-                               (defmethod puget.printer/format-doc :user/pprints-as-pr-str
-                                 [v]
-                                 [:span (pr-str v)])
-                               (derive :com.gfredericks.repl.bg/bg :user/pprints-as-pr-str))]
               :repl-options {:nrepl-middleware
                              [com.gfredericks.debug-repl/wrap-debug-repl]}
               :dependencies [[com.gfredericks/debug-repl "0.0.6"]
@@ -52,7 +47,12 @@
                             (alter-var-root
                              #'whidbey.render/puget-options
                              merge
-                             {:print-color false}))]
+                             {:print-color false})
+                            (require 'puget.printer)
+                            (defmethod puget.printer/format-doc :user/pprints-as-pr-str
+                              [v]
+                              [:span (pr-str v)])
+                            (derive :com.gfredericks.repl.bg/bg :user/pprints-as-pr-str))]
            :repl-options {:nrepl-middleware [clojure.tools.nrepl.middleware.render-values/render-values]
                           :nrepl-context {:interactive-eval {:renderer whidbey.render/render-str}}}}
  #_{:plugins [[mvxcvi/whidbey "0.4.1"]]
