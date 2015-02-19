@@ -13,16 +13,17 @@
                              com.gfredericks.debug-repl/unbreak!!
                              com.gfredericks.repl/add-dep
                              com.gfredericks.repl/dir
-                             com.gfredericks.repl/mexpand-all
+                             com.gfredericks.repl.mexpand/mexpand-all
                              com.gfredericks.repl/pp
                              com.gfredericks.repl.bg/bg
                              com.gfredericks.repl.bg/bg-deref
-                             robert.hooke/add-hook]}
+                             robert.hooke/add-hook
+                             robert.hooke/remove-hook]}
               :repl-options {:nrepl-middleware
                              [com.gfredericks.debug-repl/wrap-debug-repl]}
               :dependencies [[com.gfredericks/debug-repl "0.0.6"]
                              [robert/hooke "1.3.0"]
-                             [com.gfredericks/repl-utils "0.2.0"]
+                             [com.gfredericks/repl-utils "0.2.1"]
                              [org.clojure/tools.nrepl "0.2.7"]]
               :aliases {"dct" ["do" "clean," "test"]
                         "try" ["with-profile" "+lein-try" "try"]
@@ -38,8 +39,25 @@
              ;; existing, add a file containing {} to
              ;; ~/.lein/profiles.d/local-user
              :local-user]
- :whidbey {:plugins [[mvxcvi/whidbey "0.4.1"]]
-           :puget-options {:print-color false}}
+ ;; temporary manual whidbey setup until the new :type dispatch stuff
+ ;; is released
+ :whidbey {:dependencies [[mvxcvi/whidbey "0.4.2" :exclusions [mvxcvi/puget]]
+                          [com.gfredericks.forks.mvxcvi/puget "0.7.0-e4ca05f"]]
+           :injections [(do (require 'whidbey.render)
+                            (alter-var-root
+                             #'whidbey.render/puget-options
+                             merge
+                             {:print-color false})
+                            (require 'puget.printer)
+                            (defmethod puget.printer/format-doc :user/pprints-as-pr-str
+                              [v]
+                              [:span (pr-str v)])
+                            (derive :com.gfredericks.repl.bg/bg :user/pprints-as-pr-str))]
+           :repl-options {:nrepl-middleware [clojure.tools.nrepl.middleware.render-values/render-values]
+                          :nrepl-context {:interactive-eval {:renderer whidbey.render/render-str}}}}
+ #_{:plugins [[mvxcvi/whidbey "0.4.1"]]
+    :puget-options {:print-color false}}
+
  :clojars-releases {:deploy-repositories [["releases" :clojars]]}
  :lib-dev {:release-tasks [["clean"]
                            ["vcs" "assert-committed"]
