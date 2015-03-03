@@ -1,1 +1,1 @@
-sort | uniq -c
+sort | uniq -c | sort -n
