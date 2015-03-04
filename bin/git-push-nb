@@ -1,0 +1,4 @@
+REMOTE=${1:-origin}
+
+CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
+git push -u $REMOTE $CURRENT_BRANCH:$CURRENT_BRANCH
