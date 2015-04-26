@@ -295,7 +295,7 @@
   (if (and (cider-connected-p)
            (string= "(ns " (buffer-substring-no-properties 1 5))
            (string-match "\\.clj$" (buffer-name)))
-      (cider-load-current-buffer)))
+      (cider-load-buffer)))
 
 
 (add-hook 'clojure-mode-hook
