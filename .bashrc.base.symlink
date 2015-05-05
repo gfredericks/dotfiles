@@ -74,11 +74,14 @@ function timer_start {
 
 function timer_stop {
   the_seconds=$(($SECONDS - $timer))
+
+  # Hide results for <2sec to reduce noise
   if [[ $the_seconds > 1 ]]; then
     timer_show="[`format-duration seconds $the_seconds`]"
   else
     timer_show=""
   fi
+
   unset timer
 }
 
