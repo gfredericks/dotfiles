@@ -74,7 +74,11 @@ function timer_start {
 
 function timer_stop {
   the_seconds=$(($SECONDS - $timer))
-  timer_show=`format-duration seconds $the_seconds`
+  if [[ $the_seconds > 1 ]]; then
+    timer_show="[`format-duration seconds $the_seconds`]"
+  else
+    timer_show=""
+  fi
   unset timer
 }
 
@@ -90,4 +94,4 @@ fi
 parse_git_branch() {
     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
 }
-PS1='[\[\033[01;32m\]\u@\h:\[\033[01;34m\]\w\[\033[00m\]\[\033[01;32m\]$(parse_git_branch)\[\033[00m\]][${timer_show}]\$ '
+PS1='[\[\033[01;32m\]\u@\h:\[\033[01;34m\]\w\[\033[00m\]\[\033[01;32m\]$(parse_git_branch)\[\033[00m\]]${timer_show}\$ '
