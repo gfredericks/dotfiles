@@ -1,0 +1,43 @@
+#!/bin/bash
+
+USAGE="Usage: format-duration [unit-specifier] <millis>
+
+Input units default to milliseconds. To provide other units, add
+any of the following unit-specifiers:
+
+  nanoseconds
+  microseconds
+  milliseconds
+  seconds
+  minutes
+  hours
+  days
+
+Output will be human-formatted with two \"levels\" of precision."
+
+if [ -z "$1" ]; then
+  echo "$USAGE"
+  exit 1
+fi
+
+if [ ! "$1" == "seconds" ]; then
+  echo "Crap I haven't finished this"
+  exit 1
+fi
+
+
+case $1 in
+"seconds")
+  T=$2
+  S=$((T%60))
+  M=$((T/60%60))
+  H=$((T/60/60%24))
+  D=$((T/60/60/24))
+  [[ $D > 0 ]] && printf '%dd%dh' $D $H ||
+  ([[ $H > 0 ]] && printf '%dh%dm' $H $M) ||
+  ([[ $M > 0 ]] && printf '%dm%ds' $M $S) ||
+  printf "%ds" $S
+  ;;
+esac
+
+echo ""
