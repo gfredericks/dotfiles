@@ -139,7 +139,8 @@
   (org-defkey org-mode-map (kbd "C-c o g") 'org-promote-subtree)
   (org-defkey org-mode-map (kbd "C-c o d") 'org-demote-subtree)
   (org-defkey org-mode-map (kbd "C-c o p") 'org-move-subtree-up)
-  (org-defkey org-mode-map (kbd "C-c o n") 'org-move-subtree-down))
+  (org-defkey org-mode-map (kbd "C-c o n") 'org-move-subtree-down)
+  (org-defkey org-mode-map (kbd "C-c o z") 'org-add-note))
 (add-hook 'org-mode-hook 'org-custom)
 
 ;; so the org agenda doesn't give me this weird 3/4 window
