@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# `docker-compose run` but with auto cleanup
+# takes -f as option arg to specify YML file
+
+FILE="docker-compose.yml"
+if [ "$1" == "-f" ]; then
+  FILE=$2
+  shift
+  shift
+fi
+
+P=`uuidgen`
+
+trap "docker-compose -f \"$FILE\" -p $P kill; docker-compose -f \"$FILE\" -p $P rm --force; exit" EXIT HUP INT QUIT PIPE TERM
+
+docker-compose -f "$FILE" -p $P run $@
