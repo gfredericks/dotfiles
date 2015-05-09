@@ -184,19 +184,16 @@
 
 (defcustom gfredericks-autoexport-beamer nil
   "Exports org buffer to beamer files on save.")
-(defcustom gfredericks-autoexport-html nil
-  "Exports org buffer to html files on save.")
 (add-hook 'after-save-hook
           (lambda ()
             (if gfredericks-autoexport-beamer
-                (org-beamer-export-to-latex))
-            (if gfredericks-autoexport-html
-                (org-html-export-to-html)))
+                (org-beamer-export-to-latex)))
           t)
+
 (defun start-exporting-html
   ()
   (interactive)
-  (setq gfredericks-autoexport-html t))
+  (add-hook 'after-save-hook (lambda () (org-html-export-to-html)) t t))
 
 
 
