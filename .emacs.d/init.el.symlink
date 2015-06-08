@@ -261,34 +261,37 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Customized in-repl output
-(defun cider-interactive-eval-print-handler (buffer)
+(defun cider-eval-print-handler (&optional buffer)
   "Make a handler for evaluating and printing result in BUFFER."
-  (nrepl-make-response-handler buffer
+  (nrepl-make-response-handler (or buffer (current-buffer))
                                (lambda (buffer value)
                                  (with-current-buffer buffer
-                                   (if (string-match "\n" value)
-                                     (insert (format "\n=>\n%s" value))
-                                     (insert (format " => %s" value)))))
-                               (lambda (_buffer value)
-                                 (cider-repl-emit-interactive-output value))
+                                   (insert
+                                    (if (derived-mode-p 'cider-clojure-interaction-mode)
+                                        (format "\n%s\n" value)
+                                      (if (string-match "\n" value)
+                                        (format "\n=>\n%s" value)
+                                        value)))))
+                               (lambda (_buffer out)
+                                 (cider-emit-interactive-eval-output out))
                                (lambda (_buffer err)
-                                 (message "%s" err))
+                                 (cider-emit-interactive-eval-err-output err))
                                '()))
 
 ;; pretty printing
 (defvar gfredericks-use-whidbey-pprint nil)
-(defadvice nrepl-eval-request (after nrepl-eval-request-after)
+(defadvice nrepl--eval-request (after nrepl--eval-request-after)
   "Add the \"renderer\" option when pretty-printing."
   (if gfredericks-use-whidbey-pprint
       (setq ad-return-value
             (append ad-return-value
                     (list "renderer" "puget.printer/pprint-str")))))
-(ad-activate 'nrepl-eval-request)
-(defadvice cider-interactive-eval-print (around cider-interactive-eval-print-around)
+(ad-activate 'nrepl--eval-request)
+(defadvice cider-eval-last-sexp (around cider-eval-last-sexp-around)
   "Pretty print with in-buffer evaluation."
   (let ((gfredericks-use-whidbey-pprint t))
     ad-do-it))
-(ad-activate 'cider-interactive-eval-print)
+(ad-activate 'cider-eval-last-sexp)
 (defadvice cider-repl--send-input (around cider-repl--send-input-around)
   "Pretty-print in the repl buffer."
   (let ((gfredericks-use-whidbey-pprint t))
