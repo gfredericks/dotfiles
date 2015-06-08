@@ -41,6 +41,7 @@
                  [org.clojure/tools.nrepl "0.2.8"]]
   :aliases {"dct" ["do" "clean," "test"]
             "try" ["with-profile" "+lein-try" "try"]
+            "slamhound" ["with-profile" "+slamhound" "run" "-m" "slam.hound"]
             "deploy-fork-clojars"
             ["with-profile"
              "+clojars-releases"
@@ -102,7 +103,6 @@
                       (use 'no.disassemble))
               :welcome (do (println "\n\nI just did (use 'no.disassemble) for you.\n\nYou're welcome."))}}
  :slim      {:jvm-opts ["-Xmx250m"]}
- :slamhound {:dependencies [[slamhound "1.3.3"]]
-             :aliases {"slamhound" ["run" "-m" "slam.hound"]}}
+ :slamhound {:dependencies [[slamhound "1.5.5"]]}
  :criterium {:dependencies [[criterium "0.4.3"]]
              :jvm-opts ^:replace []}}
