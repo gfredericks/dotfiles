@@ -54,24 +54,9 @@
             ["with-profile" "+clj-usage-graph" "lein" "run"
              "-m" "com.gfredericks.clj-usage-graph/namespace-graph"]}
   :deploy-fork {:group-id-prefix "com.gfredericks.forks"}}
- ;; temporary manual whidbey setup until the new :type dispatch stuff
- ;; is released
- :whidbey {:dependencies [[mvxcvi/whidbey "0.4.2" :exclusions [mvxcvi/puget]]
-                          [com.gfredericks.forks.mvxcvi/puget "0.7.0-e4ca05f"]]
-           :injections [(do (require 'whidbey.render)
-                            (alter-var-root
-                             #'whidbey.render/puget-options
-                             merge
-                             {:print-color false})
-                            (require 'puget.printer)
-                            (defmethod puget.printer/format-doc :user/pprints-as-pr-str
-                              [v]
-                              [:span (pr-str v)])
-                            (derive :com.gfredericks.repl.bg/bg :user/pprints-as-pr-str))]
-           :repl-options {:nrepl-middleware [clojure.tools.nrepl.middleware.render-values/render-values]
-                          :nrepl-context {:interactive-eval {:renderer whidbey.render/render-str}}}}
- #_{:plugins [[mvxcvi/whidbey "0.4.1"]]
-    :puget-options {:print-color false}}
+ :whidbey {:plugins [[mvxcvi/whidbey "1.0.0"]]
+           :whidbey {:print-color false
+                     :print-fallback :print}}
 
  :debug-repl {:shorthand {. [com.gfredericks.debug-repl/break!
                              com.gfredericks.debug-repl/unbreak!

@@ -285,7 +285,7 @@
   (if gfredericks-use-whidbey-pprint
       (setq ad-return-value
             (append ad-return-value
-                    (list "renderer" "puget.printer/pprint-str")))))
+                    (list "renderer" "whidbey.render/render-str")))))
 (ad-activate 'nrepl--eval-request)
 (defadvice cider-eval-last-sexp (around cider-eval-last-sexp-around)
   "Pretty print with in-buffer evaluation."
