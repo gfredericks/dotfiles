@@ -16,6 +16,7 @@ alias wcl="wc -l"
 alias rgrep="grep -r"
 alias today="date +%Y-%m-%d"
 alias jqu="jq --unbuffered"
+alias pyc="ping -c 1 yahoo.com"
 
 # git shortcuts
 alias gs="git status"
