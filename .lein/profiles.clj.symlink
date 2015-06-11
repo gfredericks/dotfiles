@@ -25,6 +25,7 @@
             [com.gfredericks/corncob-cigar "0.1.4"]]
   :shorthand {. [clojure.repl/apropos clojure.repl/doc
                  clojure.repl/pst clojure.repl/source
+                 clojure.test/run-tests
                  clojure.tools.namespace.repl/refresh
                  com.gfredericks.repl/add-dep
                  com.gfredericks.repl/dir
