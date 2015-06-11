@@ -25,6 +25,7 @@
             [com.gfredericks/corncob-cigar "0.1.4"]]
   :shorthand {. [clojure.repl/apropos clojure.repl/doc
                  clojure.repl/pst clojure.repl/source
+                 clojure.tools.namespace.repl/refresh
                  com.gfredericks.repl/add-dep
                  com.gfredericks.repl/dir
                  com.gfredericks.repl.mexpand/mexpand-all
@@ -39,7 +40,8 @@
                  robert.hooke/remove-hook]}
   :dependencies [[robert/hooke "1.3.0"]
                  [com.gfredericks/repl-utils "0.2.4"]
-                 [org.clojure/tools.nrepl "0.2.8"]]
+                 [org.clojure/tools.nrepl "0.2.8"]
+                 [org.clojure/tools.namespace "0.2.10"]]
   :aliases {"dct" ["do" "clean," "test"]
             "try" ["with-profile" "+lein-try" "try"]
             "slamhound" ["with-profile" "+slamhound" "run" "-m" "slam.hound"]
