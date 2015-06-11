@@ -271,7 +271,7 @@
                                         (format "\n%s\n" value)
                                       (if (string-match "\n" value)
                                         (format "\n=>\n%s" value)
-                                        value)))))
+                                        (format " => %s" value))))))
                                (lambda (_buffer out)
                                  (cider-emit-interactive-eval-output out))
                                (lambda (_buffer err)
