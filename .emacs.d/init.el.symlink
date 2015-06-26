@@ -323,7 +323,7 @@
 
 (dolist (macro '(fresh conde run run* for-all for-map go go-loop
                  for> doseq> fn> defn> defprotocol> gen-for fnk
-                 macrolet bg letfn> domonad))
+                 macrolet bg letfn> domonad checking))
   (put-clojure-indent macro 'defun))
 
 
