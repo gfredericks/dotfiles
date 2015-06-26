@@ -37,10 +37,14 @@
                  com.gfredericks.repl/throw-locals
                  com.gfredericks.repl.bg/bg
                  com.gfredericks.repl.bg/bg-deref
+                 com.gfredericks.repl.stashing/stash-everything!
+                 com.gfredericks.repl.stashing/get-stash
+                 com.gfredericks.repl.stashing/stashed-exceptions
+                 com.gfredericks.repl.stashing/clear-all-stashes!
                  robert.hooke/add-hook
                  robert.hooke/remove-hook]}
   :dependencies [[robert/hooke "1.3.0"]
-                 [com.gfredericks/repl-utils "0.2.4"]
+                 [com.gfredericks/repl-utils "0.2.5"]
                  [org.clojure/tools.nrepl "0.2.8"]
                  [org.clojure/tools.namespace "0.2.10"]]
   :aliases {"dct" ["do" "clean," "test"]
