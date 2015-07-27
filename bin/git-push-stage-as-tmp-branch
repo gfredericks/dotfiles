@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Pushes the staged changes to origin (or the given remote) under a
+# temporary branch name. Changes will remain staged, mostly because
+# I don't know an easy way to unstage & discard particular changes.
+#
+# Maybe with stash?
+
+TMP_REPO=gitignored/git-push-stage-as-tmp-branch
+PATCH_FILE=/tmp/git-push-stage-as-tmp-branch.patch
+BRANCH_NAME=tmp-`uuidgen`
+THE_WD=`pwd`
+REMOTE=${1:-origin}
+
+git diff --cached > $PATCH_FILE && \
+mkdir -p $TMP_REPO && \
+cp -r .git $TMP_REPO/.git && \
+cd $TMP_REPO && \
+git co master && \
+git reset --hard master && \
+git co -b $BRANCH_NAME && \
+git apply $PATCH_FILE && \
+git commit -a && \
+git push $REMOTE $BRANCH_NAME:$BRANCH_NAME && \
+
+cd $THE_WD && rm -rf $TMP_REPO
