@@ -14,7 +14,8 @@
                           ;; dotfiles repo; to suppress warnings about the profile not
                           ;; existing, add a file containing {} to
                           ;; ~/.lein/profiles.d/local-user
-                          :local-user]
+                          :local-user
+                          :clojure-test-ex-printing]
  :user-misc
  {:plugins [[lein-kibit "0.0.8"]
             [lein-lein "0.1.0"]
@@ -98,4 +99,28 @@
  :slim      {:jvm-opts ["-Xmx250m"]}
  :slamhound {:dependencies [[slamhound "1.5.5"]]}
  :criterium {:dependencies [[criterium "0.4.3"]]
-             :jvm-opts ^:replace []}}
+             :jvm-opts ^:replace []}
+ :clojure-test-ex-printing
+ {:dependencies [[mvxcvi/puget "0.8.1"]] ;; is this actually necessary?
+  :injections [(do
+                 (require 'clojure.test 'puget.printer)
+                 (binding [*ns* (the-ns 'clojure.test)]
+                   (eval
+                    '(defmethod report :error
+                      [m]
+                      ;; pasted and tweaked from the original impl in
+                      ;; clojure.test
+                      (with-test-out
+                        (inc-report-counter :error)
+                        (println "\nERROR in" (testing-vars-str m))
+                        (when (seq *testing-contexts*) (println (testing-contexts-str)))
+                        (when-let [message (:message m)] (println message))
+                        (println "expected:" (pr-str (:expected m)))
+                        (print "  actual: ")
+                        (let [actual (:actual m)]
+                          (if (instance? Throwable actual)
+                            (do
+                              (when-let [data (ex-data actual)]
+                                (puget.printer//pprint data))
+                              (stack/print-cause-trace actual *stack-trace-depth*))
+                            (prn actual))))))))]}
