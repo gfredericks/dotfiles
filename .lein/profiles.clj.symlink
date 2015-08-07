@@ -121,6 +121,6 @@
                           (if (instance? Throwable actual)
                             (do
                               (when-let [data (ex-data actual)]
-                                (puget.printer//pprint data))
+                                (puget.printer/pprint data))
                               (stack/print-cause-trace actual *stack-trace-depth*))
                             (prn actual))))))))]}
