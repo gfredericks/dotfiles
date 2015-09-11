@@ -115,6 +115,10 @@
 (global-set-key "\C-cc" 'org-capture)
 ;; (global-set-key "\C-cb" 'org-iswitchb)
 ;; (global-set-key "\C-cl" 'org-store-link)
+(setq org-highest-priority ?0)
+(setq org-lowest-priority ?9)
+(setq org-default-priority ?9)
+
 
 ;; magit!
 (require 'magit)
