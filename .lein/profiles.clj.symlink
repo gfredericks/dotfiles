@@ -28,6 +28,7 @@
                  clojure.repl/pst clojure.repl/source
                  clojure.test/run-tests
                  clojure.tools.namespace.repl/refresh
+                 clojure.tools.namespace.repl/refresh-all
                  com.gfredericks.repl/add-dep
                  com.gfredericks.repl/dir
                  com.gfredericks.repl.mexpand/mexpand-all
