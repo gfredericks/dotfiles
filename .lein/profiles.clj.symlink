@@ -101,20 +101,20 @@
                  (binding [*ns* (the-ns 'clojure.test)]
                    (eval
                     '(defmethod report :error
-                      [m]
-                      ;; pasted and tweaked from the original impl in
-                      ;; clojure.test
-                      (with-test-out
-                        (inc-report-counter :error)
-                        (println "\nERROR in" (testing-vars-str m))
-                        (when (seq *testing-contexts*) (println (testing-contexts-str)))
-                        (when-let [message (:message m)] (println message))
-                        (println "expected:" (pr-str (:expected m)))
-                        (print "  actual: ")
-                        (let [actual (:actual m)]
-                          (if (instance? Throwable actual)
-                            (do
-                              (when-let [data (ex-data actual)]
-                                (puget.printer/pprint data))
-                              (stack/print-cause-trace actual *stack-trace-depth*))
-                            (prn actual))))))))]}}
+                       [m]
+                       ;; pasted and tweaked from the original impl in
+                       ;; clojure.test
+                       (with-test-out
+                         (inc-report-counter :error)
+                         (println "\nERROR in" (testing-vars-str m))
+                         (when (seq *testing-contexts*) (println (testing-contexts-str)))
+                         (when-let [message (:message m)] (println message))
+                         (println "expected:" (pr-str (:expected m)))
+                         (print "  actual: ")
+                         (let [actual (:actual m)]
+                           (if (instance? Throwable actual)
+                             (do
+                               (when-let [data (ex-data actual)]
+                                 (puget.printer/pprint data))
+                               (stack/print-cause-trace actual *stack-trace-depth*))
+                             (prn actual))))))))]}}
