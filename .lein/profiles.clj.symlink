@@ -1,21 +1,14 @@
-{:user      [;; temporary workaround for whyever `lein repl` starts with
-             ;; an older version of tools.nrepl when there's no
-             ;; project.clj
-             ;;
-             ;; I expect whatever release is after 2.5.1 will fix this.
-             {:aliases {"repl-no-project"
-                        ["with-profile" "-user,+user-except-debug-repl" "repl"]}}
-             :debug-repl
-             :user-except-debug-repl]
- :user-except-debug-repl [:user-misc
-                          :whidbey
-                          :lib-dev
-                          ;; A mechanism for adding to the :user profile outside of this
-                          ;; dotfiles repo; to suppress warnings about the profile not
-                          ;; existing, add a file containing {} to
-                          ;; ~/.lein/profiles.d/local-user
-                          :local-user
-                          :clojure-test-ex-printing]
+{:user [:user-misc
+        :debug-repl
+        :whidbey
+        :lib-dev
+        :clojure-test-ex-printing
+        :user-except-debug-repl
+        ;; A mechanism for adding to the :user profile outside of this
+        ;; dotfiles repo; to suppress warnings about the profile not
+        ;; existing, add a file containing {} to
+        ;; ~/.lein/profiles.d/local-user
+        :local-user]
  :user-misc
  {:plugins [[lein-kibit "0.0.8"]
             [lein-lein "0.1.0"]
