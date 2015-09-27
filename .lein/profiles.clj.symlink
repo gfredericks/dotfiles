@@ -3,7 +3,6 @@
         :whidbey
         :lib-dev
         :clojure-test-ex-printing
-        :user-except-debug-repl
         ;; A mechanism for adding to the :user profile outside of this
         ;; dotfiles repo; to suppress warnings about the profile not
         ;; existing, add a file containing {} to
