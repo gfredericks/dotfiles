@@ -55,10 +55,7 @@
             ["with-profile" "+clj-usage-graph" "lein" "run"
              "-m" "com.gfredericks.clj-usage-graph/namespace-graph"]}
   :deploy-fork {:group-id-prefix "com.gfredericks.forks"}}
- :whidbey {:plugins [;; using a fork whilst waiting on
-                     ;; https://github.com/greglook/whidbey/issues/21
-                     [com.gfredericks.forks.mvxcvi/whidbey "1.0.0-79e4bb2"]
-                     #_[mvxcvi/whidbey "1.0.0"]]
+ :whidbey {:plugins [[mvxcvi/whidbey "1.0.0"]]
            :whidbey {:print-color false
                      :print-fallback :print}}
 
