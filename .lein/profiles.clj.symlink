@@ -61,10 +61,11 @@
 
  :debug-repl {:shorthand {. [com.gfredericks.debug-repl/break!
                              com.gfredericks.debug-repl/unbreak!
-                             com.gfredericks.debug-repl/unbreak!!]}
+                             com.gfredericks.debug-repl/unbreak!!
+                             com.gfredericks.debug-repl/catch-break!]}
               :repl-options {:nrepl-middleware
                              [com.gfredericks.debug-repl/wrap-debug-repl]}
-              :dependencies [[com.gfredericks/debug-repl "0.0.6"]]}
+              :dependencies [[com.gfredericks/debug-repl "0.0.7"]]}
  :clojars-releases {:deploy-repositories [["releases" :clojars]]}
  :lib-dev {:release-tasks [["clean"]
                            ["vcs" "assert-committed"]
