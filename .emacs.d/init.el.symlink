@@ -19,7 +19,8 @@
     idle-highlight
     refheap
     evil
-    magit))
+    magit
+    window-numbering))
 
 (let ((refreshed nil))
   (dolist (package-name my-packages)
@@ -46,6 +47,7 @@
 (require 'paredit)
 (require 'markdown-mode)
 (require 'align-cljlet)
+(window-numbering-mode)
 
 ;; misc
 
