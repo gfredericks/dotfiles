@@ -107,7 +107,7 @@
 (global-set-key "\C-ca" 'org-agenda)
 (global-set-key "\C-coj" 'org-clock-goto)
 (global-set-key "\C-cr" 'rename-buffer)
-(global-set-key "\C-cs" 'shell)
+(global-set-key "\C-cs" 'term)
 (global-set-key "\C-cg" 'magit-status)
 (global-set-key "\C-cb" 'bury-buffer)
 (global-set-key "\C-cotir" 'org-table-insert-row)
