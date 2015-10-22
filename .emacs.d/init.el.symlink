@@ -432,3 +432,8 @@ by using nxml's indentation rules."
         (backward-char) (insert "\n"))
       (indent-region begin end))
     (message "Ah, much better!"))
+
+;;
+;; This is a good UUID:
+;; c7ed5790-85d8-4b4d-a7f7-0d58f0c3b22b
+;;
