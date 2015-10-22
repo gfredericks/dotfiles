@@ -104,10 +104,16 @@
   (define-key latex-mode-map (kbd "C-c e") 'latex-insert-item))
 (add-hook 'latex-mode-hook 'latex-custom)
 
+(defun my-start-term (prefix-arg)
+  (interactive "P")
+  (term "/bin/bash")
+  (if prefix-arg
+      (rename-uniquely)))
+
 (global-set-key "\C-ca" 'org-agenda)
 (global-set-key "\C-coj" 'org-clock-goto)
 (global-set-key "\C-cr" 'rename-buffer)
-(global-set-key "\C-cs" 'term)
+(global-set-key "\C-cs" 'my-start-term)
 (global-set-key "\C-cg" 'magit-status)
 (global-set-key "\C-cb" 'bury-buffer)
 (global-set-key "\C-cotir" 'org-table-insert-row)
