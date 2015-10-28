@@ -1,8 +1,9 @@
 ;; package stuff
 
 (setq package-archives
-      '(("melpa-stable" . "http://melpa-stable.milkbox.net/packages/")
-        ("gnu" . "http://elpa.gnu.org/packages/")))
+      '(("melpa-stable" . "http://stable.melpa.org/packages/")
+        ("gnu" . "http://elpa.gnu.org/packages/")
+        ("marmalade" . "http://marmalade-repo.org/packages/")))
 
 (package-initialize)
 
@@ -16,9 +17,9 @@
     paredit
     haskell-mode
     find-file-in-project
-    idle-highlight
+    idle-highlight-mode
     refheap
-    evil
+    ;; evil
     magit
     window-numbering))
 
@@ -59,7 +60,7 @@
 
 ;; idle-highlight
 ;; it highlights usages of the symbol under point
-(add-hook 'prog-mode-hook 'idle-highlight)
+(add-hook 'prog-mode-hook 'idle-highlight-mode)
 
 ;; ffip
 (global-set-key (kbd "C-x f") 'find-file-in-project)
@@ -130,7 +131,7 @@
 
 ;; magit!
 (require 'magit)
-(set-face-background 'magit-item-highlight "white")
+;; (set-face-background 'magit-item-highlight "white")
 (setq magit-last-seen-setup-instructions "1.4.0")
 
 ;; Haskell?
@@ -433,3 +434,8 @@ by using nxml's indentation rules."
         (backward-char) (insert "\n"))
       (indent-region begin end))
     (message "Ah, much better!"))
+
+;;
+;; This is a good UUID:
+;; c7ed5790-85d8-4b4d-a7f7-0d58f0c3b22b
+;;
