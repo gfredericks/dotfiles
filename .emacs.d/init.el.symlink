@@ -127,6 +127,8 @@
 (setq org-highest-priority ?0)
 (setq org-lowest-priority ?9)
 (setq org-default-priority ?9)
+;; I like this because it still works in term buffers
+(global-set-key "\M-[" 'switch-to-buffer)
 
 
 ;; magit!
