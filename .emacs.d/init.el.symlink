@@ -127,8 +127,11 @@
 (setq org-highest-priority ?0)
 (setq org-lowest-priority ?9)
 (setq org-default-priority ?9)
-;; I like this because it still works in term buffers
+
+;; I like these because they still works in term buffers.  A lot of
+;; things don't though and I can't figure out the pattern.
 (global-set-key "\M-[" 'switch-to-buffer)
+(global-set-key "\M-_" 'bury-buffer)
 
 
 ;; magit!
