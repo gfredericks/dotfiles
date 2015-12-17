@@ -343,7 +343,7 @@
 (add-hook 'cider-repl-mode-hook
           (lambda () (define-key cider-repl-mode-map (kbd "C-c C-y") 'cider-switch-to-last-clojure-buffer)))
 (add-hook 'cider-mode-hook
-          (lambda () (define-key cider-mode-map (kbd "C-c C-y") 'cider-switch-to-relevant-repl-buffer)))
+          (lambda () (define-key cider-mode-map (kbd "C-c C-y") 'cider-switch-to-repl-buffer)))
 
 (dolist (macro '(fresh conde run run* for-all for-map go go-loop
                  for> doseq> fn> defn> defprotocol> gen-for fnk
