@@ -83,6 +83,7 @@
  :replog {:dependencies [[com.gfredericks/replog "0.1.0-SNAPSHOT"]]
           :repl-options {:nrepl-middleware
                          [com.gfredericks.replog/wrap-history]}}
+ :local-repo {:local-repo "gitignored/local-m2"}
  :clj-usage-graph {:dependencies [[com.gfredericks/clj-usage-graph "0.3.0"]]}
  :lein-try {:plugins [[lein-try "0.4.1"]]}
  :bytecode  {:plugins [[lein-nodisassemble "0.1.2"]]
