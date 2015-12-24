@@ -1,9 +1,9 @@
 ;; package stuff
-
-(setq package-archives
-      '(("melpa-stable" . "http://stable.melpa.org/packages/")
-        ("gnu" . "http://elpa.gnu.org/packages/")
-        ("marmalade" . "http://marmalade-repo.org/packages/")))
+;; Commented this out when emacs started crashing on this line :/
+;; (setq package-archives
+;;       '(("melpa-stable" . "http://stable.melpa.org/packages/")
+;;         ("gnu" . "http://elpa.gnu.org/packages/")
+;;         ("marmalade" . "http://marmalade-repo.org/packages/")))
 
 (package-initialize)
 
