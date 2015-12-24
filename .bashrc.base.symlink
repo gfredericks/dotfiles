@@ -58,7 +58,7 @@ chmod 600 ~/.ssh/config
 
 # Pasted from https://coderwall.com/p/_s_xda, a function that points the current env
 # to the ssh agent, after it presumably changes (most often tmux-related).
-fixssh() {
+function fixssh() {
   for key in SSH_AUTH_SOCK SSH_CONNECTION SSH_CLIENT; do
     if (tmux show-environment | grep "^${key}" > /dev/null); then
       value=`tmux show-environment | grep "^${key}" | sed -e "s/^[A-Z_]*=//"`
