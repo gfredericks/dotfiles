@@ -218,6 +218,8 @@
   (add-hook 'after-save-hook (lambda () (org-html-export-to-html)) t t))
 
 
+;; Don't prompt about closing buffers from emacsclient
+(remove-hook 'kill-buffer-query-functions 'server-kill-buffer-query-function)
 
 ;; General editing bindings
 (global-set-key (kbd "C-h") 'backward-delete-char-untabify)

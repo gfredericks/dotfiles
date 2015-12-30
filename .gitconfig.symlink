@@ -1,5 +1,5 @@
 [core]
-  editor = nano
+  editor = editfast
   excludesfile = ~/.gitignore_global
   attributesfile = ~/.gitattributes
 [color]

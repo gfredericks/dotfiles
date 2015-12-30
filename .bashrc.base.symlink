@@ -7,6 +7,7 @@ fi
 SELF=$(readlink -f $BASH_SOURCE)
 MYBIN=`dirname $SELF`/bin
 export PATH=~/bin:$MYBIN:$PATH
+export EDITOR=edit
 
 alias lsl="ls -l"
 alias lsa="ls -a"
