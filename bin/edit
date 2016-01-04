@@ -1,0 +1,17 @@
+#!/bin/bash
+
+EMACSCLIENT=`which emacsclient`
+if [ -z "$EMACSCLIENT" ]
+then
+  NANO=`which nano`
+  if [ -z "$NANO" ]
+  then
+    echo "Can't find emacs or nano, I quit."
+    exit 1
+  else
+    echo "No emacs, falling back to nano..."
+    nano $@
+  fi
+else
+  emacsclient -a emacsnw $@
+fi
