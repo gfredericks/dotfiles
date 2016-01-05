@@ -140,7 +140,7 @@
 
 ;; magit!
 (require 'magit)
-;; (set-face-background 'magit-item-highlight "white")
+(set-face-background 'magit-item-highlight "white")
 (setq magit-last-seen-setup-instructions "1.4.0")
 
 ;; Haskell?
