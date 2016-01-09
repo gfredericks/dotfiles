@@ -8,10 +8,6 @@ end
 
 dir, matcher, replacement = ARGV
 
-def s_to_re s
-  eval "/#{s}/" # hahahahhaaa
-end
-
 # TODO: Also check if any parent directories are hidden!
 #
 # e.g., wouldn't want it mucking around in the .git directory
@@ -27,7 +23,7 @@ Dir.chdir dir do
     if(`grep -P #{matcher.inspect} #{filename}`.length > 0)
       s = File.read filename
       puts filename
-      open(filename,'w'){|f|f.write(s.gsub(s_to_re(matcher), replacement))}
+      open(filename,'w'){|f|f.write(s.gsub(matcher, replacement))}
     end
   end
 end
