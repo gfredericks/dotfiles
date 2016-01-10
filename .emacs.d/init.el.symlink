@@ -20,7 +20,8 @@
     refheap
     ;; evil
     magit
-    window-numbering))
+    window-numbering
+    workgroups))
 
 (let ((refreshed nil))
   (dolist (package-name my-packages)
@@ -87,6 +88,10 @@
 
 ;; Windows
 (winner-mode 1)
+(setq wg-prefix-key (kbd "C-c w"))
+(require 'workgroups)
+(workgroups-mode 1)
+(setq wg-morph-on nil)
 
 ;; Put backup files in /dev/shm/emacs-backups
 (shell-command "mkdir -p /dev/shm/gary-emacs-backups && chmod 700 /dev/shm/gary-emacs-backups")
