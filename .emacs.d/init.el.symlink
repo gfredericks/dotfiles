@@ -85,6 +85,9 @@
 (ido-mode 1)
 (setq ido-max-directory-size 1000000)
 
+;; Windows
+(winner-mode 1)
+
 ;; Put backup files in /dev/shm/emacs-backups
 (shell-command "mkdir -p /dev/shm/gary-emacs-backups && chmod 700 /dev/shm/gary-emacs-backups")
 (setq backup-directory-alist '(("." . "/dev/shm/gary-emacs-backups/")))
