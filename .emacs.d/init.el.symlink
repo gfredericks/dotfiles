@@ -88,7 +88,7 @@
 
 ;; Windows
 (winner-mode 1)
-(setq wg-prefix-key (kbd "C-c w"))
+(setq wg-prefix-key (kbd "C-c C-g"))
 (require 'workgroups)
 (workgroups-mode 1)
 (setq wg-morph-on nil)
