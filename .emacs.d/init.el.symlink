@@ -456,6 +456,46 @@ by using nxml's indentation rules."
     (message "Ah, much better!"))
 
 ;;
+;; Advanced workgroups stuff
+;;
+
+(defvar wconfigs-by-frame
+  "hash-table from frames to hash-tables from workgroup-names to
+  wconfigs."
+  (make-hash-table))
+
+(defun stash-my-working-config ()
+  (interactive)
+  (when-let ((the-workgroup (wg-current-workgroup t)))
+    (let ((the-wg-name (wg-name the-workgroup)))
+      (unless (gethash (selected-frame) wconfigs-by-frame)
+        (puthash (selected-frame) (make-hash-table) wconfigs-by-frame))
+      (let ((ht (gethash (selected-frame) wconfigs-by-frame)))
+        (puthash the-wg-name (wg-make-wconfig) ht)))))
+
+(add-hook 'window-configuration-change-hook
+          'stash-my-working-config)
+
+(defvar last-deleted-frame-wconfigs nil)
+
+(defun my-frame-deletion-handler (frame)
+  (setq last-deleted-frame-wconfigs
+        (gethash frame wconfigs-by-frame))
+  (remhash frame wconfigs-by-frame))
+
+(add-hook 'delete-frame-functions 'my-frame-deletion-handler)
+
+(defun restore-last-deleted-frame-wconfigs ()
+  (interactive)
+  (when last-deleted-frame-wconfigs
+    (dolist (workgroup (wg-list))
+      (when-let ((wconfig (gethash (wg-name workgroup) last-deleted-frame-wconfigs)))
+        (wg-set-working-config workgroup wconfig)))))
+
+(restore-last-deleted-frame-wconfigs)
+
+
+;;
 ;; This is a good UUID:
 ;; c7ed5790-85d8-4b4d-a7f7-0d58f0c3b22b
 ;;
