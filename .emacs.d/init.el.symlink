@@ -460,8 +460,6 @@ by using nxml's indentation rules."
 ;;
 
 (defvar wconfigs-by-frame
-  "hash-table from frames to hash-tables from workgroup-names to
-  wconfigs."
   (make-hash-table))
 
 (defun stash-my-working-config ()
