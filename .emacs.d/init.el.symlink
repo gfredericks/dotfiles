@@ -492,8 +492,6 @@ by using nxml's indentation rules."
       (when-let ((wconfig (gethash (wg-name workgroup) last-deleted-frame-wconfigs)))
         (wg-set-working-config workgroup wconfig)))))
 
-(restore-last-deleted-frame-wconfigs)
-
 
 ;;
 ;; This is a good UUID:
