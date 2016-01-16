@@ -458,18 +458,33 @@ by using nxml's indentation rules."
 ;;
 ;; Advanced workgroups stuff
 ;;
+;; The point of this code is to support sharing workgroup working
+;; configs across a series of emacsclient sessions; the assumption is
+;; that before calling `emacsclient` you first kill the previous
+;; client, and then call (restore-longrunning-workgroup-setup) which
+;; should restore all the wconfigs from the killed client as well as
+;; switch to the workgroup it was on.
+;;
 
 (defvar wconfigs-by-frame
   (make-hash-table))
 
+(defvar during-switching? nil)
+
+(defun my-puthash-nested (k1 k2 v ht)
+  (unless (gethash k1 ht)
+    (puthash k1 (make-hash-table) ht))
+  (puthash k2 v (gethash k1 ht)))
+
 (defun stash-my-working-config ()
   (interactive)
-  (when-let ((the-workgroup (wg-current-workgroup t)))
-    (let ((the-wg-name (wg-name the-workgroup)))
-      (unless (gethash (selected-frame) wconfigs-by-frame)
-        (puthash (selected-frame) (make-hash-table) wconfigs-by-frame))
-      (let ((ht (gethash (selected-frame) wconfigs-by-frame)))
-        (puthash the-wg-name (wg-make-wconfig) ht)))))
+  (unless during-switching?
+    (when-let ((the-workgroup (wg-current-workgroup t)))
+      (let ((the-wg-name (wg-name the-workgroup)))
+        (my-puthash-nested (selected-frame)
+                           the-wg-name
+                           (wg-make-wconfig)
+                           wconfigs-by-frame)))))
 
 (add-hook 'window-configuration-change-hook
           'stash-my-working-config)
@@ -488,8 +503,34 @@ by using nxml's indentation rules."
   (when last-deleted-frame-wconfigs
     (dolist (workgroup (wg-list))
       (when-let ((wconfig (gethash (wg-name workgroup) last-deleted-frame-wconfigs)))
-        (wg-set-working-config workgroup wconfig)))))
+        (wg-set-working-config workgroup wconfig)
+        (my-puthash-nested (selected-frame)
+                           (wg-name workgroup)
+                           wconfig
+                           wconfigs-by-frame)))))
 
+(defun do-not-stash-while-switching-workgroups (old-fn &rest args)
+  (setq during-switching? t)
+  (apply old-fn args)
+  (setq during-switching? nil))
+
+(advice-add 'wg-switch-to-workgroup :around 'do-not-stash-while-switching-workgroups)
+
+(defvar last-workgroup nil)
+
+(defun store-workgroup (workgroup)
+  (setq last-workgroup (wg-name workgroup)))
+
+(advice-add 'wg-switch-to-workgroup :after 'store-workgroup)
+
+(defun switch-to-last-workgroup ()
+  (dolist (workgroup (wg-list))
+    (when (eq (wg-name workgroup) last-workgroup)
+      (wg-switch-to-workgroup workgroup))))
+
+(defun restore-longrunning-workgroup-setup ()
+  (restore-last-deleted-frame-wconfigs)
+  (switch-to-last-workgroup))
 
 ;;
 ;; This is a good UUID:
