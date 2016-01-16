@@ -533,6 +533,20 @@ by using nxml's indentation rules."
   (switch-to-last-workgroup))
 
 ;;
+;; Trying to make up for not getting alerted about new ERC messages
+;; when there aren't any clients connected
+;;
+
+(defun joined-hook (&rest args)
+  (let ((bname (buffer-name (current-buffer))))
+    (when (not (string-match "^#" bname))
+      (with-current-buffer (get-buffer-create "erc-private-messages")
+        (goto-char (point-max))
+        (insert (format "Message or something from \"%s\"\n" bname))))))
+
+(add-hook 'erc-mode-hook 'joined-hook)
+
+;;
 ;; This is a good UUID:
 ;; c7ed5790-85d8-4b4d-a7f7-0d58f0c3b22b
 ;;
