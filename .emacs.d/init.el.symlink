@@ -120,9 +120,16 @@
 
 (defun my-start-term (prefix-arg)
   (interactive "P")
-  (term "/bin/bash")
-  (if prefix-arg
-      (rename-uniquely)))
+  (let* ((buffer-name-base
+          (if-let ((the-workgroup (wg-current-workgroup)))
+              (wg-name the-workgroup)
+            "default"))
+         (buffer-name (format "*terminal-%s*" buffer-name-base)))
+    (if-let ((b (get-buffer buffer-name)))
+        (switch-to-buffer buffer-name)
+      (progn
+        (term "/bin/bash")
+        (rename-buffer buffer-name)))))
 
 (global-set-key "\C-ca" 'org-agenda)
 (global-set-key "\C-coj" 'org-clock-goto)
