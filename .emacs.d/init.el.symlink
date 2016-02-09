@@ -535,7 +535,7 @@ by using nxml's indentation rules."
 
 (defvar last-workgroup nil)
 
-(defun store-workgroup (workgroup)
+(defun store-workgroup (workgroup &optional _)
   (setq last-workgroup (wg-name workgroup)))
 
 (advice-add 'wg-switch-to-workgroup :after 'store-workgroup)
