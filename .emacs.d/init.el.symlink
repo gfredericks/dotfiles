@@ -166,7 +166,8 @@
 
 ;; magit!
 (require 'magit)
-(set-face-background 'magit-item-highlight "white")
+;; commented this out since it errors in newer emacs/magit
+;; (set-face-background 'magit-item-highlight "white")
 (setq magit-last-seen-setup-instructions "1.4.0")
 
 ;; Haskell?
