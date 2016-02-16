@@ -519,7 +519,7 @@ by using nxml's indentation rules."
 (defun restore-last-deleted-frame-wconfigs ()
   (interactive)
   (when last-deleted-frame-wconfigs
-    (dolist (workgroup (wg-list))
+    (dolist (workgroup (wg-list t))
       (when-let ((wconfig (gethash (wg-name workgroup) last-deleted-frame-wconfigs)))
         (wg-set-working-config workgroup wconfig)
         (my-puthash-nested (selected-frame)
@@ -542,7 +542,7 @@ by using nxml's indentation rules."
 (advice-add 'wg-switch-to-workgroup :after 'store-workgroup)
 
 (defun switch-to-last-workgroup ()
-  (dolist (workgroup (wg-list))
+  (dolist (workgroup (wg-list t))
     (when (eq (wg-name workgroup) last-workgroup)
       (wg-switch-to-workgroup workgroup))))
 
