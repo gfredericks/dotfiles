@@ -9,6 +9,7 @@
 (setq my-packages
   '(clojure-mode
     cider
+    dash
     align-cljlet
     jabber
     markdown-mode
@@ -497,7 +498,7 @@ by using nxml's indentation rules."
 (defun stash-my-working-config ()
   (interactive)
   (unless during-switching?
-    (when-let ((the-workgroup (wg-current-workgroup t)))
+    (-when-let ((the-workgroup (wg-current-workgroup t)))
       (let ((the-wg-name (wg-name the-workgroup)))
         (my-puthash-nested (selected-frame)
                            the-wg-name
@@ -520,7 +521,7 @@ by using nxml's indentation rules."
   (interactive)
   (when last-deleted-frame-wconfigs
     (dolist (workgroup (wg-list t))
-      (when-let ((wconfig (gethash (wg-name workgroup) last-deleted-frame-wconfigs)))
+      (-when-let ((wconfig (gethash (wg-name workgroup) last-deleted-frame-wconfigs)))
         (wg-set-working-config workgroup wconfig)
         (my-puthash-nested (selected-frame)
                            (wg-name workgroup)
