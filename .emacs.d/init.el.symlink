@@ -122,7 +122,7 @@
 (defun my-start-term (prefix-arg)
   (interactive "P")
   (let* ((buffer-name-base
-          (if-let ((the-workgroup (wg-current-workgroup t)))
+          (-if-let (the-workgroup (wg-current-workgroup t))
               (wg-name the-workgroup)
             "default"))
          (done? nil)
@@ -131,7 +131,7 @@
       (let ((buffer-name (if (= 1 idx)
                              (format "*terminal-%s*" buffer-name-base)
                            (format "*terminal-%s-%d*" buffer-name-base idx))))
-        (if-let ((b (get-buffer buffer-name)))
+        (-if-let (b (get-buffer buffer-name))
             (if (get-buffer-window b)
                 (setq idx (+ 1 idx))
               (progn
