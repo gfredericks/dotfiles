@@ -565,6 +565,17 @@ by using nxml's indentation rules."
 (add-hook 'erc-mode-hook 'joined-hook)
 
 ;;
+;; Utilities for automatically setting up workgroups and stuff
+;;
+
+(defun start-terminal-with-command (buffer-name initial-command)
+  (let* ((orig-buffer (current-buffer))
+         (proc (get-buffer-process (term "/bin/bash"))))
+    (rename-buffer buffer-name)
+    (term-send-string proc (concat initial-command "\n"))
+    (switch-to-buffer orig-buffer)))
+
+;;
 ;; This is a good UUID:
 ;; c7ed5790-85d8-4b4d-a7f7-0d58f0c3b22b
 ;;
