@@ -43,6 +43,7 @@
 ;; modes by file extension
 (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
 
+(require 'dash)
 (require 'clojure-mode)
 (require 'cider)
 (require 'find-file-in-project)
