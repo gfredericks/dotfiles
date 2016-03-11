@@ -33,9 +33,14 @@
 
   ;; special handling for org-mode which comes prepackaged with emacs but
   ;; not in a new enough version.
-  (unless (package-installed-p 'org (version-to-list "8.2.3c"))
-    (unless refreshed (package-refresh-contents))
-    (package-install 'org)))
+  ;;
+  ;; Commenting this now since the package-installed-p check is always nil
+  ;; for some reason (resulting in emacs needing to connect to the internet
+  ;; on each startup) and I'm not sure it's needed anymore
+  ;; (unless (package-installed-p 'org (version-to-list "8.2.10"))
+  ;;   (unless refreshed (package-refresh-contents))
+  ;;   (package-install 'org))
+    )
 
 ;; for things I've included in this repo
 ;; (add-to-list 'load-path "~/.emacs.d/included/")
