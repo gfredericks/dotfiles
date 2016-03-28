@@ -14,7 +14,7 @@
             [lein-oneoff "0.3.1"]
             [lein-pprint "1.1.1"]
             [com.palletops/lein-shorthand "0.4.0"]
-            [cider/cider-nrepl "0.10.0"]
+            [cider/cider-nrepl "0.10.2"]
             [com.gfredericks/corncob-cigar "0.1.5"]]
   :shorthand {. [clojure.repl/apropos clojure.repl/doc
                  clojure.repl/pst clojure.repl/source
