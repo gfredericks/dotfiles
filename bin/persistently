@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# TODO: check if first arg is a number, if so use it to sleep
+
+until $@
+do
+  echo "Trying again..."
+done
