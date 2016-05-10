@@ -13,6 +13,7 @@ THE_WD=`pwd`
 REMOTE=${1:-origin}
 
 git diff --cached > $PATCH_FILE && \
+rm -rf $TMP_REPO && \
 mkdir -p $TMP_REPO && \
 cp -r .git $TMP_REPO/.git && \
 cd $TMP_REPO && \
