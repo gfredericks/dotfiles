@@ -14,7 +14,7 @@
             [lein-oneoff "0.3.1"]
             [lein-pprint "1.1.1"]
             [com.palletops/lein-shorthand "0.4.0"]
-            [cider/cider-nrepl "0.10.0"]
+            [cider/cider-nrepl "0.10.2"]
             [com.gfredericks/corncob-cigar "0.1.5"]]
   :shorthand {. [clojure.repl/apropos clojure.repl/doc
                  clojure.repl/pst clojure.repl/source
@@ -65,7 +65,7 @@
                              com.gfredericks.debug-repl/catch-break!]}
               :repl-options {:nrepl-middleware
                              [com.gfredericks.debug-repl/wrap-debug-repl]}
-              :dependencies [[com.gfredericks/debug-repl "0.0.7"]]}
+              :dependencies [[com.gfredericks/debug-repl "0.0.8"]]}
  :clojars-releases {:deploy-repositories [["releases" :clojars]]}
  :lib-dev {:release-tasks [["clean"]
                            ["vcs" "assert-committed"]
