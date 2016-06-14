@@ -1,0 +1,45 @@
+! !Remap Caps_Lock as Escape
+! remove Lock = Caps_Lock
+! keysym Caps_Lock = Escape
+
+
+! Swap Caps_Lock and Control_L
+!
+! remove Lock = Caps_Lock
+! remove Control = Control_L
+! keysym Control_L = Caps_Lock
+! keysym Caps_Lock = Control_L
+! add Lock = Caps_Lock
+! add Control = Control_L
+
+! Map Caps_Lock to Control_L
+!
+remove Lock = Caps_Lock
+keysym Caps_Lock = Control_L
+add Control = Control_L
+
+! Swap the numbers and symbols
+! keycode  10 = exclam 1
+! keycode  11 = at 2
+! keycode  12 = numbersign 3
+! keycode  13 = dollar 4
+! keycode  14 = percent 5
+! keycode  15 = asciicircum 6
+! keycode  16 = ampersand 7
+! keycode  17 = asterisk 8
+! keycode  18 = parenleft 9
+! keycode  19 = parenright 0
+
+! Undo the above
+! keycode  10 = exclam 1
+! keycode  11 = 2 at
+! keycode  12 = 3 numbersign
+! keycode  13 = 4 dollar
+! keycode  14 = 5 percent
+! keycode  15 = 6 asciicircum
+! keycode  16 = 7 ampersand
+! keycode  17 = 8 asterisk
+! keycode  18 = 9 parenleft
+! keycode  19 = 0 parenright
+
+keycode 62 = Multi_key
