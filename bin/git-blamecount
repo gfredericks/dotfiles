@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Like git-blame, but prints the number of lines contributed by each
+# person in the given file.
+
+git blame -ef $1 | tr -s ' ' |  cut -f 3 -d ' ' | sed 's/..\(.*\)./\1/' | frequencies

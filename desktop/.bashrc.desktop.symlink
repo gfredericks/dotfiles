@@ -1,0 +1,1 @@
+alias logout="i3-msg exit"

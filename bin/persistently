@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Runs the given command until it returns successfully.
+
+USAGE="Usage: $0 [sleep-seconds] cmd..."
+
+if [ "$#" == "0" ]; then
+  echo $USAGE
+  exit 1
+fi
+
+re='^[0-9]+$'
+if [[ "$1" =~ $re ]] ; then
+    SLEEPSEC="$1"
+    shift
+fi
+
+until $@
+do
+    if [ -z $SLEEPSEC ]; then
+        echo "Trying again..."
+    else
+        echo "Trying again in $SLEEPSEC seconds..."
+        sleep "$SLEEPSEC"
+    fi
+done

@@ -10,7 +10,7 @@ if [ "$1" == "-f" ]; then
   shift
 fi
 
-P=`uuidgen`
+P=`uuidgen | cut -c 25-36`
 
 trap "docker-compose -f \"$FILE\" -p $P kill; docker-compose -f \"$FILE\" -p $P rm --force; exit" EXIT HUP INT QUIT PIPE TERM
 

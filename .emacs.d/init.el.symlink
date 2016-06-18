@@ -33,9 +33,14 @@
 
   ;; special handling for org-mode which comes prepackaged with emacs but
   ;; not in a new enough version.
-  (unless (package-installed-p 'org (version-to-list "8.2.3c"))
-    (unless refreshed (package-refresh-contents))
-    (package-install 'org)))
+  ;;
+  ;; Commenting this now since the package-installed-p check is always nil
+  ;; for some reason (resulting in emacs needing to connect to the internet
+  ;; on each startup) and I'm not sure it's needed anymore
+  ;; (unless (package-installed-p 'org (version-to-list "8.2.10"))
+  ;;   (unless refreshed (package-refresh-contents))
+  ;;   (package-install 'org))
+    )
 
 ;; for things I've included in this repo
 ;; (add-to-list 'load-path "~/.emacs.d/included/")
@@ -43,6 +48,7 @@
 ;; modes by file extension
 (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
 
+(require 'dash)
 (require 'clojure-mode)
 (require 'cider)
 (require 'find-file-in-project)
@@ -392,66 +398,6 @@
 
 (add-hook 'java-mode-hook (lambda ()
           (setq c-basic-offset 2)))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; org-babel + Clojure (stolen from stuartsierra's dotfiles)
-
-(when (locate-file "ob" load-path load-suffixes)
-  (require 'ob)
-  (require 'ob-tangle)
-  (add-to-list 'org-babel-tangle-lang-exts '("clojure" . "clj"))
-
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((emacs-lisp . t)
-     (clojure . t)))
-
-  (defun org-babel-execute:clojure (body params)
-    "Evaluate a block of Clojure code with Babel."
-    (let* ((gfredericks-use-whidbey-pprint t)
-           (result (nrepl-send-string-sync body (cider-current-ns)))
-           (value (plist-get result :value))
-           (out (plist-get result :stdout))
-           (out (when out
-                  (if (string= "\n" (substring out -1))
-                      (substring out 0 -1)
-                    out)))
-           (err (plist-get result :stderr))
-           (err (when err
-                  (if (string= "\n" (substring err -1))
-                      (substring err 0 -1)
-                    err)))
-           (stdout (when out
-                     (mapconcat (lambda (line)
-                                  (concat ";; " line))
-                                (split-string out "\n")
-                                "\n")))
-           (stderr (when err
-                     (mapconcat (lambda (line)
-                                  (concat ";; " line))
-                                (split-string err "\n")
-                                "\n")))
-           (formatted-value (when value
-                              (mapconcat (lambda (line)
-                                           (concat ";;   " line))
-                                         (split-string value "\n")
-                                         "\n")))
-           (output (concat stdout
-                           (when (and stdout (not (string= "\n" (substring stdout -1))))
-                             "\n")
-                           stderr)))
-      (concat output
-              (when (and output
-                         (not (string= "" output))
-                         (not (string= "\n" (substring output -1))))
-                "\n")
-              (when value (concat ";;=> " (substring formatted-value 5))))))
-
-  (provide 'ob-clojure)
-
-  (setq org-src-fontify-natively t)
-  (setq org-confirm-babel-evaluate nil))
 
 ;; Load any ~/.emacs.d/init.*.el files
 (dolist (file (directory-files user-emacs-directory
