@@ -148,6 +148,14 @@
             (term "/bin/bash")
             (rename-buffer buffer-name)))))))
 
+(defun switch-term-buffers-to-char-mode (&rest args)
+  ;; this way I can generally assume a term buffer is in char mode
+  ;; when I switch to it
+  (when (string= "term-mode" major-mode)
+    (term-char-mode)
+    (goto-char (- (point-max) 1))))
+(advice-add 'switch-to-buffer :after #'switch-term-buffers-to-char-mode)
+
 (global-set-key "\C-ca" 'org-agenda)
 (global-set-key "\C-coj" 'org-clock-goto)
 (global-set-key "\C-cr" 'rename-buffer)
