@@ -171,3 +171,6 @@ bar {
         # 12  why did this start being too big on the macbook?
         font pango:Inconsolata 11
 }
+
+
+exec "xmodmap ~/.Xmodmap"
