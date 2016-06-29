@@ -2,6 +2,7 @@
         :debug-repl
         :whidbey
         :lib-dev
+        :sneaky-classpath
         :clojure-test-ex-printing
         ;; A mechanism for adding to the :user profile outside of this
         ;; dotfiles repo; to suppress warnings about the profile not
@@ -42,8 +43,6 @@
                  [com.gfredericks/repl-utils "0.2.9"]
                  [org.clojure/tools.nrepl "0.2.12"]
                  [org.clojure/tools.namespace "0.2.11"]]
-  ;; for local monkeypatching
-  :source-paths ["gitignored/sneaky-classpath"]
   :aliases {"dct" ["do" "clean," "test"]
             "try" ["with-profile" "+lein-try" "try"]
             "slamhound" ["with-profile" "+slamhound" "run" "-m" "slam.hound"]
@@ -58,6 +57,8 @@
             ["with-profile" "+clj-usage-graph" "lein" "run"
              "-m" "com.gfredericks.clj-usage-graph/namespace-graph"]}
   :deploy-fork {:group-id-prefix "com.gfredericks.forks"}}
+ ;; for local monkeypatching
+ :sneaky-classpath {:source-paths ["gitignored/sneaky-classpath"]}
  :whidbey {:plugins [[mvxcvi/whidbey "1.0.0"]]
            :whidbey {:print-color false
                      :print-fallback :print}}
