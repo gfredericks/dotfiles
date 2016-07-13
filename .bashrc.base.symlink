@@ -9,6 +9,9 @@ MYBIN=`dirname $SELF`/bin
 export PATH=~/bin:$MYBIN:$PATH
 export EDITOR=edit
 
+cdl(){ cd $1; ls; }
+cdll(){ cd $1; ls -l; }
+cdlla(){ cd $1; ls -la; }
 alias lsl="ls -l"
 alias lsa="ls -a"
 alias lsla="ls -la"
