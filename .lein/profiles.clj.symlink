@@ -2,7 +2,7 @@
         :debug-repl
         :whidbey
         :lib-dev
-        :sneaky-classpath
+        :local-injections
         :clojure-test-ex-printing
         ;; A mechanism for adding to the :user profile outside of this
         ;; dotfiles repo; to suppress warnings about the profile not
@@ -57,8 +57,12 @@
             ["with-profile" "+clj-usage-graph" "lein" "run"
              "-m" "com.gfredericks.clj-usage-graph/namespace-graph"]}
   :deploy-fork {:group-id-prefix "com.gfredericks.forks"}}
- ;; for local monkeypatching
- :sneaky-classpath {:source-paths ["gitignored/sneaky-classpath"]}
+ :local-injections {:injections
+                    [(let [filename "gitignored/local-injections.clj"]
+                       (when (.exists (java.io.File. filename))
+                         (binding [*out* *err*]
+                           (println (format "Loading %s..." filename)))
+                         (load-file filename)))]}
  :whidbey {:plugins [[mvxcvi/whidbey "1.0.0"]]
            :whidbey {:print-color false
                      :print-fallback :print}}
