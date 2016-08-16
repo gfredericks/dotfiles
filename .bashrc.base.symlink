@@ -127,7 +127,9 @@ __prompt_command() {
       THE_TIMER=" ┃ $THE_TIMER"
   fi
 
-  LINE2="┃ $USER ┃ $HOSTNAME ┃ $PWD$GIT_BRANCH$SHOW_EXIT$THE_TIMER ┃"
+  THEWD="$PWD"
+  [[ "$THEWD" =~ ^"$HOME"(/|$) ]] && THEWD="~${THEWD#$HOME}"
+  LINE2="┃ $USER ┃ $HOSTNAME ┃ $THEWD$GIT_BRANCH$SHOW_EXIT$THE_TIMER ┃"
   LINE1=`echo "$LINE2" | sed 's/┃/┳/g' | sed 's/[^┳]/━/g'`
   LINE1=`echo "$LINE1" | sed 's/^.\(.*\).$/\1/'`
   LINE25=`echo "$LINE1" | sed 's/┳/┻/g'`
@@ -139,7 +141,7 @@ __prompt_command() {
   else
       SHOW_EXIT=" ┃ ${Red}$EXIT${RCol}"
   fi
-  LINE2="┃ $USER ┃ $HOSTNAME ┃ $PWD$GIT_BRANCH$SHOW_EXIT$THE_TIMER ┃"
+  LINE2="┃ $USER ┃ $HOSTNAME ┃ $THEWD$GIT_BRANCH$SHOW_EXIT$THE_TIMER ┃"
   LINE2="${LINE2//┃/${Theme}┃${RCol}}"
 
   LINE3="${Theme}┃${RCol} "
