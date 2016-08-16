@@ -106,30 +106,43 @@ __prompt_command() {
   local LightGrey='\[\e[01;34m\]'
   local Pur='\[\e[0;35m\]'
   local Theme=$Yellow
-  DOT="${Theme} ≣ ${RCol}"
+  DOT="${Theme} ┃ ${RCol}"
   GIT_BRANCH=$(parse_git_branch)
   if [ -z $GIT_BRANCH ]; then
       foo="bar"
   else
-      GIT_BRANCH="$DOT$GIT_BRANCH"
+      GIT_BRANCH=" ┃ $GIT_BRANCH"
   fi
 
   if [ $EXIT -eq "0" ]; then
       SHOW_EXIT=""
   else
-      SHOW_EXIT="$DOT${Red}$EXIT${RCol}"
+      SHOW_EXIT=" ┃ $EXIT"
   fi
 
   THE_TIMER=${timer_show}
   if [ -z $THE_TIMER ]; then
       foo="bar"
   else
-      THE_TIMER="$DOT$THE_TIMER"
+      THE_TIMER=" ┃ $THE_TIMER"
   fi
 
-  LINE1="${Theme}┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┅┅┅┅╸╸╸╸ ╸ ╸ ╸  ╸${RCol}"
-  LINE2="${Theme}┃ ${RCol}\u$DOT\h$DOT\w$GIT_BRANCH$SHOW_EXIT$THE_TIMER"
+  LINE2="┃ $USER ┃ $HOSTNAME ┃ $PWD$GIT_BRANCH$SHOW_EXIT$THE_TIMER ┃"
+  LINE1=`echo "$LINE2" | sed 's/┃/┳/g' | sed 's/[^┳]/━/g'`
+  LINE1=`echo "$LINE1" | sed 's/^.\(.*\).$/\1/'`
+  LINE25=`echo "$LINE1" | sed 's/┳/┻/g'`
+  LINE1="${Theme}┏$LINE1┓${RCol}"
+  LINE25="${Theme}┣$LINE25┛${RCol}"
+
+  if [ $EXIT -eq "0" ]; then
+      SHOW_EXIT=""
+  else
+      SHOW_EXIT=" ┃ ${Red}$EXIT${RCol}"
+  fi
+  LINE2="┃ $USER ┃ $HOSTNAME ┃ $PWD$GIT_BRANCH$SHOW_EXIT$THE_TIMER ┃"
+  LINE2="${LINE2//┃/${Theme}┃${RCol}}"
+
   LINE3="${Theme}┃ ❱${RCol} "
 
-  PS1+="\n$LINE1\n$LINE2\n$LINE3"
+  PS1+="\n$LINE1\n$LINE2\n$LINE25\n$LINE3"
 }
