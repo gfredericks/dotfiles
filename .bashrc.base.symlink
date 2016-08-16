@@ -142,7 +142,7 @@ __prompt_command() {
   LINE2="┃ $USER ┃ $HOSTNAME ┃ $PWD$GIT_BRANCH$SHOW_EXIT$THE_TIMER ┃"
   LINE2="${LINE2//┃/${Theme}┃${RCol}}"
 
-  LINE3="${Theme}┃ ❱${RCol} "
+  LINE3="${Theme}┃${RCol} "
 
   PS1+="\n$LINE1\n$LINE2\n$LINE25\n$LINE3"
 }
