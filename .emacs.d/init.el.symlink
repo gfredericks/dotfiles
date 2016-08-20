@@ -156,6 +156,19 @@
     (goto-char (- (point-max) 1))))
 (advice-add 'switch-to-buffer :after #'switch-term-buffers-to-char-mode)
 
+;; Pasted from
+;; http://stackoverflow.com/questions/14444265/kill-the-terminal-buffer-with-c-d
+(defun term-handle-exit--close-buffer (&rest args)
+  (when (null (get-buffer-process (current-buffer)))
+    (insert "Press <C-d> to kill the buffer.")
+    (use-local-map (let ((map (make-sparse-keymap)))
+                     (define-key map (kbd "C-d")
+                       (lambda ()
+                         (interactive)
+                         (kill-buffer (current-buffer))))
+                     map))))
+(advice-add 'term-handle-exit :after #'term-handle-exit--close-buffer)
+
 (global-set-key "\C-ca" 'org-agenda)
 (global-set-key "\C-coj" 'org-clock-goto)
 (global-set-key "\C-cr" 'rename-buffer)
