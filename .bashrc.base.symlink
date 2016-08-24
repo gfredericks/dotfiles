@@ -109,7 +109,7 @@ __prompt_command() {
   SQUARE="$Theme●$RCol"
   DOT="${Theme} ┃ ${RCol}"
   GIT_BRANCH=$(parse_git_branch)
-  if [ -z $GIT_BRANCH ]; then
+  if [ -z "$GIT_BRANCH" ]; then
       foo="bar"
   else
       GIT_BRANCH=" $SQUARE $GIT_BRANCH"
