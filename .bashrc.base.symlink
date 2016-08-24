@@ -106,7 +106,7 @@ __prompt_command() {
   local LightGrey='\[\e[01;34m\]'
   local Pur='\[\e[0;35m\]'
   local Theme=$Yellow
-  SQUARE="$Theme▮$RCol"
+  SQUARE="$Theme●$RCol"
   DOT="${Theme} ┃ ${RCol}"
   GIT_BRANCH=$(parse_git_branch)
   if [ -z $GIT_BRANCH ]; then
