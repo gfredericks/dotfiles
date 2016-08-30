@@ -14,7 +14,11 @@
             [lein-lein "0.2.0"]
             [lein-oneoff "0.3.1"]
             [lein-pprint "1.1.1"]
-            [com.palletops/lein-shorthand "0.4.0"]
+
+            ;; waiting for release of
+            ;; https://github.com/palletops/lein-shorthand/pull/6
+            [com.gfredericks.forks.com.palletops/lein-shorthand "0.4.1-1e93384"]
+
             [cider/cider-nrepl "0.10.2"]
             [com.gfredericks/corncob-cigar "0.1.6"]]
   :shorthand {. [clojure.repl/apropos clojure.repl/doc
