@@ -20,7 +20,7 @@
             [com.gfredericks.forks.com.palletops/lein-shorthand "0.4.1-1e93384"]
 
             [cider/cider-nrepl "0.10.2"]
-            [com.gfredericks/corncob-cigar "0.1.6"]]
+            [com.gfredericks/corncob-cigar "0.1.7"]]
   :shorthand {. [clojure.repl/apropos clojure.repl/doc
                  clojure.repl/pst clojure.repl/source
                  clojure.test/run-tests
