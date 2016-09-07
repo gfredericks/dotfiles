@@ -191,6 +191,12 @@
 (global-set-key "\M-[" 'switch-to-buffer)
 (global-set-key "\M-_" 'bury-buffer)
 
+;; make workgroup commands work in the terminal buffers
+(defun expose-global-binding-in-term (binding)
+  (define-key term-raw-map binding
+    (lookup-key (current-global-map) binding)))
+(expose-global-binding-in-term (kbd "C-c C-g"))
+
 
 ;; magit!
 (require 'magit)
