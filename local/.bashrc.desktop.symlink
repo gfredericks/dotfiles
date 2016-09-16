@@ -1,1 +1,2 @@
 alias logout="i3-msg exit"
+alias xmm="xmodmap ~/.Xmodmap"
