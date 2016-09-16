@@ -195,10 +195,12 @@
 (defun expose-global-binding-in-term (binding)
   (define-key term-raw-map binding
     (lookup-key (current-global-map) binding)))
-(expose-global-binding-in-term (kbd "C-c C-g"))
-(expose-global-binding-in-term (kbd "C-c s"))
+(add-hook 'term-load-hook
+  (lambda ()
+    (expose-global-binding-in-term (kbd "C-c C-g"))
+    (expose-global-binding-in-term (kbd "C-c s"))
 
-(define-key term-raw-map (kbd "C-x") 'nil)
+    (define-key term-raw-map (kbd "C-x") 'nil)))
 
 
 ;; magit!
