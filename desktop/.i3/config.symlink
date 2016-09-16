@@ -102,10 +102,10 @@ bindsym $mod+Shift+space floating toggle
 bindsym $mod+space focus mode_toggle
 
 # focus the parent container
-bindsym $mod+a focus parent
+bindsym $mod+y focus parent
 
 # focus the child container
-bindsym $mod+e focus child
+bindsym $mod+i focus child
 
 # switch to workspace
 bindsym $mod+1 workspace 1
@@ -118,7 +118,7 @@ bindsym $mod+7 workspace 7
 bindsym $mod+8 workspace 8
 bindsym $mod+9 workspace 9
 bindsym $mod+0 workspace 10
-bindsym $mod+grave workspace back_and_forth
+bindsym $mod+a workspace back_and_forth
 
 # move focused container to workspace
 bindsym $mod+Shift+1 move container to workspace 1
