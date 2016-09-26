@@ -2,11 +2,11 @@
 
 FILE=$1
 shift
-CMD=$@
+CMD="$@"
 
 MODTIME=`stat -c %Y $FILE`
 
-$CMD # why not run right up front
+echo "$CMD" | /usr/bin/env bash -s  # why not run right up front
 
 while :
 do
@@ -15,7 +15,7 @@ do
   if [ "$NEW_MODTIME" -gt "$MODTIME" ]
     then
     echo "File updated, re-running..."
-    $CMD
+    echo "$CMD" | /usr/bin/env bash -s
   fi
   MODTIME=$NEW_MODTIME
 done
