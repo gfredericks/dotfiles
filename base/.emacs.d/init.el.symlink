@@ -110,6 +110,7 @@
 (workgroups-mode 1)
 (setq wg-morph-on nil)
 (setq wg-use-faces nil)
+(define-key wg-map (kbd "TAB") 'wg-switch-to-previous-workgroup)
 
 ;; Put backup files in /dev/shm/emacs-backups
 (shell-command "mkdir -p /dev/shm/gary-emacs-backups && chmod 700 /dev/shm/gary-emacs-backups")
