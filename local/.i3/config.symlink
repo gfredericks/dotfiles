@@ -40,8 +40,9 @@ bindsym $mod+Shift+c kill
 #   gsettings set org.gnome.desktop.background show-desktop-icons false
 bindsym $mod+Shift+m exec dmenu_run
 
+# Wish I could do both of these with one binding :/
 bindsym $mod+m move workspace to output right
-
+bindsym $mod+w move workspace to output up
 
 # This seems to be decent volume control setup for pulseaudio
 bindsym XF86AudioRaiseVolume exec amixer -D pulse sset Master 5%+ unmute
