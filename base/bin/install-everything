@@ -4,7 +4,7 @@
 # manager. essentially it's an ad-hoc, informally-specified,
 # bug-ridden, slow implementation of half of nix.
 
-# everything should be installed in userland, in ~/build with symlinks
+# everything should be installed in userland, in ~/.install-everything with symlinks
 # from ~/bin.
 
 set -e
