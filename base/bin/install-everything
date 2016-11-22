@@ -1,4 +1,4 @@
-!#/usr/bin/env bash
+#!/usr/bin/env bash
 
 # script for building everything I can't easily get via a package
 # manager. essentially it's an ad-hoc, informally-specified,
