@@ -1,0 +1,56 @@
+!#/usr/bin/env bash
+
+# script for building everything I can't easily get via a package
+# manager. essentially it's an ad-hoc, informally-specified,
+# bug-ridden, slow implementation of half of nix.
+
+# everything should be installed in userland, in ~/build with symlinks
+# from ~/bin.
+
+set -e
+
+sudo apt-get install -y wget build-essential
+
+###
+### Emacs
+###
+
+# TODO
+
+###
+### Git
+###
+
+# TODO
+
+###
+### NodeJS
+###
+
+# TODO
+
+###
+### Java
+###
+
+# TODO
+
+###
+### Maven 3
+###
+
+BUILDDIR=~/build/maven
+rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+wget http://apache.mirrors.tds.net/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+echo '6e3e9c949ab4695a204f74038717aa7b2689b1be94875899ac1b3fe42800ff82  apache-maven-3.3.9-bin.tar.gz' | \
+  sha256sum -c
+tar xzf apache-maven-3.3.9-bin.tar.gz
+rm -f ~/bin/mvn
+ln -s $BUILDDIR/apache-maven-3.3.9/bin/mvn ~/bin/mvn
+
+
+###
+### Done
+###
+
+echo  $'\n\n---------------------\nInstalled everything!'
