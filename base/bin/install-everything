@@ -9,7 +9,11 @@
 
 set -e
 
-sudo apt-get install -y wget build-essential
+sudo apt-get update &&
+sudo apt-get install -y wget build-essential asciidoc docbook2x libssl-dev \
+     libcurl4-openssl-dev libexpat1-dev gettext
+
+BUILDDIRBASE=~/.install-everything
 
 ###
 ### Emacs
@@ -21,7 +25,7 @@ sudo apt-get install -y wget build-essential
 ### Git
 ###
 
-BUILDDIR=~/build/git
+BUILDDIR=$BUILDDIRBASE/git
 rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
 wget https://github.com/git/git/archive/v2.10.2.zip
 echo '30f27b29ea1ab8df0ed2959ef32b16531133cd447d365065e96f614790c03c09  v2.10.2.zip' | sha256sum -c
@@ -30,7 +34,10 @@ cd git-2.10.2
 INSTALLDIR=$BUILDDIR/install
 mkdir $INSTALLDIR
 make prefix=$INSTALLDIR all doc info
-make prefix=$INSTALLDIR install install-doc install-html install-info
+# skipping `install-html` because who even uses that
+make prefix=$INSTALLDIR install install-doc install-info
+cd -
+for FILE in `ls $INSTALLDIR/bin`; do ln -s $INSTALLDIR/bin/$FILE ~/bin/$FILE; done
 
 ###
 ### NodeJS
@@ -48,7 +55,7 @@ make prefix=$INSTALLDIR install install-doc install-html install-info
 ### Maven 3
 ###
 
-BUILDDIR=~/build/maven
+BUILDDIR=$BUILDDIRBASE/maven
 rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
 wget http://apache.mirrors.tds.net/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
 echo '6e3e9c949ab4695a204f74038717aa7b2689b1be94875899ac1b3fe42800ff82  apache-maven-3.3.9-bin.tar.gz' | \
