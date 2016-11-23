@@ -67,6 +67,7 @@ echo 'd4eb161e4715e11bbef816a6c577974271e2bddae9cf008744627676ff00036a  node-v6.
 tar xJf node-v6.9.1-linux-x64.tar.xz
 rm -f ~/bin/node
 ln -s $BUILDDIR/node-v6.9.1-linux-x64/bin/node ~/bin/node
+ln -s $BUILDDIR/node-v6.9.1-linux-x64/bin/npm ~/bin/npm
 
 ###
 ### Java
