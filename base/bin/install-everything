@@ -20,7 +20,22 @@ mkdir -p ~/bin
 ### Emacs
 ###
 
-# TODO
+BUILDDIR=$BUILDDIRBASE/emacs
+rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+wget http://mirror.team-cymru.org/gnu/emacs/emacs-25.1.tar.gz
+echo '763344b90db4d40e9fe90c5d14748a9dbd201ce544e2cf0835ab48a0aa4a1c67  emacs-25.1.tar.gz' | sha256sum -c
+tar xzf emacs-25.1.tar.gz
+cd emacs-25.1
+./configure \
+    --without-x \
+    --prefix=$BUILDDIR/install \
+    --bindir=$BUILDDIR/bin
+make
+make install
+make clean
+rm -rf ~/bin/emacs ~/bin/emacsclient
+ln -s $BUILDDIR/bin/emacs ~/bin/emacs
+ln -s $BUILDDIR/bin/emacsclient ~/bin/emacsclient
 
 ###
 ### Git
