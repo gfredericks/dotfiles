@@ -74,7 +74,16 @@ ln -s $BUILDDIR/node-v6.9.1-linux-x64/bin/npm ~/bin/npm
 ### Java
 ###
 
-# TODO
+BUILDDIR=$BUILDDIRBASE/jdk
+rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+wget --header "Cookie: oraclelicense=accept-securebackup-cookie" \
+     http://download.oracle.com/otn-pub/java/jdk/8u112-b15/jdk-8u112-linux-x64.tar.gz
+echo '777bd7d5268408a5a94f5e366c2e43e720c6ce4fe8c59d9a71e2961e50d774a5  jdk-8u112-linux-x64.tar.gz' | sha256sum -c
+tar xzf jdk-8u112-linux-x64.tar.gz
+for FILE in `ls jdk1.8.0_112/bin`; do
+    rm -f ~/bin/$FILE
+    ln -s $BUILDDIR/jdk1.8.0_112/bin/$FILE ~/bin/$FILE
+done
 
 ###
 ### Maven 3
