@@ -4,3 +4,4 @@ gitignored
 /target
 /.lein-repl-history
 /.nrepl-port
+.projectile

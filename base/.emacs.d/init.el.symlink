@@ -50,6 +50,10 @@
 ;; modes by file extension
 (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
 
+(setq auto-save-file-name-transforms
+      `((".*" "~/tmp/emacs-auto-save/" t)))
+(setq create-lockfiles nil)
+
 (require 'dash)
 (require 'clojure-mode)
 (require 'cider)
@@ -209,7 +213,6 @@
 
     (define-key term-raw-map (kbd "C-x") 'nil)))
 
-
 ;; magit!
 (require 'magit)
 ;; commented this out since it errors in newer emacs/magit
@@ -353,6 +356,7 @@
 
 ;; Tell cider not to require clojure.repl &c on startup
 (setq nrepl-repl-requires-sexp "()")
+(setq cider-repl-display-help-banner nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CIDER MONKEYPATCH CUSTOMIZATIONS ;;
