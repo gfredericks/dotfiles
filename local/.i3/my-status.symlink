@@ -1,0 +1,16 @@
+#!/bin/bash
+
+EXTRAS_FILE=~/.i3statusextras
+
+i3status | while :
+do
+    read line
+    if [ -f $EXTRAS_FILE ]
+    then
+        EXTRAS=`$EXTRAS_FILE`
+        # TODO: allow multiple lines, that get joined with pipes
+        echo "$EXTRAS | $line" || exit 1
+    else
+        echo "$line" || exit 1
+    fi
+done
