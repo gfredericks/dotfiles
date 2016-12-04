@@ -105,7 +105,7 @@ ln -s $BUILDDIR/apache-maven-3.3.9/bin/mvn ~/bin/mvn
 ### GnuPG
 ###
 
-sudo apt-get install libassuan-dev libpth-dev libksba-dev
+sudo apt-get install -y libassuan-dev libpth-dev libksba-dev
 BUILDDIR=$BUILDDIRBASE/gnupg
 rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
 wget https://www.gnupg.org/ftp/gcrypt/gnupg/gnupg-2.0.30.tar.bz2
