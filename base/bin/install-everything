@@ -124,6 +124,20 @@ for FILE in `ls $INSTALLDIR/bin`; do
 done
 
 ###
+### jq
+###
+
+BUILDDIR=$BUILDDIRBASE/jq
+rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+wget https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+echo 'c6b3a7d7d3e7b70c6f51b706a3b90bd01833846c54d32ca32f0027f00226ff6d  jq-linux64' | \
+    sha256sum -c
+EX=$BUILDDIR/jq-linux64
+chmod +x $EX
+rm -f ~/bin/jq
+ln -s $EX ~/bin/jq
+
+###
 ### Done
 ###
 
