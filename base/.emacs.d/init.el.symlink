@@ -53,6 +53,7 @@
 (setq auto-save-file-name-transforms
       `((".*" "~/tmp/emacs-auto-save/" t)))
 (setq create-lockfiles nil)
+(setq vc-follow-symlinks t)
 
 (require 'dash)
 (require 'clojure-mode)
