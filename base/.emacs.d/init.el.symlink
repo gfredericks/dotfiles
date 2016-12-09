@@ -50,8 +50,11 @@
 ;; modes by file extension
 (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
 
-(setq auto-save-file-name-transforms
-      `((".*" "~/tmp/emacs-auto-save/" t)))
+(let ((auto-save-dir "~/.emacs-auto-save/"))
+  (make-directory auto-save-dir)
+  (set-file-modes auto-save-dir 448) ;; 0700
+  (setq auto-save-file-name-transforms
+        `((".*" ,auto-save-dir t))))
 (setq create-lockfiles nil)
 (setq vc-follow-symlinks t)
 
