@@ -115,6 +115,17 @@ __prompt_command() {
       GIT_BRANCH=" $SQUARE $GIT_BRANCH"
   fi
 
+  JOBS=`jobs | wc -l`
+  if [ $JOBS -eq "0" ]; then
+      JOBS=""
+  else
+      if [ $JOBS -eq "1" ]; then
+          JOBS=" $SQUARE 1 job"
+      else
+          JOBS=" $SQUARE $JOBS jobs"
+      fi
+  fi
+
   if [ $EXIT -eq "0" ]; then
       SHOW_EXIT=""
   else
@@ -136,7 +147,7 @@ __prompt_command() {
   else
       SHOW_EXIT=" $SQUARE ${Red}$EXIT${RCol}"
   fi
-  LINE2="$Theme◀$RCol $HOSTNAME $SQUARE $THEWD$GIT_BRANCH$SHOW_EXIT$THE_TIMER $Theme▶ $RCol"
+  LINE2="$Theme◀$RCol $HOSTNAME $SQUARE $THEWD$JOBS$GIT_BRANCH$SHOW_EXIT$THE_TIMER $Theme▶ $RCol"
   LINE3="${Theme}\$${RCol} "
 
   PS1+="\n$LINE2\n$LINE3"
