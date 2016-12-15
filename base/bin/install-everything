@@ -100,6 +100,18 @@ tar xzf apache-maven-3.3.9-bin.tar.gz
 rm -f ~/bin/mvn
 ln -s $BUILDDIR/apache-maven-3.3.9/bin/mvn ~/bin/mvn
 
+###
+### Firefox
+###
+
+BUILDDIR=$BUILDDIRBASE/firefox
+rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+wget https://ftp.mozilla.org/pub/firefox/releases/50.1.0/linux-x86_64/en-US/firefox-50.1.0.tar.bz2
+echo '3b7030ee82944036c1e32803a9cca96a08becc9fda6f2c77d1687163fc2810f3  firefox-50.1.0.tar.bz2' | \
+    sha256sum -c
+tar xf firefox-50.1.0.tar.bz2
+rm -f ~/bin/firefox
+ln -s $BUILDDIR/firefox/firefox ~/bin/firefox
 
 ###
 ### GnuPG
