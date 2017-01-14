@@ -29,6 +29,7 @@ tar xzf emacs-25.1.tar.gz
 cd emacs-25.1
 ./configure \
     --without-x \
+    --with-file-notification=yes \
     --prefix=$BUILDDIR/install \
     --bindir=$BUILDDIR/bin
 make
