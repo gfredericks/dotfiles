@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+FILE=~/.remote-clipboard
+
+if hash xsel 2>/dev/null; then
+  xsel -ob
+else
+  if [ -e "$FILE" ]; then
+    cat "$FILE"
+  fi
+fi
