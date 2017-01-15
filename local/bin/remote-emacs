@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+HOST="$1"
+
+if [ "$2" == "--with-clipboard-sync" ]; then
+  sync-clipboard "$HOST" \
+    2> /dev/null > /dev/null &
+  trap 'kill $(jobs -p)' EXIT
+fi
+
+ssh "$HOST" -t /usr/bin/env bash -l -c $'
+  PID=`cat ~/.remote-emacs.pid`
+  echo $PATH >> ~/.remote-emacs.log
+  re=\'^[0-9]+$\'
+  if [[ "$PID" =~ $re ]]; then
+    if ps -o comm -p $PID | grep -q emacsclient; then
+      kill $PID
+    fi
+  fi
+  echo $$ > ~/.remote-emacs.pid
+  emacsclient --alternate-editor= -c -e \'(restore-longrunning-workgroup-setup)\'
+'
