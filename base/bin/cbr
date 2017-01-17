@@ -2,6 +2,11 @@
 
 FILE=~/.remote-clipboard
 
+if [ "$1" = "--write-time" ]; then
+  stat --format=%Z "$FILE" 2>/dev/null
+  exit 0
+fi
+
 if hash xsel 2>/dev/null; then
   xsel -ob
 else
