@@ -8,7 +8,7 @@ if [ "$2" == "--with-clipboard-sync" ]; then
   trap 'kill $(jobs -p)' EXIT
 fi
 
-ssh "$HOST" -t /usr/bin/env bash -l -c $'
+ssh -A "$HOST" -t /usr/bin/env bash -l -c $'
   PID=`cat ~/.remote-emacs.pid`
   echo $PATH >> ~/.remote-emacs.log
   re=\'^[0-9]+$\'
