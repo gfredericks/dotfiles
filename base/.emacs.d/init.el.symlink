@@ -205,6 +205,7 @@
 (setq org-highest-priority ?0)
 (setq org-lowest-priority ?9)
 (setq org-default-priority ?9)
+(setq org-clock-into-drawer t)
 
 ;; make workgroup commands work in the terminal buffers
 (defun expose-global-binding-in-term (binding)
