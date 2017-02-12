@@ -123,26 +123,6 @@ rm -f ~/bin/firefox
 ln -s $BUILDDIR/firefox/firefox ~/bin/firefox
 
 ###
-### GnuPG
-###
-
-sudo apt-get install -y libassuan-dev libpth-dev libksba-dev libgpg-error-dev \
-                        libgcrypt20-dev libnpth0-dev libksba-dev
-BUILDDIR=$BUILDDIRBASE/gnupg
-rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-wget https://gnupg.org/ftp/gcrypt/gnupg/gnupg-2.1.18.tar.bz2
-echo 'd04c6fab7e5562ce4b915b22020e34d4c1a256847690cf149842264fc7cef994  gnupg-2.1.18.tar.bz2' | \
-    sha256sum -c
-tar xf gnupg-2.1.18.tar.bz2
-cd gnupg-2.1.18/
-INSTALLDIR=$BUILDDIR/install
-mkdir $INSTALLDIR
-./configure --prefix=$INSTALLDIR
-make
-make install
-ln -s $INSTALLDIR/bin ~/bin/gnupg.bin
-
-###
 ### jq
 ###
 
