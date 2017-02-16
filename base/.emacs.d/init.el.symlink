@@ -47,6 +47,8 @@
 ;; for things I've included in this repo
 ;; (add-to-list 'load-path "~/.emacs.d/included/")
 
+(add-to-list 'exec-path "~/bin")
+
 ;; modes by file extension
 (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
 
