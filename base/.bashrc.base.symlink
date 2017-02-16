@@ -6,6 +6,11 @@ fi
 
 SELF=$(readlink -f $BASH_SOURCE)
 MYBIN=`dirname $SELF`/bin
+for FILE in `find ~/bin -maxdepth 1 -type l`; do
+    if [[ -d "$FILE" ]]; then
+        PATH=$FILE:$PATH
+    fi
+done
 export PATH=~/bin:$MYBIN:$PATH
 export EDITOR=edit
 
