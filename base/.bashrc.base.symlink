@@ -75,6 +75,8 @@ function timer_start {
 function timer_stop {
   the_seconds=$(($SECONDS - $timer))
 
+  __last_stopped_at=$SECONDS
+
   # Hide results for <2sec to reduce noise
   if [[ $the_seconds > 1 ]]; then
     timer_show="`format-duration seconds $the_seconds`"
@@ -83,6 +85,12 @@ function timer_stop {
   fi
 
   unset timer
+}
+
+function when-did-that-happen? {
+  ___what=$(($SECONDS - $__last_stopped_at))
+  ___elapsed=`format-duration seconds $___what`
+  echo "That happened $___elapsed ago."
 }
 
 trap 'timer_start' DEBUG
