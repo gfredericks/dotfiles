@@ -100,7 +100,11 @@ parse_git_branch() {
     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
 }
 
-PROMPT_COMMAND="__prompt_command; $PROMPT_COMMAND"
+if [ -z "$PROMPT_COMMAND" ]; then
+  PROMPT_COMMAND=__prompt_command
+else
+  PROMPT_COMMAND="__prompt_command; $PROMPT_COMMAND"
+fi
 
 __prompt_command() {
   local EXIT="$?"
