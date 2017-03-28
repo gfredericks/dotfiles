@@ -13,6 +13,7 @@ REMOTE=${1:-origin}
 BACKUPDIR=/tmp/git-push-stage-as-tmp-branch.backup
 
 echo "Backing up entire repo (just in case) to $BACKUPDIR..."
+rm -rf "$BACKUPDIR"
 cp -r "$MAIN_REPO" "$BACKUPDIR"
 
 git fetch
