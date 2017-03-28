@@ -1,27 +1,34 @@
 #!/bin/bash
 
 # Pushes the staged changes to origin (or the given remote) under a
-# temporary branch name. Changes will remain staged, mostly because
-# I don't know an easy way to unstage & discard particular changes.
-#
-# Maybe with stash?
+# temporary branch name, then discards the staged changes.
+
+set -e
 
 TMP_REPO=gitignored/git-push-stage-as-tmp-branch
+MAIN_REPO=`git rev-parse --show-toplevel`
 PATCH_FILE=/tmp/git-push-stage-as-tmp-branch.patch
 BRANCH_NAME=tmp-`uuidgen`
-THE_WD=`pwd`
 REMOTE=${1:-origin}
+BACKUPDIR=/tmp/git-push-stage-as-tmp-branch.backup
 
-git diff --cached > $PATCH_FILE && \
-rm -rf $TMP_REPO && \
-mkdir -p $TMP_REPO && \
-cp -r .git $TMP_REPO/.git && \
-cd $TMP_REPO && \
-git co master && \
-git reset --hard master && \
-git co -b $BRANCH_NAME && \
-git apply $PATCH_FILE && \
-git commit -a && \
-git push $REMOTE $BRANCH_NAME:$BRANCH_NAME && \
+echo "Backing up entire repo (just in case) to $BACKUPDIR..."
+cp -r "$MAIN_REPO" "$BACKUPDIR"
 
-cd $THE_WD && rm -rf $TMP_REPO
+git fetch
+git commit
+SHA=`git rev-parse HEAD`
+git revert HEAD --no-edit
+git reset HEAD^^
+rm -rf $TMP_REPO
+mkdir -p $TMP_REPO
+cp -r "$MAIN_REPO/.git" $TMP_REPO/.git
+cd $TMP_REPO
+git co master > /dev/null
+git reset --hard origin/master
+git co -b $BRANCH_NAME
+git cherry-pick $SHA
+git push $REMOTE $BRANCH_NAME:$BRANCH_NAME
+
+cd "$MAIN_REPO"
+rm -rf $TMP_REPO
