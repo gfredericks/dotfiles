@@ -26,8 +26,10 @@
   lgt = log --graph --all --format=\"%h[%t] %d %an--%s\"
   lgh = log --graph --format=\"%h[%t] %d %an--%s\"
   wip = commit -a -m wip
-  commend = commit --amend
-  dashed = diff --cached
+  ca = commit --amend
+  dc = diff --cached
+  cane = commit --amend --no-edit
+  caane = commit -a --amend --no-edit
 [annex]
 	backends = SHA256
 [push]
