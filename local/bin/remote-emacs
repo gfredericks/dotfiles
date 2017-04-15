@@ -18,5 +18,6 @@ ssh -A "$HOST" -t /usr/bin/env bash -l -c $'
     fi
   fi
   echo $$ > ~/.remote-emacs.pid
+  export PATH=/home/gary/bin/emacs.bin:$PATH
   emacsclient --alternate-editor= -c -e \'(restore-longrunning-workgroup-setup)\'
 '
