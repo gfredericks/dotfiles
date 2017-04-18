@@ -9,136 +9,204 @@
 
 set -e
 
-sudo apt-get update &&
-sudo apt-get install -y wget build-essential asciidoc docbook2x libssl-dev \
-     libcurl4-openssl-dev libexpat1-dev gettext
+sudo apt-get update
+sudo apt-get install -y wget build-essential unzip
+
+# wtf; using bsdtar instead of tar in this script because
+# of https://github.com/coreos/bugs/issues/1095
+sudo apt-get install -y --no-install-recommends bsdtar
+
+# sudo apt-get install -y wget build-essential asciidoc docbook2x libssl-dev \
+#      libcurl4-openssl-dev libexpat1-dev gettext &&
+# sudo apt-get install tree
 
 BUILDDIRBASE=~/.install-everything
 mkdir -p ~/bin
 
-###
-### Emacs
-###
+if [ $# -eq 0 ]
+then
+    echo "USAGE: install-everything [all | <thing>]" 1>&2
+    exit 1
+fi
 
-sudo apt-get install -y libncurses-dev
-BUILDDIR=$BUILDDIRBASE/emacs
-rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-wget http://mirror.team-cymru.org/gnu/emacs/emacs-25.1.tar.gz
-echo '763344b90db4d40e9fe90c5d14748a9dbd201ce544e2cf0835ab48a0aa4a1c67  emacs-25.1.tar.gz' | sha256sum -c
-tar xzf emacs-25.1.tar.gz
-cd emacs-25.1
-./configure \
-    --without-x \
-    --with-file-notification=yes \
-    --prefix=$BUILDDIR/install \
-    --bindir=$BUILDDIR/bin
-make
-make install
-make clean
-rm -f ~/bin/emacs.bin
-ln -s $BUILDDIR/bin ~/bin/emacs.bin
+while [ $# -ne 0 ]
+do
 
-###
-### Git
-###
+  ###
+  ### Misc
+  ###
 
-BUILDDIR=$BUILDDIRBASE/git
-rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-wget https://github.com/git/git/archive/v2.10.2.zip
-echo '30f27b29ea1ab8df0ed2959ef32b16531133cd447d365065e96f614790c03c09  v2.10.2.zip' | sha256sum -c
-unzip v2.10.2.zip
-cd git-2.10.2
-INSTALLDIR=$BUILDDIR/install
-mkdir $INSTALLDIR
-make prefix=$INSTALLDIR all doc info
-# skipping `install-html` because who even uses that
-make prefix=$INSTALLDIR install install-doc install-info
-cd -
-rm -f ~/bin/git.bin
-ln -s $INSTALLDIR/bin ~/bin/git.bin
+  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "misc" ]
+  then
+    sudo apt-get install -y tree
+  fi
 
-###
-### NodeJS
-###
+  ###
+  ### Emacs
+  ###
 
-BUILDDIR=$BUILDDIRBASE/nodejs
-rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-wget https://nodejs.org/dist/v6.9.1/node-v6.9.1-linux-x64.tar.xz
-echo 'd4eb161e4715e11bbef816a6c577974271e2bddae9cf008744627676ff00036a  node-v6.9.1-linux-x64.tar.xz' | \
-    sha256sum -c
-tar xJf node-v6.9.1-linux-x64.tar.xz
-rm -f ~/bin/nodejs.bin
-ln -s $BUILDDIR/node-v6.9.1-linux-x64/bin ~/bin/nodejs.bin
+  # not including "server" here since I only install emacs on special
+  # servers
+  if [ "$1" == "all" -o "$1" == "emacs" ]
+  then
+    sudo apt-get install -y libncurses-dev asciidoc docbook2x
+    BUILDDIR=$BUILDDIRBASE/emacs
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    wget http://mirror.team-cymru.org/gnu/emacs/emacs-25.1.tar.gz
+    echo '763344b90db4d40e9fe90c5d14748a9dbd201ce544e2cf0835ab48a0aa4a1c67  emacs-25.1.tar.gz' | sha256sum -c
+    bsdtar xzf emacs-25.1.tar.gz
+    cd emacs-25.1
+    ./configure \
+        --without-x \
+        --with-file-notification=yes \
+        --prefix=$BUILDDIR/install \
+        --bindir=$BUILDDIR/bin
+    make
+    make install
+    make clean
+    rm -f ~/bin/emacs.bin
+    ln -s $BUILDDIR/bin ~/bin/emacs.bin
+  fi
 
-###
-### PhantomJS
-###
+  ###
+  ### Git
+  ###
 
-BUILDDIR=$BUILDDIRBASE/phantomjs
-rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
-echo '86dd9a4bf4aee45f1a84c9f61cf1947c1d6dce9b9e8d2a907105da7852460d2f  ./phantomjs-2.1.1-linux-x86_64.tar.bz2' | \
-    sha256sum -c
-tar xf phantomjs-2.1.1-linux-x86_64.tar.bz2
-rm -f ~/bin/phantomjs
-ln -s $BUILDDIR/phantomjs-2.1.1-linux-x86_64/bin/phantomjs ~/bin/phantomjs
+  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "git" ]
+  then
+    sudo apt-get install -y asciidoc docbook2x libssl-dev libcurl4-openssl-dev libexpat1-dev gettext
+    BUILDDIR=$BUILDDIRBASE/git
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    wget https://github.com/git/git/archive/v2.10.2.zip
+    echo '30f27b29ea1ab8df0ed2959ef32b16531133cd447d365065e96f614790c03c09  v2.10.2.zip' | sha256sum -c
+    unzip v2.10.2.zip
+    cd git-2.10.2
+    INSTALLDIR=$BUILDDIR/install
+    mkdir $INSTALLDIR
+    make prefix=$INSTALLDIR all doc info
+    # skipping `install-html` because who even uses that
+    make prefix=$INSTALLDIR install install-doc install-info
+    cd -
+    rm -f ~/bin/git.bin
+    ln -s $INSTALLDIR/bin ~/bin/git.bin
+  fi
 
-###
-### Java
-###
+  ###
+  ### NodeJS
+  ###
 
-BUILDDIR=$BUILDDIRBASE/jdk
-rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-wget --header "Cookie: oraclelicense=accept-securebackup-cookie" \
-     http://download.oracle.com/otn-pub/java/jdk/8u112-b15/jdk-8u112-linux-x64.tar.gz
-echo '777bd7d5268408a5a94f5e366c2e43e720c6ce4fe8c59d9a71e2961e50d774a5  jdk-8u112-linux-x64.tar.gz' | \
-    sha256sum -c
-tar xzf jdk-8u112-linux-x64.tar.gz
-rm -f ~/bin/jdk.bin
-ln -s $BUILDDIR/jdk1.8.0_112/bin ~/bin/jdk.bin
+  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "nodejs" ]
+  then
+    BUILDDIR=$BUILDDIRBASE/nodejs
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    wget https://nodejs.org/dist/v6.9.1/node-v6.9.1-linux-x64.tar.xz
+    echo 'd4eb161e4715e11bbef816a6c577974271e2bddae9cf008744627676ff00036a  node-v6.9.1-linux-x64.tar.xz' | \
+        sha256sum -c
+    bsdtar xJf node-v6.9.1-linux-x64.tar.xz
+    rm -f ~/bin/nodejs.bin
+    ln -s $BUILDDIR/node-v6.9.1-linux-x64/bin ~/bin/nodejs.bin
+  fi
 
-###
-### Maven 3
-###
+  ###
+  ### PhantomJS
+  ###
 
-BUILDDIR=$BUILDDIRBASE/maven
-rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-wget http://apache.mirrors.tds.net/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
-echo '6e3e9c949ab4695a204f74038717aa7b2689b1be94875899ac1b3fe42800ff82  apache-maven-3.3.9-bin.tar.gz' | \
-    sha256sum -c
-tar xzf apache-maven-3.3.9-bin.tar.gz
-rm -f ~/bin/mvn
-ln -s $BUILDDIR/apache-maven-3.3.9/bin ~/bin/maven.bin
+  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "phantomjs" ]
+  then
+    BUILDDIR=$BUILDDIRBASE/phantomjs
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
+    echo '86dd9a4bf4aee45f1a84c9f61cf1947c1d6dce9b9e8d2a907105da7852460d2f  ./phantomjs-2.1.1-linux-x86_64.tar.bz2' | \
+        sha256sum -c
+    bsdtar xf phantomjs-2.1.1-linux-x86_64.tar.bz2
+    rm -f ~/bin/phantomjs
+    ln -s $BUILDDIR/phantomjs-2.1.1-linux-x86_64/bin/phantomjs ~/bin/phantomjs
+  fi
 
-###
-### Firefox
-###
+  ###
+  ### Java
+  ###
 
-BUILDDIR=$BUILDDIRBASE/firefox
-rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-wget https://ftp.mozilla.org/pub/firefox/releases/50.1.0/linux-x86_64/en-US/firefox-50.1.0.tar.bz2
-echo '3b7030ee82944036c1e32803a9cca96a08becc9fda6f2c77d1687163fc2810f3  firefox-50.1.0.tar.bz2' | \
-    sha256sum -c
-tar xf firefox-50.1.0.tar.bz2
-rm -f ~/bin/firefox
-ln -s $BUILDDIR/firefox/firefox ~/bin/firefox
+  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "java" ]
+  then
+    BUILDDIR=$BUILDDIRBASE/jdk
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    wget --header "Cookie: oraclelicense=accept-securebackup-cookie" \
+         http://download.oracle.com/otn-pub/java/jdk/8u112-b15/jdk-8u112-linux-x64.tar.gz
+    echo '777bd7d5268408a5a94f5e366c2e43e720c6ce4fe8c59d9a71e2961e50d774a5  jdk-8u112-linux-x64.tar.gz' | \
+        sha256sum -c
+    bsdtar xzf jdk-8u112-linux-x64.tar.gz
+    rm -f ~/bin/jdk.bin
+    ln -s $BUILDDIR/jdk1.8.0_112/bin ~/bin/jdk.bin
+  fi
 
-###
-### jq
-###
+  ###
+  ### Maven 3
+  ###
 
-BUILDDIR=$BUILDDIRBASE/jq
-rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-wget https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
-echo 'c6b3a7d7d3e7b70c6f51b706a3b90bd01833846c54d32ca32f0027f00226ff6d  jq-linux64' | \
-    sha256sum -c
-EX=$BUILDDIR/jq-linux64
-chmod +x $EX
-rm -f ~/bin/jq
-ln -s $EX ~/bin/jq
+  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "maven" ]
+  then
+    BUILDDIR=$BUILDDIRBASE/maven
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    wget http://apache.mirrors.tds.net/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+    echo '6e3e9c949ab4695a204f74038717aa7b2689b1be94875899ac1b3fe42800ff82  apache-maven-3.3.9-bin.tar.gz' | \
+        sha256sum -c
+    bsdtar xzf apache-maven-3.3.9-bin.tar.gz
+    rm -f ~/bin/mvn
+    ln -s $BUILDDIR/apache-maven-3.3.9/bin ~/bin/maven.bin
+  fi
 
-###
-### Done
-###
+  ###
+  ### Firefox
+  ###
 
-echo  $'\n\n---------------------\nInstalled everything!'
+  if [ "$1" == "all" -o "$1" == "firefox" ]
+  then
+    BUILDDIR=$BUILDDIRBASE/firefox
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    wget https://ftp.mozilla.org/pub/firefox/releases/50.1.0/linux-x86_64/en-US/firefox-50.1.0.tar.bz2
+    echo '3b7030ee82944036c1e32803a9cca96a08becc9fda6f2c77d1687163fc2810f3  firefox-50.1.0.tar.bz2' | \
+        sha256sum -c
+    bsdtar xf firefox-50.1.0.tar.bz2
+    rm -f ~/bin/firefox
+    ln -s $BUILDDIR/firefox/firefox ~/bin/firefox
+  fi
+
+  ###
+  ### jq
+  ###
+
+  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "jq" ]
+  then
+    BUILDDIR=$BUILDDIRBASE/jq
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    wget https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+    echo 'c6b3a7d7d3e7b70c6f51b706a3b90bd01833846c54d32ca32f0027f00226ff6d  jq-linux64' | \
+        sha256sum -c
+    EX=$BUILDDIR/jq-linux64
+    chmod +x $EX
+    rm -f ~/bin/jq
+    ln -s $EX ~/bin/jq
+  fi
+
+  ###
+  ### lein
+  ###
+
+  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "lein" ]
+  then
+    BUILDDIR=$BUILDDIRBASE/lein
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    wget https://github.com/technomancy/leiningen/raw/2.7.1/bin/lein
+    echo '3f7c6474ff79ba90aa5fdf9f7d074d5d6b1f6cee6e10c917089f75a2fe24db37  lein' | \
+        sha256sum -c
+    EX=$BUILDDIR/lein
+    chmod +x $EX
+    rm -f ~/bin/lein
+    ln -s $EX ~/bin/lein
+  fi
+
+  shift
+done
+
+echo  $'\n\n---------------------\nInstalled successfully!'
