@@ -16,6 +16,7 @@ include "%L"   # import the default Compose file for your locale
 <Multi_key> <asciitilde> <asciitilde> : "≈"
 <Multi_key> <equal> <asciitilde> : "≃"
 <Multi_key> <asciitilde> <equal> : "≃"
+<Multi_key> <h> <a> : "א"
 
 ##
 ## Arrows
