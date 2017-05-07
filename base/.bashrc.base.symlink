@@ -57,7 +57,22 @@ alias txa="tmux attach -t"
 
 mkcd(){ mkdir -p $1; cd $1; }
 tmp(){ pushd `mktemp -d --tmpdir=/dev/shm`; }
-d(){ cd `devdir $1`; }
+
+# devdir should be defined somewhere else, as a script that takes a
+# partial project name and prints a the full path to a project that
+# is its best guess for that partial name
+d(){
+  if [ $# -eq 0 ]; then
+    echo '`d` is not a thing'
+    return 1
+  fi
+  CDTO=`devdir $1`
+  if [[ -z "$CDTO" ]]; then
+    echo "Can't find anything for: $1"
+    return 1
+  fi
+  cd "$CDTO";
+}
 
 
 
