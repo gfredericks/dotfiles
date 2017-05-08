@@ -67,7 +67,7 @@
                          (binding [*out* *err*]
                            (println (format "Loading %s..." filename)))
                          (load-file filename)))]}
- :whidbey {:plugins [[mvxcvi/whidbey "1.0.0"]]
+ :whidbey {:plugins [[mvxcvi/whidbey "1.3.1"]]
            :whidbey {:print-color false
                      :print-fallback :print}}
 
@@ -108,7 +108,7 @@
  :criterium {:dependencies [[criterium "0.4.3"]]
              :jvm-opts ^:replace []}
  :clojure-test-ex-printing
- {:dependencies [[mvxcvi/puget "0.8.1"]] ;; is this actually necessary?
+ {;; :dependencies [[mvxcvi/puget "0.8.1"]] ;; is this actually necessary?
   :injections [(do
                  (require 'clojure.test 'puget.printer)
                  (binding [*ns* (the-ns 'clojure.test)]
