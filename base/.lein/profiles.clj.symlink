@@ -110,7 +110,7 @@
  :criterium {:dependencies [[criterium "0.4.3"]]
              :jvm-opts ^:replace []}
  :clojure-test-ex-printing
- {;; :dependencies [[mvxcvi/puget "0.8.1"]] ;; is this actually necessary?
+ {:dependencies [[mvxcvi/puget "1.0.1"]]
   :injections [(do
                  (require 'clojure.test 'puget.printer)
                  (binding [*ns* (the-ns 'clojure.test)]
