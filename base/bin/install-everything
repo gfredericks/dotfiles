@@ -38,7 +38,7 @@ do
 
   if [ "$1" == "all" -o "$1" == "server" -o "$1" == "misc" ]
   then
-    sudo apt-get install -y tree
+    sudo apt-get install -y tree htop
   fi
 
   ###
