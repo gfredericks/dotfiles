@@ -320,7 +320,8 @@
 ;; Scrolling. Someone on the internet suggested this might be less than
 ;; ideal. I dunno why. Whatever.
 (setq scroll-step            1
-      scroll-conservatively  10000)
+      scroll-conservatively  10000
+      scroll-margin          3)
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
