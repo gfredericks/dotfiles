@@ -77,10 +77,10 @@ do
     sudo apt-get install -y asciidoc docbook2x libssl-dev libcurl4-openssl-dev libexpat1-dev gettext
     BUILDDIR=$BUILDDIRBASE/git
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://github.com/git/git/archive/v2.10.2.zip
-    echo '30f27b29ea1ab8df0ed2959ef32b16531133cd447d365065e96f614790c03c09  v2.10.2.zip' | sha256sum -c
-    unzip v2.10.2.zip
-    cd git-2.10.2
+    wget https://github.com/git/git/archive/v2.14.1.zip
+    echo '846e55e4fd8501db71b6b57ff6a1554a8a19a2ac20dc4c0864eeaed50a481122  v2.14.1.zip' | sha256sum -c
+    unzip v2.14.1.zip
+    cd git-2.14.1
     INSTALLDIR=$BUILDDIR/install
     mkdir $INSTALLDIR
     make prefix=$INSTALLDIR all doc info
