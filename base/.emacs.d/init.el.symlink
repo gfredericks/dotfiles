@@ -99,7 +99,10 @@
           (lambda ()
             ;; linum-mode is slow for very large org files
             (when (< (buffer-size) 65536)
-              (linum-mode 1))))
+              (linum-mode 1))
+
+            (make-local-variable 'scroll-margin)
+            (setq scroll-margin 3)))
 
 ;; See http://en.wikipedia.org/wiki/Box-drawing_character for other
 ;; decent separator options
