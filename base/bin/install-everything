@@ -38,7 +38,8 @@ do
 
   if [ "$1" == "all" -o "$1" == "server" -o "$1" == "misc" ]
   then
-    sudo apt-get install -y tree htop
+      # better to put latex stuff in one place or something?
+    sudo apt-get install -y tree htop texlive-latex-extra python-pygments
   fi
 
   ###
