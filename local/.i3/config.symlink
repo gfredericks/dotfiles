@@ -189,6 +189,3 @@ exec "xmodmap ~/.Xmodmap"
 exec --no-startup-id dbus-send --session --dest=org.gnome.SessionManager /org/gnome/SessionManager org.gnome.SessionManager.RegisterClient string:i3.desktop string:''
 # Run this in gnome to get the bottom panel to go away
 # gsettings set org.gnome.gnome-panel.layout toplevel-id-list "['top-panel-0']"
-
-bindsym $mod+Shift+l exec "~/bin/lockitup"
-exec xautolock -time 5 -locker '~/bin/lockitup'
