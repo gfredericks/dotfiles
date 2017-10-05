@@ -19,7 +19,7 @@
             ;; https://github.com/palletops/lein-shorthand/pull/6
             [com.gfredericks.forks.com.palletops/lein-shorthand "0.4.1-1e93384"]
 
-            [cider/cider-nrepl "0.10.2"]
+            [cider/cider-nrepl "0.14.0"]
             [com.gfredericks/corncob-cigar "0.1.7"]]
   :shorthand {. [clojure.java.shell/sh
                  clojure.repl/apropos clojure.repl/doc
