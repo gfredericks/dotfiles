@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Adapted from
+# https://blog.onetwentyseven001.com/more-of-xrandr-or-blue-light-exposure/#.WdrE_6uVthE
+
+night_mode() {
+    for disp in $(xrandr | grep -oP '^\S+ connected ' | cut -f 1 -d ' '); do
+        xrandr --output $disp --gamma $1 --brightness $2
+    done
+}
+case $1 in
+  off) night_mode 1:1:1 1.0 ;;
+  *) night_mode 1:1:0.5 0.7 ;;
+esac
