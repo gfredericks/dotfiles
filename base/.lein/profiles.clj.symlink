@@ -2,6 +2,7 @@
         :debug-repl
         :whidbey
         :lib-dev
+        :cider
         :local-injections
         :clojure-test-ex-printing
         ;; A mechanism for adding to the :user profile outside of this
@@ -19,7 +20,6 @@
             ;; https://github.com/palletops/lein-shorthand/pull/6
             [com.gfredericks.forks.com.palletops/lein-shorthand "0.4.1-1e93384"]
 
-            [cider/cider-nrepl "0.14.0"]
             [com.gfredericks/corncob-cigar "0.1.7"]]
   :shorthand {. [clojure.java.shell/sh
                  clojure.repl/apropos clojure.repl/doc
@@ -63,6 +63,15 @@
             ["with-profile" "+clj-usage-graph" "lein" "run"
              "-m" "com.gfredericks.clj-usage-graph/namespace-graph"]}
   :deploy-fork {:group-id-prefix "com.gfredericks.forks"}}
+ :cider {:plugins [[cider/cider-nrepl "0.15.1"]]
+         :injections
+         [(try
+            (require 'cider.inlined-deps.puget.v1v0v1.puget.printer)
+            (alter-var-root (resolve 'cider.inlined-deps.puget.v1v0v1.puget.printer/*options*)
+                            assoc :print-fallback :print)
+            (catch Exception t
+              (binding [*out* *err*]
+                (println "Can't monkey-patch cider-nrepl's copy of puget!"))))]}
  :local-injections {:injections
                     [(let [filename "gitignored/local-injections.clj"]
                        (when (.exists (java.io.File. filename))
