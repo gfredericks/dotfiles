@@ -43,7 +43,9 @@ bindsym $mod+Shift+q kill
 # up a weird "desktop" window:
 #
 #   gsettings set org.gnome.desktop.background show-desktop-icons false
-bindsym $mod+Shift+d exec dmenu_run
+#
+# Using bash -i here so that my full PATH gets picked up
+bindsym $mod+Shift+d exec /usr/bin/env bash -i -c dmenu_run
 
 # Wish I could do both of these with one binding :/
 bindsym $mod+period move workspace to output right
