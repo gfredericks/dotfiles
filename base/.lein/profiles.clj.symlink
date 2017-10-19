@@ -1,6 +1,7 @@
 {:user [:user-misc
         :debug-repl
-        :whidbey
+        #_:whidbey ;; leaving this out, since emacs seems to have
+                   ;; pprinting covered
         :lib-dev
         :cider
         :local-injections
