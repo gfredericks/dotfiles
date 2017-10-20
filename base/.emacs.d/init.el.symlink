@@ -21,6 +21,7 @@
     idle-highlight-mode
     refheap
     ;; evil
+    neotree
     magit
     git-timemachine
     window-numbering
@@ -93,6 +94,24 @@
 (global-set-key (kbd "C-x f") 'find-file-in-project)
 (setq ffip-full-paths t)
 (add-to-list 'ffip-prune-patterns "local")
+
+;; neotree
+(require 'neotree) ;; is this necessary?
+(setq projectile-switch-project-action 'neotree-projectile-action)
+
+(defun neotree-project-dir ()
+  "Open NeoTree using the git root."
+  (interactive)
+  (let ((project-dir (projectile-project-root))
+        (file-name (buffer-file-name)))
+    (neotree-toggle)
+    (if project-dir
+        (if (neo-global--window-exists-p)
+            (progn
+              (neotree-dir project-dir)
+              (neotree-find file-name)))
+      (message "Could not find git project root."))))
+(global-set-key (kbd "C-c C-t") 'neotree-toggle)
 
 ;; line numbers
 (add-hook 'find-file-hook
@@ -309,8 +328,6 @@
 
 ;; General editing bindings
 (global-set-key (kbd "C-h") 'backward-delete-char-untabify)
-(global-set-key (kbd "C-c n") (lambda () (interactive) (other-window 2)))
-(global-set-key (kbd "C-c p") (lambda () (interactive) (other-window -1)))
 (global-set-key (kbd "C-c h") 'enlarge-window-horizontally)
 (global-set-key (kbd "C-c C-r") 'replace-string)
 
@@ -335,7 +352,7 @@
     (autoaway autojoin button completion fill irccontrols list match menu move-to-prompt netsplit networks noncommands readonly ring stamp track)) t)
  '(package-selected-packages
    (quote
-    (inf-clojure workgroups window-numbering refheap projectile paredit multiple-cursors markdown-mode magit jabber idle-highlight-mode haskell-mode git-timemachine find-file-in-project cider align-cljlet)))
+    (neotree inf-clojure htmlize simple-httpd workgroups window-numbering refheap projectile paredit multiple-cursors markdown-mode magit jabber idle-highlight-mode haskell-mode git-timemachine find-file-in-project cider align-cljlet)))
  '(safe-local-variable-values
    (quote
     ((encoding . utf-8)
