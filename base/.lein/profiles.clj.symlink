@@ -66,9 +66,6 @@
                        robert.hooke/add-hook
                        robert.hooke/remove-hook]}))]}
 
- :dot-slash
- {}
-
  :cider
  {:plugins [[cider/cider-nrepl "0.15.1"]]
   :injections
@@ -97,7 +94,7 @@
  {:repl-options {:nrepl-middleware
                  [com.gfredericks.debug-repl/wrap-debug-repl]}
   :dependencies [[com.gfredericks/debug-repl "0.0.8"]
-                 [com.gfredericks/dot-slash-2 "0.1.0"]]
+                 [com.gfredericks/dot-slash-2 "0.1.1"]]
   :injections [(do
                  (require 'com.gfredericks.dot-slash-2)
                  ((resolve 'com.gfredericks.dot-slash-2/!)
