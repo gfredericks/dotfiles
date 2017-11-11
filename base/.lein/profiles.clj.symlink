@@ -1,4 +1,5 @@
 {:user [:user-misc
+        :dot-slash
         :debug-repl
         #_:whidbey ;; leaving this out, since emacs seems to have
                    ;; pprinting covered
@@ -11,45 +12,18 @@
         ;; existing, add a file containing {} to
         ;; ~/.lein/profiles.d/local-user
         :local-user]
+
  :user-misc
  {:plugins [[lein-kibit "0.0.8"]
             [lein-lein "0.2.0"]
             [lein-oneoff "0.3.1"]
             [lein-pprint "1.1.1"]
-
-            ;; waiting for release of
-            ;; https://github.com/palletops/lein-shorthand/pull/6
-            [com.gfredericks.forks.com.palletops/lein-shorthand "0.4.1-1e93384"]
-
             [com.gfredericks/corncob-cigar "0.1.7"]]
-  :shorthand {. [clojure.java.shell/sh
-                 clojure.repl/apropos clojure.repl/doc
-                 clojure.repl/pst clojure.repl/source
-                 clojure.test/run-tests
-                 clojure.tools.namespace.repl/refresh
-                 clojure.tools.namespace.repl/refresh-all
-                 com.gfredericks.repl/add-dep
-                 com.gfredericks.repl/bash
-                 com.gfredericks.repl/comment
-                 com.gfredericks.repl/dir
-                 com.gfredericks.repl.mexpand/mexpand-all
-                 com.gfredericks.repl/pp
-                 com.gfredericks.repl/forever
-                 com.gfredericks.repl/locals
-                 com.gfredericks.repl/run-all-tests
-                 com.gfredericks.repl/throw-locals
-                 com.gfredericks.repl.bg/bg
-                 com.gfredericks.repl.bg/bg-deref
-                 com.gfredericks.repl.stashing/stash-everything!
-                 com.gfredericks.repl.stashing/get-stash
-                 com.gfredericks.repl.stashing/stashed-exceptions
-                 com.gfredericks.repl.stashing/clear-all-stashes!
-                 robert.hooke/add-hook
-                 robert.hooke/remove-hook]}
   :dependencies [[robert/hooke "1.3.0"]
                  [com.gfredericks/repl-utils "0.2.13"]
                  [org.clojure/tools.nrepl "0.2.12"]
-                 [org.clojure/tools.namespace "0.2.11"]]
+                 [org.clojure/tools.namespace "0.2.11"]
+                 [com.gfredericks/dot-slash-2 "0.1.0"]]
   :aliases {"dct" ["do" "clean," "test"]
             "try" ["with-profile" "+lein-try" "try"]
             "slamhound" ["with-profile" "+slamhound" "run" "-m" "slam.hound"]
@@ -63,62 +37,124 @@
             "namespace-graph"
             ["with-profile" "+clj-usage-graph" "lein" "run"
              "-m" "com.gfredericks.clj-usage-graph/namespace-graph"]}
-  :deploy-fork {:group-id-prefix "com.gfredericks.forks"}}
- :cider {:plugins [[cider/cider-nrepl "0.15.1"]]
-         :injections
-         [(try
-            (require 'cider.inlined-deps.puget.v1v0v1.puget.printer)
-            (alter-var-root (resolve 'cider.inlined-deps.puget.v1v0v1.puget.printer/*options*)
-                            assoc :print-fallback :print)
-            (catch Exception t
-              (binding [*out* *err*]
-                (println "Can't monkey-patch cider-nrepl's copy of puget!"))))]}
- :local-injections {:injections
-                    [(let [filename "gitignored/local-injections.clj"]
-                       (when (.exists (java.io.File. filename))
-                         (binding [*out* *err*]
-                           (println (format "Loading %s..." filename)))
-                         (load-file filename)))]}
- :whidbey {:plugins [[mvxcvi/whidbey "1.3.1"]]
-           :whidbey {:print-color false
-                     :print-fallback :print}}
+  :deploy-fork {:group-id-prefix "com.gfredericks.forks"}
+  :injections [(do
+                 (require 'com.gfredericks.dot-slash-2)
+                 ((resolve 'com.gfredericks.dot-slash-2/!)
+                  '{. [clojure.java.shell/sh
+                       clojure.repl/apropos clojure.repl/doc
+                       clojure.repl/pst clojure.repl/source
+                       clojure.test/run-tests
+                       clojure.tools.namespace.repl/refresh
+                       clojure.tools.namespace.repl/refresh-all
+                       com.gfredericks.repl/add-dep
+                       com.gfredericks.repl/bash
+                       com.gfredericks.repl/comment
+                       com.gfredericks.repl/dir
+                       com.gfredericks.repl.mexpand/mexpand-all
+                       com.gfredericks.repl/pp
+                       com.gfredericks.repl/forever
+                       com.gfredericks.repl/locals
+                       com.gfredericks.repl/run-all-tests
+                       com.gfredericks.repl/throw-locals
+                       com.gfredericks.repl.bg/bg
+                       com.gfredericks.repl.bg/bg-deref
+                       com.gfredericks.repl.stashing/stash-everything!
+                       com.gfredericks.repl.stashing/get-stash
+                       com.gfredericks.repl.stashing/stashed-exceptions
+                       com.gfredericks.repl.stashing/clear-all-stashes!
+                       robert.hooke/add-hook
+                       robert.hooke/remove-hook]}))]}
 
- :debug-repl {:shorthand {. [com.gfredericks.debug-repl/break!
-                             com.gfredericks.debug-repl/unbreak!
-                             com.gfredericks.debug-repl/unbreak!!
-                             com.gfredericks.debug-repl/catch-break!]}
-              :repl-options {:nrepl-middleware
-                             [com.gfredericks.debug-repl/wrap-debug-repl]}
-              :dependencies [[com.gfredericks/debug-repl "0.0.8"]]}
- :clojars-releases {:deploy-repositories [["releases" :clojars]]}
- :lib-dev {:release-tasks [["clean"]
-                           ["vcs" "assert-committed"]
-                           ["change" "version"
-                            "leiningen.release/bump-version" "release"]
-                           ["gsub-version"]
-                           ["vcs" "commit"]
-                           ["vcs-tag-no-sign"]
-                           #_["vcs" "tag"]
-                           ["deploy"]
-                           ["change" "version" "leiningen.release/bump-version"]
-                           ["vcs" "commit"]
-                           ["vcs" "push"]]
-           :gsub-version/files #{"README.md"}}
- :replog {:dependencies [[com.gfredericks/replog "0.1.0-SNAPSHOT"]]
-          :repl-options {:nrepl-middleware
-                         [com.gfredericks.replog/wrap-history]}}
- :local-repo {:local-repo "gitignored/local-m2"}
- :clj-usage-graph {:dependencies [[com.gfredericks/clj-usage-graph "0.3.0"]]}
- :lein-try {:plugins [[lein-try "0.4.1"]]}
- :bytecode  {:plugins [[lein-nodisassemble "0.1.2"]]
-             :repl-options
-             {:init (do
-                      (use 'no.disassemble))
-              :welcome (do (println "\n\nI just did (use 'no.disassemble) for you.\n\nYou're welcome."))}}
- :slim      {:jvm-opts ["-Xmx250m"]}
- :slamhound {:dependencies [[slamhound "1.5.5"]]}
- :criterium {:dependencies [[criterium "0.4.3"]]
-             :jvm-opts ^:replace []}
+ :dot-slash
+ {}
+
+ :cider
+ {:plugins [[cider/cider-nrepl "0.15.1"]]
+  :injections
+  [(try
+     (require 'cider.inlined-deps.puget.v1v0v1.puget.printer)
+     (alter-var-root (resolve 'cider.inlined-deps.puget.v1v0v1.puget.printer/*options*)
+                     assoc :print-fallback :print)
+     (catch Exception t
+       (binding [*out* *err*]
+         (println "Can't monkey-patch cider-nrepl's copy of puget!"))))]}
+
+ :local-injections
+ {:injections
+  [(let [filename "gitignored/local-injections.clj"]
+     (when (.exists (java.io.File. filename))
+       (binding [*out* *err*]
+         (println (format "Loading %s..." filename)))
+       (load-file filename)))]}
+
+ :whidbey
+ {:plugins [[mvxcvi/whidbey "1.3.1"]]
+  :whidbey {:print-color false
+            :print-fallback :print}}
+
+ :debug-repl
+ {:repl-options {:nrepl-middleware
+                 [com.gfredericks.debug-repl/wrap-debug-repl]}
+  :dependencies [[com.gfredericks/debug-repl "0.0.8"]
+                 [com.gfredericks/dot-slash-2 "0.1.0"]]
+  :injections [(do
+                 (require 'com.gfredericks.dot-slash-2)
+                 ((resolve 'com.gfredericks.dot-slash-2/!)
+                  '{. [com.gfredericks.debug-repl/break!
+                       com.gfredericks.debug-repl/unbreak!
+                       com.gfredericks.debug-repl/unbreak!!
+                       com.gfredericks.debug-repl/catch-break!]}))]}
+
+ :clojars-releases
+ {:deploy-repositories [["releases" :clojars]]}
+
+ :lib-dev
+ {:release-tasks [["clean"]
+                  ["vcs" "assert-committed"]
+                  ["change" "version"
+                   "leiningen.release/bump-version" "release"]
+                  ["gsub-version"]
+                  ["vcs" "commit"]
+                  ["vcs-tag-no-sign"]
+                  #_["vcs" "tag"]
+                  ["deploy"]
+                  ["change" "version" "leiningen.release/bump-version"]
+                  ["vcs" "commit"]
+                  ["vcs" "push"]]
+  :gsub-version/files #{"README.md"}}
+
+ :replog
+ {:dependencies [[com.gfredericks/replog "0.1.0-SNAPSHOT"]]
+  :repl-options {:nrepl-middleware
+                 [com.gfredericks.replog/wrap-history]}}
+
+ :local-repo
+ {:local-repo "gitignored/local-m2"}
+
+ :clj-usage-graph
+ {:dependencies [[com.gfredericks/clj-usage-graph "0.3.0"]]}
+
+ :lein-try
+ {:plugins [[lein-try "0.4.1"]]}
+
+ :bytecode
+ {:plugins [[lein-nodisassemble "0.1.2"]]
+  :repl-options
+  {:init (do
+           (use 'no.disassemble))
+   :welcome (do (println "\n\nI just did (use 'no.disassemble) for you.\n\nYou're welcome."))}}
+
+ :slim
+ {:jvm-opts ["-Xmx250m"]}
+
+ :slamhound
+ {:dependencies [[slamhound "1.5.5"]]}
+
+ :criterium
+ {:dependencies [[criterium "0.4.3"]]
+  :jvm-opts ^:replace []}
+
  :clojure-test-ex-printing
  {:dependencies [[mvxcvi/puget "1.0.1"]]
   :injections [(do
