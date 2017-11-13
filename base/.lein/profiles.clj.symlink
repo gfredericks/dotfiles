@@ -1,5 +1,4 @@
 {:user [:user-misc
-        :dot-slash
         :debug-repl
         #_:whidbey ;; leaving this out, since emacs seems to have
                    ;; pprinting covered
