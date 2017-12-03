@@ -133,12 +133,12 @@ do
     BUILDDIR=$BUILDDIRBASE/jdk
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
     wget --header "Cookie: oraclelicense=accept-securebackup-cookie" \
-         http://download.oracle.com/otn-pub/java/jdk/8u112-b15/jdk-8u112-linux-x64.tar.gz
-    echo '777bd7d5268408a5a94f5e366c2e43e720c6ce4fe8c59d9a71e2961e50d774a5  jdk-8u112-linux-x64.tar.gz' | \
+         http://download.oracle.com/otn-pub/java/jdk/9.0.1+11/jdk-9.0.1_linux-x64_bin.tar.gz
+    echo '2cdaf0ff92d0829b510edd883a4ac8322c02f2fc1beae95d048b6716076bc014  jdk-9.0.1_linux-x64_bin.tar.gz' | \
         sha256sum -c
-    bsdtar xzf jdk-8u112-linux-x64.tar.gz
+    bsdtar xzf jdk-9.0.1_linux-x64_bin.tar.gz
     rm -f ~/bin/jdk.bin
-    ln -s $BUILDDIR/jdk1.8.0_112/bin ~/bin/jdk.bin
+    ln -s $BUILDDIR/jdk-9.0.1/bin ~/bin/jdk.bin
   fi
 
   ###
