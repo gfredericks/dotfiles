@@ -599,6 +599,40 @@ by using nxml's indentation rules."
     (term-send-string proc (concat initial-command "\n"))
     (switch-to-buffer orig-buffer)))
 
+;;
+;; remote xclip integration (see also the executables: `copy`, `paste`, and `remote-emacs`)
+;;
+
+(defvar recent-internal-copy nil)
+(defun my-interprogram-paste-function ()
+  (if recent-internal-copy
+      nil
+      (shell-command-to-string "paste")) )
+
+(defvar copy-path (string-trim-right (shell-command-to-string "which copy")))
+
+(defun my-interprogram-cut-function (text)
+  ;; this disables pasting from the X server for 20 seconds; makes
+  ;; internal copy-pastes fast.
+  (setq recent-internal-copy text)
+  (run-at-time "20 sec" nil
+               (lambda () (if (string= text recent-internal-copy)
+                              (setq recent-internal-copy nil))))
+  (condition-case nil
+      (let ((f (make-temp-file "clipboard-bridge")))
+        (with-temp-file f (insert text))
+        ;; the 0 makes this run in the background, which I guess is
+        ;; good for latency?
+        (call-process copy-path f 0)
+        (delete-file f))
+    (error nil)))
+
+
+(defun my-clipboard-start ()
+  ;; these start out as gui-select-text and gui-selection-value,
+  ;; apparently
+  (setq interprogram-cut-function #'my-interprogram-cut-function)
+  (setq interprogram-paste-function #'my-interprogram-paste-function))
 
 ;;
 ;; This is a good UUID:
