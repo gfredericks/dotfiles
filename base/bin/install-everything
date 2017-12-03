@@ -57,7 +57,9 @@ do
     echo '763344b90db4d40e9fe90c5d14748a9dbd201ce544e2cf0835ab48a0aa4a1c67  emacs-25.1.tar.gz' | sha256sum -c
     bsdtar xzf emacs-25.1.tar.gz
     cd emacs-25.1
-    ./configure \
+    # the -no-pie here is an attempt to work around a segfault:
+    # https://askubuntu.com/questions/837306/how-to-compile-gnu-emacs-25-1-on-16-10
+    ./configure CFLAGS=-no-pie \
         --without-x \
         --with-file-notification=yes \
         --prefix=$BUILDDIR/install \
