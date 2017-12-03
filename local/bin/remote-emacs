@@ -2,12 +2,6 @@
 
 HOST="$1"
 
-if [ "$2" == "--with-clipboard-sync" ]; then
-  sync-clipboard "$HOST" \
-    2> /dev/null > /dev/null &
-  trap 'kill $(jobs -p)' EXIT
-fi
-
 ssh -A "$HOST" -t /usr/bin/env bash -l -c $'
   PID=`cat ~/.remote-emacs.pid`
   echo $PATH >> ~/.remote-emacs.log

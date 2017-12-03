@@ -601,36 +601,6 @@ by using nxml's indentation rules."
 
 
 ;;
-;; Copy-paste integration for a remote emacs; see
-;; the sync-clipboard script for more details.
-;;
-
-(defun current-time-secs
-  ()
-  (let ((tuple (current-time)))
-    (+ (nth 1 tuple) (* 65536 (nth 0 tuple)))))
-
-(defvar last-internal-copy-time 0)
-
-(defun clipboard-bridge-interprogram-paste-function ()
-  (let ((write-time (string-to-number (shell-command-to-string "cbr --write-time"))))
-    (if (< last-internal-copy-time write-time)
-      (shell-command-to-string "cbr"))))
-
-(defun clipboard-bridge-interprogram-cut-function (text)
-  (condition-case nil
-      (let ((f (make-temp-file "clipboard-bridge")))
-        (with-temp-file f (insert text))
-        (call-process "cbw" f)
-        (delete-file f))
-    (error nil)))
-
-(defun clipboard-bridge-start ()
-  (setq interprogram-cut-function #'clipboard-bridge-interprogram-cut-function)
-  (setq interprogram-paste-function #'clipboard-bridge-interprogram-paste-function))
-
-
-;;
 ;; This is a good UUID:
 ;; c7ed5790-85d8-4b4d-a7f7-0d58f0c3b22b
 ;;
