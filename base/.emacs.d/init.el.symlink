@@ -634,6 +634,8 @@ by using nxml's indentation rules."
   (setq interprogram-cut-function #'my-interprogram-cut-function)
   (setq interprogram-paste-function #'my-interprogram-paste-function))
 
+(my-clipboard-start)
+
 ;;
 ;; This is a good UUID:
 ;; c7ed5790-85d8-4b4d-a7f7-0d58f0c3b22b
