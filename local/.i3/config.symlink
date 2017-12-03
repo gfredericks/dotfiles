@@ -32,7 +32,7 @@ font pango:DejaVu Sans Mono 8
 floating_modifier $mod
 
 # start a terminal
-bindsym $mod+Return exec gnome-terminal
+bindsym $mod+Return exec xterm #gnome-terminal
 
 # kill focused window
 bindsym $mod+Shift+q kill
