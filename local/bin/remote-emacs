@@ -2,9 +2,10 @@
 
 HOST="$1"
 
-ssh -A "$HOST" -t /usr/bin/env bash -l -c $'
+ssh -X -A "$HOST" -t /usr/bin/env bash -l -c $'
   PID=`cat ~/.remote-emacs.pid`
   echo $PATH >> ~/.remote-emacs.log
+  echo $DISPLAY >> ~/.xclip-display-fallback
   re=\'^[0-9]+$\'
   if [[ "$PID" =~ $re ]]; then
     if ps -o comm -p $PID | grep -q emacsclient; then
