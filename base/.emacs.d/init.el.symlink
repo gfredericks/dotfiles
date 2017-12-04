@@ -448,8 +448,8 @@
           (lambda () (paredit-mode +1)
                      (tweak-clojure-syntax)
                      (show-paren-mode +1)
-                     (add-hook 'after-save-hook 'reload-buffer-if-cider-running nil 'make-local)
-                     (define-key clojure-mode-map (kbd "C-c C-a") 'align-cljlet)))
+                     (define-key clojure-mode-map (kbd "C-c C-a") 'align-cljlet)
+                     (define-key clojure-mode-map (kbd "M-RET")   'indent-new-comment-line)))
 
 ;; rebinding these two from C-c C-z since C-z is captured by my tmux
 (add-hook 'cider-repl-mode-hook
@@ -609,12 +609,18 @@ by using nxml's indentation rules."
       nil
       (shell-command-to-string "paste")) )
 
+(defun paste ()
+  (interactive)
+  (insert (shell-command-to-string "paste")))
+
 (defvar copy-path (string-trim-right (shell-command-to-string "which copy")))
 
 (defun my-interprogram-cut-function (text)
   ;; this disables pasting from the X server for 20 seconds; makes
   ;; internal copy-pastes fast.
   (setq recent-internal-copy text)
+  ;; TODO: apparently this is broken?
+  ;; error running timer: void variable text
   (run-at-time "20 sec" nil
                (lambda () (if (string= text recent-internal-copy)
                               (setq recent-internal-copy nil))))
