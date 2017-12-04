@@ -10,6 +10,7 @@ night_mode() {
 }
 case $1 in
   off) night_mode 1:1:1 1.0 ;;
+  morning) night_mode 1:1:1 0.5 ;;
   day) night_mode 1:1:1 0.75 ;;
   *) night_mode 1:1:0.4 0.5 ;;
 esac
