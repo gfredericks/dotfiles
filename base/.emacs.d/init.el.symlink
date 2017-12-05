@@ -619,11 +619,11 @@ by using nxml's indentation rules."
   ;; this disables pasting from the X server for 20 seconds; makes
   ;; internal copy-pastes fast.
   (setq recent-internal-copy text)
-  ;; TODO: apparently this is broken?
-  ;; error running timer: void variable text
   (run-at-time "20 sec" nil
-               (lambda () (if (string= text recent-internal-copy)
-                              (setq recent-internal-copy nil))))
+               (lambda (text)
+                 (if (string= text recent-internal-copy)
+                     (setq recent-internal-copy nil)))
+               text)
   (condition-case nil
       (let ((f (make-temp-file "clipboard-bridge")))
         (with-temp-file f (insert text))
