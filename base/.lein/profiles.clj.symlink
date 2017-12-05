@@ -49,6 +49,7 @@
                        com.gfredericks.repl/add-dep
                        com.gfredericks.repl/bash
                        com.gfredericks.repl/comment
+                       com.gfredericks.repl/def
                        com.gfredericks.repl/dir
                        com.gfredericks.repl.mexpand/mexpand-all
                        com.gfredericks.repl/pp
