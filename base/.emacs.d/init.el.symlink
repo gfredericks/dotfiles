@@ -642,6 +642,112 @@ by using nxml's indentation rules."
 
 (my-clipboard-start)
 
+
+;;
+;; Monkeypatching org-mode so the agenda export only exports
+;; visible things
+;;
+
+(defun org-agenda-write (file &optional open nosettings agenda-bufname)
+  "Write the current buffer (an agenda view) as a file.
+Depending on the extension of the file name, plain text (.txt),
+HTML (.html or .htm), PDF (.pdf) or Postscript (.ps) is produced.
+If the extension is .ics, run icalendar export over all files used
+to construct the agenda and limit the export to entries listed in the
+agenda now.
+If the extension is .org, collect all subtrees corresponding to the
+agenda entries and add them in an .org file.
+With prefix argument OPEN, open the new file immediately.
+If NOSETTINGS is given, do not scope the settings of
+`org-agenda-exporter-settings' into the export commands.  This is used when
+the settings have already been scoped and we do not wish to overrule other,
+higher priority settings.
+If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
+  (interactive "FWrite agenda to file: \nP")
+  (if (or (not (file-writable-p file))
+	  (and (file-exists-p file)
+	       (if (org-called-interactively-p 'any)
+		   (not (y-or-n-p (format "Overwrite existing file %s? " file))))))
+      (user-error "Cannot write agenda to file %s" file))
+  (org-let (if nosettings nil org-agenda-exporter-settings)
+    '(save-excursion
+       (save-window-excursion
+	 (let ((bs
+          ;; this is the only part that's different
+          ;;(copy-sequence (buffer-string))
+          (progn (org-copy-visible (point-min) (point-max)) (current-kill 0))
+         )
+         beg content)
+	   (with-temp-buffer
+	     (rename-buffer org-agenda-write-buffer-name t)
+	     (set-buffer-modified-p nil)
+	     (insert bs)
+	     (org-agenda-remove-marked-text 'org-filtered)
+	     (run-hooks 'org-agenda-before-write-hook)
+	     (cond
+	      ((org-bound-and-true-p org-mobile-creating-agendas)
+	       (org-mobile-write-agenda-for-mobile file))
+	      ((string-match "\\.org\\'" file)
+	       (let (content p m message-log-max)
+		 (goto-char (point-min))
+		 (while (setq p (next-single-property-change (point) 'org-hd-marker nil))
+		   (goto-char p)
+		   (setq m (get-text-property (point) 'org-hd-marker))
+		   (when m
+		     (push (save-excursion
+			     (set-buffer (marker-buffer m))
+			     (goto-char m)
+			     (org-copy-subtree 1 nil t t)
+			     org-subtree-clip)
+			   content)))
+		 (find-file file)
+		 (erase-buffer)
+		 (dolist (s content) (org-paste-subtree 1 s))
+		 (write-file file)
+		 (kill-buffer (current-buffer))
+		 (message "Org file written to %s" file)))
+	      ((string-match "\\.html?\\'" file)
+	       (require 'htmlize)
+	       (set-buffer (htmlize-buffer (current-buffer)))
+	       (when org-agenda-export-html-style
+		 ;; replace <style> section with org-agenda-export-html-style
+		 (goto-char (point-min))
+		 (kill-region (- (search-forward "<style") 6)
+			      (search-forward "</style>"))
+		 (insert org-agenda-export-html-style))
+	       (write-file file)
+	       (kill-buffer (current-buffer))
+	       (message "HTML written to %s" file))
+	      ((string-match "\\.ps\\'" file)
+	       (require 'ps-print)
+	       (ps-print-buffer-with-faces file)
+	       (message "Postscript written to %s" file))
+	      ((string-match "\\.pdf\\'" file)
+	       (require 'ps-print)
+	       (ps-print-buffer-with-faces
+		(concat (file-name-sans-extension file) ".ps"))
+	       (call-process "ps2pdf" nil nil nil
+			     (expand-file-name
+			      (concat (file-name-sans-extension file) ".ps"))
+			     (expand-file-name file))
+	       (delete-file (concat (file-name-sans-extension file) ".ps"))
+	       (message "PDF written to %s" file))
+	      ((string-match "\\.ics\\'" file)
+	       (require 'ox-icalendar)
+	       (org-icalendar-export-current-agenda (expand-file-name file)))
+	      (t
+	       (let ((bs (buffer-string)))
+		 (find-file file)
+		 (erase-buffer)
+		 (insert bs)
+		 (save-buffer 0)
+		 (kill-buffer (current-buffer))
+		 (message "Plain text written to %s" file))))))))
+    (set-buffer (or agenda-bufname
+		    (and (org-called-interactively-p 'any) (buffer-name))
+		    org-agenda-buffer-name)))
+  (when open (org-open-file file)))
+
 ;;
 ;; This is a good UUID:
 ;; c7ed5790-85d8-4b4d-a7f7-0d58f0c3b22b
