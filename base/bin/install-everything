@@ -39,7 +39,7 @@ do
   if [ "$1" == "all" -o "$1" == "server" -o "$1" == "misc" ]
   then
       # better to put latex stuff in one place or something?
-    sudo apt-get install -y tree htop texlive-latex-extra python-pygments xclip
+    sudo apt-get install -y tree htop texlive-latex-extra python-pygments xclip rlwrap
   fi
 
   ###
@@ -207,6 +207,26 @@ do
     chmod +x $EX
     rm -f ~/bin/lein
     ln -s $EX ~/bin/lein
+  fi
+
+  ###
+  ### Clojure
+  ###
+
+  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "clojure" ]
+  then
+    BUILDDIR=$BUILDDIRBASE/clojure
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    wget https://download.clojure.org/install/clojure-tools-1.9.0.273.tar.gz
+    echo '64d1c714d758feee5fc76f3c044c229965d068f140868af0930280bcfbc0b976  clojure-tools-1.9.0.273.tar.gz' | \
+        sha256sum -c
+    tar xzf clojure-tools-1.9.0.273.tar.gz
+    cd clojure-tools
+    ./install.sh $BUILDDIR
+    cd -
+    BIN=$BUILDDIR/bin
+    rm -f ~/bin/clojure.bin
+    ln -s $BIN ~/bin/clojure.bin
   fi
 
   shift
