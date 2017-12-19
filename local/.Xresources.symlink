@@ -5,6 +5,12 @@
 ! Inconsolata does not seem to work with unicode (?)
 XTerm*faceName: DejaVu Sans Mono
 XTerm*faceSize: 16
+XTerm*faceSize1: 8
+XTerm*faceSize2: 12
+XTerm*faceSize3: 16
+XTerm*faceSize4: 20
+XTerm*faceSize5: 24
+XTerm*faceSize6: 28
 XTerm*utf8: 2
 
 ! Gets the Alt key working
