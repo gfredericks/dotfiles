@@ -90,11 +90,6 @@
       ;; as well as git-worktree things
       '(projectile-root-local projectile-root-top-down projectile-root-bottom-up projectile-root-top-down-recurring))
 
-;; ffip
-(global-set-key (kbd "C-x f") 'find-file-in-project)
-(setq ffip-full-paths t)
-(add-to-list 'ffip-prune-patterns "local")
-
 ;; neotree
 (require 'neotree) ;; is this necessary?
 (setq projectile-switch-project-action 'neotree-projectile-action)
