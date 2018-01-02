@@ -387,48 +387,8 @@
 (setq nrepl-repl-requires-sexp "()")
 (setq cider-repl-display-help-banner nil)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; CIDER MONKEYPATCH CUSTOMIZATIONS ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; ;; Customized in-repl output
-;; (defun cider-eval-print-handler (&optional buffer)
-;;   "Make a handler for evaluating and printing result in BUFFER."
-;;   (nrepl-make-response-handler (or buffer (current-buffer))
-;;                                (lambda (buffer value)
-;;                                  (with-current-buffer buffer
-;;                                    (insert
-;;                                     (if (derived-mode-p 'cider-clojure-interaction-mode)
-;;                                         (format "\n%s\n" value)
-;;                                       (if (string-match "\n" value)
-;;                                         (format "\n=>\n%s" value)
-;;                                         (format " => %s" value))))))
-;;                                (lambda (_buffer out)
-;;                                  (cider-emit-interactive-eval-output out))
-;;                                (lambda (_buffer err)
-;;                                  (cider-emit-interactive-eval-err-output err))
-;;                                '()))
-
-;; ;; pretty printing
-;; (defvar gfredericks-use-whidbey-pprint nil)
-;; (defadvice nrepl--eval-request (after nrepl--eval-request-after)
-;;   "Add the \"renderer\" option when pretty-printing."
-;;   (if gfredericks-use-whidbey-pprint
-;;       (setq ad-return-value
-;;             (append ad-return-value
-;;                     (list "renderer" "whidbey.render/render-str")))))
-;; (ad-activate 'nrepl--eval-request)
-;; (defadvice cider-eval-last-sexp (around cider-eval-last-sexp-around)
-;;   "Pretty print with in-buffer evaluation."
-;;   (let ((gfredericks-use-whidbey-pprint t))
-;;     ad-do-it))
-;; (ad-activate 'cider-eval-last-sexp)
-;; (defadvice cider-repl--send-input (around cider-repl--send-input-around)
-;;   "Pretty-print in the repl buffer."
-;;   (let ((gfredericks-use-whidbey-pprint t))
-;;     ad-do-it))
-;; (ad-activate 'cider-repl--send-input)
-
+(setq cider-pprint-fn 'puget)
+(setq cider-repl-use-pretty-printing t)
 
 ;; Auto-eval on save
 (defun reload-buffer-if-cider-running ()
@@ -637,11 +597,15 @@ by using nxml's indentation rules."
 
 (my-clipboard-start)
 
-
 ;;
 ;; Monkeypatching org-mode so the agenda export only exports
 ;; visible things
 ;;
+
+;; this doesn't seem to work automatically (requires a manual eval);
+;; maybe somehow this is getting loaded before the org-agenda code?
+;; is there something I can "require"?
+(require 'org-agenda)
 
 (defun org-agenda-write (file &optional open nosettings agenda-bufname)
   "Write the current buffer (an agenda view) as a file.
