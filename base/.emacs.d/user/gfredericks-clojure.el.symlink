@@ -1,0 +1,87 @@
+(provide 'gfredericks-clojure)
+
+(require 'gfredericks-packages)
+
+(gfredericks-packages-install 'clojure-mode)
+(gfredericks-packages-install 'cider)
+(gfredericks-packages-install 'align-cljlet)
+(gfredericks-packages-install 'paredit)
+
+(require 'clojure-mode)
+(require 'cider)
+(require 'align-cljlet)
+(require 'paredit)
+
+
+;; paredit bindings
+(defun paredit-custom ()
+  "paredit-mode-hook"
+  (define-key paredit-mode-map (kbd "C-x z") 'paredit-splice-sexp)
+  (define-key paredit-mode-map (kbd "M-)") 'paredit-forward-slurp-sexp)
+  (define-key paredit-mode-map (kbd "RET") 'newline-and-indent))
+(add-hook 'paredit-mode-hook 'paredit-custom)
+
+
+;; Pasted from https://github.com/mpenet/emax/blob/master/config/modes.el#L89
+(defmacro defclojureface (name color desc &optional others)
+  `(defface ,name '((((class color)) (:foreground ,color ,@others))) ,desc :group 'faces))
+
+;; (defclojureface clojure-parens "DimGrey" "Clojure parens")
+;; (defclojureface clojure-braces "yellow" "Clojure braces")
+(defclojureface clojure-brackets "blue" "Clojure brackets")
+(defclojureface clojure-keyword "#bfebbf" "Clojure keywords")
+;; (defclojureface clojure-java-call "#4bcf68" "Clojure Java calls")
+;; (defclojureface clojure-special "#b8bb00" "Clojure special")
+;; (defclojureface clojure-double-quote "#b8bb00" "Clojure special" (:background "unspecified"))
+(set-face-foreground 'font-lock-comment-face "red")
+(defun tweak-clojure-syntax ()
+  (dolist (x '((("#?['`]*(\\|)" . 'clojure-parens))
+               (("#?\\^?{\\|}" . 'clojure-brackets))
+               (("\\[\\|\\]" . 'clojure-braces))
+               ((":\\w+#?" . 'clojure-keyword))
+               (("#?\"" 0 'clojure-double-quote prepend))
+               (("nil\\|true\\|false\\|%[1-9]?" . 'clojure-special))
+               (("(\\(\\.[^ \n)]*\\|[^ \n)]+\\.\\|new\\)\\([ )\n]\\|$\\)" 1 'clojure-java-call))
+               ))
+    (font-lock-add-keywords nil x)))
+
+;; Tell cider not to require clojure.repl &c on startup
+(setq nrepl-repl-requires-sexp "()")
+(setq cider-repl-display-help-banner nil)
+
+(setq cider-pprint-fn 'puget)
+(setq cider-repl-use-pretty-printing t)
+
+;; Auto-eval on save
+(defun reload-buffer-if-cider-running ()
+  (interactive)
+  (if (and (cider-connected-p)
+           (string= "(ns " (buffer-substring-no-properties 1 5))
+           (string-match "\\.clj$" (buffer-name)))
+      (cider-load-buffer)))
+
+(defun intellij-paredit-select-around ()
+  (interactive)
+  (paredit-backward-up)
+  (paredit-forward)
+  (set-mark-command nil)
+  (paredit-backward))
+
+(add-hook 'clojure-mode-hook
+          (lambda () (paredit-mode +1)
+                     (tweak-clojure-syntax)
+                     (show-paren-mode +1)
+                     (define-key clojure-mode-map (kbd "C-c C-a") 'align-cljlet)
+                     (define-key clojure-mode-map (kbd "M-RET")   'indent-new-comment-line)
+                     (define-key clojure-mode-map (kbd "C-M-w") 'intellij-paredit-select-around)))
+
+;; rebinding these two from C-c C-z since C-z is captured by my tmux
+(add-hook 'cider-repl-mode-hook
+          (lambda () (define-key cider-repl-mode-map (kbd "C-c C-y") 'cider-switch-to-last-clojure-buffer)))
+(add-hook 'cider-mode-hook
+          (lambda () (define-key cider-mode-map (kbd "C-c C-y") 'cider-switch-to-repl-buffer)))
+
+(dolist (macro '(fresh conde run run* for-all for-map go go-loop
+                 for> doseq> fn> defn> defprotocol> gen-for fnk
+                 macrolet bg letfn> domonad checking))
+  (put-clojure-indent macro 'defun))

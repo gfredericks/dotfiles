@@ -1,0 +1,24 @@
+;; things that are more customized for my personal setup
+
+(provide 'gfredericks-personal)
+
+;; TODO: add all the dirs under ~/bin?
+(add-to-list 'exec-path "~/bin")
+
+;; Get my normal PATH -- can this be satisfied by doing the comment
+;; above?
+(setenv "PATH"
+        (shell-command-to-string "/usr/bin/env bash -i -c 'source ~/.bashrc; echo $PATH'"))
+
+(let ((auto-save-dir "~/.emacs-auto-save/"))
+  (make-directory auto-save-dir t)
+  (set-file-modes auto-save-dir 448) ;; 0700
+  (setq auto-save-file-name-transforms
+        `((".*" ,auto-save-dir t))))
+(setq create-lockfiles nil)
+(setq vc-follow-symlinks t)
+
+
+;; Put backup files in /dev/shm/emacs-backups
+(shell-command "mkdir -p /dev/shm/gary-emacs-backups && chmod 700 /dev/shm/gary-emacs-backups")
+(setq backup-directory-alist '(("." . "/dev/shm/gary-emacs-backups/")))

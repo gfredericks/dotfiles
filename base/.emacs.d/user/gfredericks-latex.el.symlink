@@ -1,0 +1,6 @@
+(provide 'gfredericks-latex)
+
+(defun latex-custom ()
+  "latex-mode-hook"
+  (define-key latex-mode-map (kbd "C-c e") 'latex-insert-item))
+(add-hook 'latex-mode-hook 'latex-custom)

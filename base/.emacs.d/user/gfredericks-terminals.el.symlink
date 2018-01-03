@@ -1,0 +1,61 @@
+(provide 'gfredericks-terminals)
+
+;; requiring this ensures that we're using workgroups
+(require 'gfredericks-base)
+
+(defun my-start-term (prefix-arg)
+  (interactive "P")
+  (let* ((buffer-name-base
+          (-if-let (the-workgroup (wg-current-workgroup t))
+              (wg-name the-workgroup)
+            "default"))
+         (done? nil)
+         (idx 1))
+    (while (not done?)
+      (let ((buffer-name (if (= 1 idx)
+                             (format "*terminal-%s*" buffer-name-base)
+                           (format "*terminal-%s-%d*" buffer-name-base idx))))
+        (-if-let (b (get-buffer buffer-name))
+            (if (get-buffer-window b)
+                (setq idx (+ 1 idx))
+              (progn
+                (setq done? t)
+                (switch-to-buffer b)))
+          (progn
+            (setq done? t)
+            (term "/bin/bash")
+            (rename-buffer buffer-name)))))))
+
+(defun switch-term-buffers-to-char-mode (&rest args)
+  ;; this way I can generally assume a term buffer is in char mode
+  ;; when I switch to it
+  (when (string= "term-mode" major-mode)
+    (term-char-mode)
+    (goto-char (- (point-max) 1))))
+(advice-add 'switch-to-buffer :after #'switch-term-buffers-to-char-mode)
+
+;; Pasted from
+;; http://stackoverflow.com/questions/14444265/kill-the-terminal-buffer-with-c-d
+(defun term-handle-exit--close-buffer (&rest args)
+  (when (null (get-buffer-process (current-buffer)))
+    (insert "Press <C-d> to kill the buffer.")
+    (use-local-map (let ((map (make-sparse-keymap)))
+                     (define-key map (kbd "C-d")
+                       (lambda ()
+                         (interactive)
+                         (kill-buffer (current-buffer))))
+                     map))))
+(advice-add 'term-handle-exit :after #'term-handle-exit--close-buffer)
+
+(global-set-key "\C-cs" 'my-start-term)
+
+;; make workgroup commands work in the terminal buffers
+(defun expose-global-binding-in-term (binding)
+  (define-key term-raw-map binding
+    (lookup-key (current-global-map) binding)))
+(add-hook 'term-load-hook
+  (lambda ()
+    (expose-global-binding-in-term (kbd "C-c C-g"))
+    (expose-global-binding-in-term (kbd "C-c s"))
+
+    (define-key term-raw-map (kbd "C-x") 'nil)))

@@ -1,0 +1,19 @@
+(provide 'gfredericks-packages)
+
+(package-initialize)
+
+(setq package-archives
+      ;; do I need all of these?
+      '(("melpa-stable" . "http://stable.melpa.org/packages/")
+        ("gnu"          . "http://elpa.gnu.org/packages/")
+        ("marmalade"    . "http://marmalade-repo.org/packages/")))
+
+(defvar gfredericks-packages-is-refreshed nil)
+
+(defun gfredericks-packages-install
+    (package-name)
+  (unless (package-installed-p package-name)
+    (unless gfredericks-packages-is-refreshed
+      (package-refresh-contents)
+      (setq gfredericks-packages-is-refreshed t))
+    (package-install package-name)))

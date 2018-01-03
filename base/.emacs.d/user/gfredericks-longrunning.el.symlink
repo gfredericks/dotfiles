@@ -1,0 +1,132 @@
+(provide 'gfredericks-longrunning)
+
+;;
+;; Advanced workgroups stuff
+;;
+;; The point of this code is to support sharing workgroup working
+;; configs across a series of emacsclient sessions; the assumption is
+;; that before calling `emacsclient` you first kill the previous
+;; client, and then call (restore-longrunning-workgroup-setup) which
+;; should restore all the wconfigs from the killed client as well as
+;; switch to the workgroup it was on.
+;;
+
+(defvar wconfigs-by-frame
+  (make-hash-table))
+
+(defvar during-switching? nil)
+
+(defun my-puthash-nested (k1 k2 v ht)
+  (unless (gethash k1 ht)
+    (puthash k1 (make-hash-table) ht))
+  (puthash k2 v (gethash k1 ht)))
+
+(defun stash-my-working-config ()
+  (interactive)
+  (unless during-switching?
+    (-when-let (the-workgroup (wg-current-workgroup t))
+      (let ((the-wg-name (wg-name the-workgroup)))
+        (my-puthash-nested (selected-frame)
+                           the-wg-name
+                           (wg-make-wconfig)
+                           wconfigs-by-frame)))))
+
+(add-hook 'window-configuration-change-hook
+          'stash-my-working-config)
+
+(defvar last-deleted-frame-wconfigs nil)
+
+(defun my-frame-deletion-handler (frame)
+  (setq last-deleted-frame-wconfigs
+        (gethash frame wconfigs-by-frame))
+  (remhash frame wconfigs-by-frame))
+
+(add-hook 'delete-frame-functions 'my-frame-deletion-handler)
+
+(defun restore-last-deleted-frame-wconfigs ()
+  (interactive)
+  (when last-deleted-frame-wconfigs
+    (dolist (workgroup (wg-list t))
+      (-when-let (wconfig (gethash (wg-name workgroup) last-deleted-frame-wconfigs))
+        (wg-set-working-config workgroup wconfig)
+        (my-puthash-nested (selected-frame)
+                           (wg-name workgroup)
+                           wconfig
+                           wconfigs-by-frame)))))
+
+(defun do-not-stash-while-switching-workgroups (old-fn &rest args)
+  (setq during-switching? t)
+  (apply old-fn args)
+  (setq during-switching? nil))
+
+(advice-add 'wg-switch-to-workgroup :around 'do-not-stash-while-switching-workgroups)
+
+(defvar last-workgroup nil)
+
+(defun store-workgroup (workgroup &optional _)
+  (setq last-workgroup (wg-name workgroup)))
+
+(advice-add 'wg-switch-to-workgroup :after 'store-workgroup)
+
+(defun switch-to-last-workgroup ()
+  (dolist (workgroup (wg-list t))
+    (when (eq (wg-name workgroup) last-workgroup)
+      (wg-switch-to-workgroup workgroup))))
+
+(defun restore-longrunning-workgroup-setup ()
+  (restore-last-deleted-frame-wconfigs)
+  (switch-to-last-workgroup))
+
+;;
+;; Utilities for automatically setting up workgroups and stuff
+;;
+
+(defun start-terminal-with-command (buffer-name initial-command)
+  (let* ((orig-buffer (current-buffer))
+         (proc (get-buffer-process (term "/bin/bash"))))
+    (rename-buffer buffer-name)
+    (term-send-string proc (concat initial-command "\n"))
+    (switch-to-buffer orig-buffer)))
+
+;;
+;; remote xclip integration (see also the executables: `copy`, `paste`, and `remote-emacs`)
+;;
+
+(defvar recent-internal-copy nil)
+(defun my-interprogram-paste-function ()
+  (if recent-internal-copy
+      nil
+      (shell-command-to-string "paste")) )
+
+(defun paste ()
+  (interactive)
+  (insert (shell-command-to-string "paste")))
+
+(defvar copy-path (string-trim-right (shell-command-to-string "which copy")))
+
+(defun my-interprogram-cut-function (text)
+  ;; this disables pasting from the X server for 20 seconds; makes
+  ;; internal copy-pastes fast.
+  (setq recent-internal-copy text)
+  (run-at-time "20 sec" nil
+               (lambda (text)
+                 (if (string= text recent-internal-copy)
+                     (setq recent-internal-copy nil)))
+               text)
+  (condition-case nil
+      (let ((f (make-temp-file "clipboard-bridge")))
+        (with-temp-file f (insert text))
+        ;; the 0 makes this run in the background, which I guess is
+        ;; good for latency?
+        (call-process copy-path f 0)
+        (delete-file f))
+    (error nil)))
+
+
+(defun my-clipboard-start ()
+  ;; these start out as gui-select-text and gui-selection-value,
+  ;; apparently
+  (setq interprogram-cut-function #'my-interprogram-cut-function)
+  (setq interprogram-paste-function #'my-interprogram-paste-function))
+
+(my-clipboard-start)

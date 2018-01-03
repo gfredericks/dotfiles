@@ -1,0 +1,20 @@
+(provide 'gfredericks-erc)
+
+(setq erc-hide-list '("JOIN" "PART" "QUIT"))
+
+;; Please stop setting me to being away
+(setq erc-autoaway-idle-seconds 86400)
+
+;;
+;; Trying to make up for not getting alerted about new ERC messages
+;; when there aren't any clients connected
+;;
+
+(defun joined-hook (&rest args)
+  (let ((bname (buffer-name (current-buffer))))
+    (when (not (string-match "^#" bname))
+      (with-current-buffer (get-buffer-create "erc-private-messages")
+        (goto-char (point-max))
+        (insert (format "Message or something from \"%s\"\n" bname))))))
+
+(add-hook 'erc-mode-hook 'joined-hook)
