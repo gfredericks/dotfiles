@@ -16,8 +16,6 @@
 ;; paredit bindings
 (defun paredit-custom ()
   "paredit-mode-hook"
-  (define-key paredit-mode-map (kbd "C-x z") 'paredit-splice-sexp)
-  (define-key paredit-mode-map (kbd "M-)") 'paredit-forward-slurp-sexp)
   (define-key paredit-mode-map (kbd "RET") 'newline-and-indent))
 (add-hook 'paredit-mode-hook 'paredit-custom)
 
@@ -75,11 +73,26 @@
                      (define-key clojure-mode-map (kbd "M-RET")   'indent-new-comment-line)
                      (define-key clojure-mode-map (kbd "C-M-w") 'intellij-paredit-select-around)))
 
+;; like cider-eval-last-sexp, but always pretty-prints
+(defun gfredericks-cider-eval-last-sexp (&optional output-to-current-buffer)
+  "Evaluate the expression preceding point.
+  If invoked with OUTPUT-TO-CURRENT-BUFFER, print the result in the current buffer."
+  (interactive "P")
+  (if output-to-current-buffer
+      (cider-pprint-eval-last-sexp-to-comment)
+    (cider-pprint-eval-last-sexp-to-repl)))
+
+(setq cider-comment-prefix "(comment ")
+(setq cider-comment-continued-prefix "         ")
+(setq cider-comment-postfix ")")
+
 ;; rebinding these two from C-c C-z since C-z is captured by my tmux
 (add-hook 'cider-repl-mode-hook
           (lambda () (define-key cider-repl-mode-map (kbd "C-c C-y") 'cider-switch-to-last-clojure-buffer)))
 (add-hook 'cider-mode-hook
-          (lambda () (define-key cider-mode-map (kbd "C-c C-y") 'cider-switch-to-repl-buffer)))
+          (lambda ()
+            (define-key cider-mode-map (kbd "C-c C-y") 'cider-switch-to-repl-buffer)
+            (define-key cider-mode-map (kbd "C-x C-e") 'gfredericks-cider-eval-last-sexp)))
 
 (dolist (macro '(fresh conde run run* for-all for-map go go-loop
                  for> doseq> fn> defn> defprotocol> gen-for fnk

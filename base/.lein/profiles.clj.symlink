@@ -67,7 +67,7 @@
                        robert.hooke/remove-hook]}))]}
 
  :cider
- {:plugins [[cider/cider-nrepl "0.15.1"]]
+ {:plugins [[cider/cider-nrepl "0.16.0"]]
   :injections
   [(try
      (require 'cider.inlined-deps.puget.v1v0v1.puget.printer)
