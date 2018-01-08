@@ -135,3 +135,6 @@
   (setq auto-save-file-name-transforms
         `((".*" ,auto-save-dir t))))
 (setq create-lockfiles nil)
+
+;; keep the init.el clean
+(setq custom-file (concat user-emacs-directory "/user/custom.el"))
