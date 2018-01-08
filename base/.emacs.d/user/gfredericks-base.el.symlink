@@ -127,3 +127,11 @@
 
 (add-hook 'java-mode-hook (lambda ()
           (setq c-basic-offset 2)))
+
+;; keep directories clean
+(let ((auto-save-dir "~/.emacs.d/auto-save/"))
+  (make-directory auto-save-dir t)
+  (set-file-modes auto-save-dir 448) ;; 0700
+  (setq auto-save-file-name-transforms
+        `((".*" ,auto-save-dir t))))
+(setq create-lockfiles nil)
