@@ -80,7 +80,10 @@
   (interactive "P")
   (if output-to-current-buffer
       (cider-pprint-eval-last-sexp-to-comment)
-    (cider-pprint-eval-last-sexp-to-repl)))
+      ;; TODO: get it to call this on C-u C-u
+    ;; (cider-pprint-eval-last-sexp-to-repl)
+    (cider-eval-last-sexp)
+))
 
 (setq cider-comment-prefix "(comment ")
 (setq cider-comment-continued-prefix "         ")

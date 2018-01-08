@@ -70,7 +70,7 @@
  {:plugins [[cider/cider-nrepl "0.16.0"]]
   :injections
   [(try
-     (require 'cider.inlined-deps.puget.v1v0v1.puget.printer)
+     (require 'cider.inlined-deps.puget.v1v0v2.puget.printer)
      (alter-var-root (resolve 'cider.inlined-deps.puget.v1v0v1.puget.printer/*options*)
                      assoc :print-fallback :print)
      (catch Exception t
