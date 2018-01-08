@@ -79,11 +79,10 @@
   If invoked with OUTPUT-TO-CURRENT-BUFFER, print the result in the current buffer."
   (interactive "P")
   (if output-to-current-buffer
-      (cider-pprint-eval-last-sexp-to-comment)
-      ;; TODO: get it to call this on C-u C-u
-    ;; (cider-pprint-eval-last-sexp-to-repl)
-    (cider-eval-last-sexp)
-))
+      (if (= 16 (prefix-numeric-value output-to-current-buffer))
+          (cider-pprint-eval-last-sexp-to-repl)
+        (cider-pprint-eval-last-sexp-to-comment))
+    (cider-eval-last-sexp)))
 
 (setq cider-comment-prefix "(comment ")
 (setq cider-comment-continued-prefix "         ")
@@ -95,6 +94,9 @@
 (add-hook 'cider-mode-hook
           (lambda ()
             (define-key cider-mode-map (kbd "C-c C-y") 'cider-switch-to-repl-buffer)
+            ;;         C-x C-e: evals to minibuffer, tmp display in buffer
+            ;;     C-u C-x C-e: inserts commented & pprinted into buffer
+            ;; C-u C-u C-x C-e: pprints to repl
             (define-key cider-mode-map (kbd "C-x C-e") 'gfredericks-cider-eval-last-sexp)))
 
 (dolist (macro '(fresh conde run run* for-all for-map go go-loop
