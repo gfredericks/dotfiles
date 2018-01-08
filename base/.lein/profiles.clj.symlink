@@ -71,7 +71,7 @@
   :injections
   [(try
      (require 'cider.inlined-deps.puget.v1v0v2.puget.printer)
-     (alter-var-root (resolve 'cider.inlined-deps.puget.v1v0v1.puget.printer/*options*)
+     (alter-var-root (resolve 'cider.inlined-deps.puget.v1v0v2.puget.printer/*options*)
                      assoc :print-fallback :print)
      (catch Exception t
        (binding [*out* *err*]
