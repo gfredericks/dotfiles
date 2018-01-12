@@ -20,29 +20,6 @@
 (add-hook 'paredit-mode-hook 'paredit-custom)
 
 
-;; Pasted from https://github.com/mpenet/emax/blob/master/config/modes.el#L89
-(defmacro defclojureface (name color desc &optional others)
-  `(defface ,name '((((class color)) (:foreground ,color ,@others))) ,desc :group 'faces))
-
-;; (defclojureface clojure-parens "DimGrey" "Clojure parens")
-;; (defclojureface clojure-braces "yellow" "Clojure braces")
-(defclojureface clojure-brackets "blue" "Clojure brackets")
-(defclojureface clojure-keyword "#bfebbf" "Clojure keywords")
-;; (defclojureface clojure-java-call "#4bcf68" "Clojure Java calls")
-;; (defclojureface clojure-special "#b8bb00" "Clojure special")
-;; (defclojureface clojure-double-quote "#b8bb00" "Clojure special" (:background "unspecified"))
-(set-face-foreground 'font-lock-comment-face "red")
-(defun tweak-clojure-syntax ()
-  (dolist (x '((("#?['`]*(\\|)" . 'clojure-parens))
-               (("#?\\^?{\\|}" . 'clojure-brackets))
-               (("\\[\\|\\]" . 'clojure-braces))
-               ((":\\w+#?" . 'clojure-keyword))
-               (("#?\"" 0 'clojure-double-quote prepend))
-               (("nil\\|true\\|false\\|%[1-9]?" . 'clojure-special))
-               (("(\\(\\.[^ \n)]*\\|[^ \n)]+\\.\\|new\\)\\([ )\n]\\|$\\)" 1 'clojure-java-call))
-               ))
-    (font-lock-add-keywords nil x)))
-
 ;; Tell cider not to require clojure.repl &c on startup
 (setq nrepl-repl-requires-sexp "()")
 (setq cider-repl-display-help-banner nil)
