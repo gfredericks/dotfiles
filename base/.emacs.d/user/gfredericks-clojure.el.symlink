@@ -44,7 +44,6 @@
 
 (add-hook 'clojure-mode-hook
           (lambda () (paredit-mode +1)
-                     (tweak-clojure-syntax)
                      (show-paren-mode +1)
                      (define-key clojure-mode-map (kbd "C-c C-a") 'align-cljlet)
                      (define-key clojure-mode-map (kbd "M-RET")   'indent-new-comment-line)
