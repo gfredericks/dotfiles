@@ -6,11 +6,11 @@
 XTerm*faceName: DejaVu Sans Mono
 XTerm*faceSize: 16
 XTerm*faceSize1: 8
-XTerm*faceSize2: 12
-XTerm*faceSize3: 16
-XTerm*faceSize4: 20
-XTerm*faceSize5: 24
-XTerm*faceSize6: 28
+XTerm*faceSize2: 10
+XTerm*faceSize3: 12
+XTerm*faceSize4: 16
+XTerm*faceSize5: 20
+XTerm*faceSize6: 32
 XTerm*utf8: 2
 
 ! Gets the Alt key working
