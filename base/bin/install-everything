@@ -236,10 +236,10 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/clojure
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://download.clojure.org/install/clojure-tools-1.9.0.273.tar.gz
-    echo '64d1c714d758feee5fc76f3c044c229965d068f140868af0930280bcfbc0b976  clojure-tools-1.9.0.273.tar.gz' | \
+    wget https://download.clojure.org/install/clojure-tools-1.9.0.315.tar.gz
+    echo 'c9eba2fe2d151f9eb0635c997232c9637c8af4799f8dd0e93634d594ede80949  clojure-tools-1.9.0.315.tar.gz' | \
         sha256sum -c
-    tar xzf clojure-tools-1.9.0.273.tar.gz
+    tar xzf clojure-tools-1.9.0.315.tar.gz
     cd clojure-tools
     ./install.sh $BUILDDIR
     cd -

@@ -22,7 +22,7 @@
                  [com.gfredericks/repl-utils "0.2.15"]
                  [org.clojure/tools.nrepl "0.2.12"]
                  [org.clojure/tools.namespace "0.2.11"]
-                 [com.gfredericks/dot-slash-2 "0.1.1"]]
+                 [com.gfredericks/dot-slash-2 "0.1.2"]]
   :aliases {"dct" ["do" "clean," "test"]
             "try" ["with-profile" "+lein-try" "try"]
             "slamhound" ["with-profile" "+slamhound" "run" "-m" "slam.hound"]
@@ -94,7 +94,7 @@
  {:repl-options {:nrepl-middleware
                  [com.gfredericks.debug-repl/wrap-debug-repl]}
   :dependencies [[com.gfredericks/debug-repl "0.0.8"]
-                 [com.gfredericks/dot-slash-2 "0.1.1"]]
+                 [com.gfredericks/dot-slash-2 "0.1.2"]]
   :injections [(do
                  (require 'com.gfredericks.dot-slash-2)
                  ((resolve 'com.gfredericks.dot-slash-2/!)
