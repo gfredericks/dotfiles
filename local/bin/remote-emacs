@@ -1,17 +1,43 @@
 #!/usr/bin/env bash
 
 HOST="$1"
+OPEN_URL_REMOTE_PORT=49634
+LOG=/dev/null
+BROWSER_COMMAND=${2:-firefox}
+I3_WORKSPACE=${3:-1}
+
+listen_for_open_url_requests(){
+    set -e
+    sleep 5 # hopefully other clients will have been killed by now
+    ssh "$HOST" nc -d -k -l $OPEN_URL_REMOTE_PORT 2>>$LOG |
+        grep --line-buffered -oP '^http\S*' |
+        while read REQ;
+    do
+        if [[ ! -z "$REQ" ]]; then
+            i3-msg workspace $I3_WORKSPACE      >> $LOG 2>&1
+            i3-msg exec "$BROWSER_COMMAND $REQ" >> $LOG 2>&1
+        fi
+    done
+}
+
+listen_for_open_url_requests &
+
+# is this even necessary?
+URL_PID=$!
+trap "kill $URL_PID" EXIT
 
 ssh -X -A "$HOST" -t /usr/bin/env bash -l -c $'
+  # Kill/cleanup other connections
   PID=`cat ~/.remote-emacs.pid`
-  echo $PATH >> ~/.remote-emacs.log
-  echo $DISPLAY > ~/.xclip-display-fallback
   re=\'^[0-9]+$\'
   if [[ "$PID" =~ $re ]]; then
     if ps -o comm -p $PID | grep -q emacsclient; then
       kill $PID
     fi
   fi
+  echo | nc localhost 49634 # make sure the old nc dies??? (!!??)
+
+  echo $DISPLAY > ~/.xclip-display-fallback
   echo $$ > ~/.remote-emacs.pid
   export PATH=/home/gary/bin/emacs.bin:$PATH
   emacsclient --alternate-editor= -c -e \'(restore-longrunning-workgroup-setup)\'
