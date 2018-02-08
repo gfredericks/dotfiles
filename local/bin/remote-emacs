@@ -13,10 +13,8 @@ listen_for_open_url_requests(){
         grep --line-buffered -oP '^http\S*' |
         while read REQ;
     do
-        if [[ ! -z "$REQ" ]]; then
-            i3-msg workspace $I3_WORKSPACE      >> $LOG 2>&1
-            i3-msg exec "$BROWSER_COMMAND $REQ" >> $LOG 2>&1
-        fi
+        i3-msg workspace $I3_WORKSPACE      >> $LOG 2>&1
+        i3-msg exec "$BROWSER_COMMAND $REQ" >> $LOG 2>&1
     done
 }
 
