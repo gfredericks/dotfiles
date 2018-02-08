@@ -3,12 +3,8 @@
 (provide 'gfredericks-personal)
 
 ;; TODO: add all the dirs under ~/bin?
+;; or is this redundant with the PATH env in the longrunning file?
 (add-to-list 'exec-path "~/bin")
-
-;; Get my normal PATH -- can this be satisfied by doing the comment
-;; above?
-(setenv "PATH"
-        (shell-command-to-string "/usr/bin/env bash -i -c 'source ~/.bashrc; echo $PATH'"))
 
 (setq vc-follow-symlinks t)
 
