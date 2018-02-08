@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+URL="$1"
+
+bg(){
+  echo "$URL" | nc localhost 49634
+}
+
+bg &

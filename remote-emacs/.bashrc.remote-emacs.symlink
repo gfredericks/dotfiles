@@ -1,0 +1,3 @@
+SELF=$(readlink -f $BASH_SOURCE)
+MYBIN=`dirname $SELF`/bin
+export PATH=~/bin:$MYBIN:$PATH

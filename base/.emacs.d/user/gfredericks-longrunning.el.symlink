@@ -130,3 +130,27 @@
   (setq interprogram-paste-function #'my-interprogram-paste-function))
 
 (my-clipboard-start)
+
+;;
+;; This is pretty hacky but it might actually *work*
+;;
+(defvar browse-path
+  (string-trim-right
+   (shell-command-to-string "which open-url-in-browser-from-remote")))
+
+(defun call-to-open-url-in-browser-from-remote
+    (url &rest args)
+  (message "HELL YES")
+  (message (format "I got called with %d extra args" (length args)))
+  ;; (shell-command-to-string (concat browse-path " http://gfredericks.com" ))
+  (call-process browse-path nil nil nil url))
+
+(setq browse-url-browser-function 'call-to-open-url-in-browser-from-remote)
+
+(defun call-browse-url-noninteractively
+    ()
+  (interactive)
+  (browse-url (browse-url-url-at-point)))
+
+;; matches the org-mode binding
+(global-set-key (kbd "C-c C-o") 'call-browse-url-noninteractively)
