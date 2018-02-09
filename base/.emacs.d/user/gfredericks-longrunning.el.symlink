@@ -149,9 +149,6 @@
 
 (defun call-to-open-url-in-browser-from-remote
     (url &rest args)
-  (message "HELL YES")
-  (message (format "I got called with %d extra args" (length args)))
-  ;; (shell-command-to-string (concat browse-path " http://gfredericks.com" ))
   (call-process browse-path nil nil nil url))
 
 (setq browse-url-browser-function 'call-to-open-url-in-browser-from-remote)
