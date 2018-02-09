@@ -84,4 +84,4 @@ XTerm*color14:               S_base1
 
 !! white dark/light
 XTerm*color7:                S_base2
-XTerm*color15: S_base3
+XTerm*color15:               S_base3
