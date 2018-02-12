@@ -24,7 +24,11 @@
 
 ;; modes by file extension
 (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
+(add-to-list 'auto-mode-alist '("\\.el.symlink\\'" . emacs-lisp-mode))
 
+(add-hook 'emacs-lisp-mode-hook
+          (lambda ()
+            (paredit-mode +1)))
 
 (menu-bar-mode -99)
 (setq-default tab-width 2)
