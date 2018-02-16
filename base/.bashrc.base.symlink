@@ -52,8 +52,7 @@ alias cd-="cd -"
 # What does this even do?
 export LESS="-R"
 
-alias txa="tmux attach -t"
-
+alias hed='head -n $(( $(tput lines) - 3 ))'
 
 mkcd(){ mkdir -p $1; cd $1; }
 tmp(){ pushd `mktemp -d --tmpdir=/dev/shm`; }
