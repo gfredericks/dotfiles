@@ -52,7 +52,9 @@ alias cd-="cd -"
 # What does this even do?
 export LESS="-R"
 
+# https://twitter.com/petdance/status/964576338307936257
 alias hed='head -n $(( $(tput lines) - 3 ))'
+alias tal='tail -n $(( $(tput lines) - 3 ))'
 
 mkcd(){ mkdir -p $1; cd $1; }
 tmp(){ pushd `mktemp -d --tmpdir=/dev/shm`; }
