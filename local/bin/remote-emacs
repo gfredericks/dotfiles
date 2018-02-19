@@ -38,5 +38,8 @@ ssh -X -A "$HOST" -t /usr/bin/env bash -l -c $'
   echo $DISPLAY > ~/.xclip-display-fallback
   echo $$ > ~/.remote-emacs.pid
   export PATH=/home/gary/bin/emacs.bin:$PATH
-  emacsclient --alternate-editor= -c -e \'(restore-longrunning-workgroup-setup)\'
+  emacsclient -c -e \'(restore-longrunning-workgroup-setup)\'
+  # For some reason, making emacsclient not the last thing causes
+  # the server not to crash when we kill the client O_O
+  date > /tmp/this-should-not-be-necessary
 '
