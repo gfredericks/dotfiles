@@ -53,15 +53,12 @@ do
     sudo apt-get install -y libncurses-dev asciidoc docbook2x
     BUILDDIR=$BUILDDIRBASE/emacs
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget http://mirror.team-cymru.org/gnu/emacs/emacs-25.1.tar.gz
-    echo '763344b90db4d40e9fe90c5d14748a9dbd201ce544e2cf0835ab48a0aa4a1c67  emacs-25.1.tar.gz' | sha256sum -c
-    bsdtar xzf emacs-25.1.tar.gz
-    cd emacs-25.1
-    # the -no-pie here is an attempt to work around a segfault:
-    # https://askubuntu.com/questions/837306/how-to-compile-gnu-emacs-25-1-on-16-10
-    ./configure CFLAGS=-no-pie \
+    wget http://mirror.team-cymru.org/gnu/emacs/emacs-25.3.tar.gz
+    echo 'f72c6a1b48b6fbaca2b991eed801964a208a2f8686c70940013db26cd37983c9  emacs-25.3.tar.gz' | sha256sum -c
+    bsdtar xzf emacs-25.3.tar.gz
+    cd emacs-25.3
+    ./configure \
         --without-x \
-        --with-file-notification=yes \
         --prefix=$BUILDDIR/install \
         --bindir=$BUILDDIR/bin
     make
