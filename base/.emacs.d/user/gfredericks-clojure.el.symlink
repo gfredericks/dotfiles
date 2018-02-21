@@ -60,9 +60,9 @@
         (cider-pprint-eval-last-sexp-to-comment))
     (cider-eval-last-sexp)))
 
-(setq cider-comment-prefix "(comment ")
-(setq cider-comment-continued-prefix "         ")
-(setq cider-comment-postfix ")")
+(setq cider-comment-prefix "#_=> ")
+(setq cider-comment-continued-prefix "#_=> ")
+(setq cider-comment-postfix "")
 
 ;; rebinding these two from C-c C-z since C-z is captured by my tmux
 (add-hook 'cider-repl-mode-hook
