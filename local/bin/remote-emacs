@@ -27,9 +27,8 @@ trap "kill $URL_PID" EXIT
 ssh -X -A "$HOST" -t /usr/bin/env bash -l -c $'
   # Kill/cleanup other connections
   PID=`cat ~/.remote-emacs.pid`
-  re=\'^[0-9]+$\'
-  if [[ "$PID" =~ $re ]]; then
-    if ps -o comm -p $PID | grep -q emacsclient; then
+  if [ ! -z "$PID" ]; then
+    if pstree $PID | grep -q emacsclient; then
       kill $PID
     fi
   fi
