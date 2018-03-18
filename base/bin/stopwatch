@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+start = Time.new
+
+while true
+  sleep 0.047
+  secs = Time.new - start
+  hours = secs / 3600
+  minutes = (secs % 3600) / 60
+  seconds = secs % 60
+  millis = (secs * 1000) % 1000
+  print "\r%02d:%02d:%02d.%03d" % [hours,minutes,seconds,millis]
+end
