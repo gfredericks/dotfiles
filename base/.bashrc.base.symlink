@@ -30,7 +30,6 @@ alias emc="emacsclient"
 
 # git shortcuts
 alias gs="git status"
-alias glg="git lg"
 alias gl="git lg"
 alias gc="git commit"
 alias ga="git add"
