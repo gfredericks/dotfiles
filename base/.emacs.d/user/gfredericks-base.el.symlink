@@ -106,9 +106,20 @@
 (global-set-key (kbd "C-c m a") 'mc/mark-all-like-this)
 (global-set-key (kbd "C-c m n") 'mc/mark-next-like-this)
 (global-set-key (kbd "C-c m p") 'mc/mark-previous-like-this)
+
+(defun insert-random-uuid ()
+  (interactive)
+  (insert
+   (string-trim-right
+    (with-temp-buffer
+      (let ((buff (current-buffer)))
+        (shell-command "uuidgen" buff)
+        (buffer-string))))))
+
 (global-set-key "\C-cr" 'rename-buffer)
 (global-set-key "\C-cb" 'bury-buffer)
 (global-set-key "\C-cg" 'magit-status)
+(global-set-key (kbd "C-c u u") 'insert-random-uuid)
 
 
 ;; JavaScript
