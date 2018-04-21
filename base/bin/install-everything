@@ -97,6 +97,7 @@ do
 
   if [ "$1" == "all" -o "$1" == "server" -o "$1" == "gnupg" ]
   then
+    sudo apt-get -y install libfltk1.3-dev zlib1g-dev
     BUILDDIR=$BUILDDIRBASE/gnupg
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
     INSTALLDIR=$BUILDDIR/install
@@ -119,14 +120,16 @@ do
           68076686fa724a290ea49cdf0d1c0c1500907d1b759a3bcbfbec0293e8f56570  pinentry-1.1.0.tar.bz2' | sha256sum -c
     for tarball in `ls *.tar.bz2`; do tar xjf $tarball; done
     rm *.tar.bz2
+    # Something about the linking here is broken such that I can't run
+    # gpg without setting LD_LIBRARY_PATH=$INSTALLDIR/lib at runtime
     cd libgpg-error* && ./configure --prefix=$INSTALLDIR && make && make install && cd -
-    cd libgcrypt* && ./configure --with-libgpg-error-prefix=$INSTALLDIR --prefix=$INSTALLDIR && make && make install && cd -
-    cd libksba* && ./configure --with-libgpg-error-prefix=$INSTALLDIR --prefix=$INSTALLDIR && make && make install && cd -
-    cd libassuan* && ./configure --with-libgpg-error-prefix=$INSTALLDIR --prefix=$INSTALLDIR && make && make install && cd -
-    cd ntbtls* && ./configure --with-libgpg-error-prefix=$INSTALLDIR --with-libgcrypt-prefix=$INSTALLDIR --with-ksba-prefix=$INSTALLDIR --prefix=$INSTALLDIR && make && make install && cd -
-    cd npth* && ./configure --prefix=$INSTALLDIR && make && make install && cd -
-    cd pinentry* && ./configure --with-libgpg-error-prefix=$INSTALLDIR --with-libassuan-prefix=$INSTALLDIR --prefix=$INSTALLDIR && make && make install && cd -
-    cd gnupg* && ./configure --with-libgpg-error-prefix=$INSTALLDIR --with-libgcrypt-prefix=$INSTALLDIR --with-libassuan-prefix=$INSTALLDIR --with-ksba-prefix=$INSTALLDIR --with-npth-prefix=$INSTALLDIR --with-ntbtls-prefix=$INSTALLDIR --prefix=$INSTALLDIR && make && make install && cd -
+    cd libgcrypt*    && ./configure --with-libgpg-error-prefix=$INSTALLDIR --prefix=$INSTALLDIR && make && make install && cd -
+    cd libksba*      && ./configure --with-libgpg-error-prefix=$INSTALLDIR --prefix=$INSTALLDIR && make && make install && cd -
+    cd libassuan*    && ./configure --with-libgpg-error-prefix=$INSTALLDIR --prefix=$INSTALLDIR && make && make install && cd -
+    cd ntbtls*       && ./configure --with-libgpg-error-prefix=$INSTALLDIR --with-libgcrypt-prefix=$INSTALLDIR --with-ksba-prefix=$INSTALLDIR --prefix=$INSTALLDIR && make && make install && cd -
+    cd npth*         && ./configure --prefix=$INSTALLDIR && make && make install && cd -
+    cd pinentry*     && ./configure --with-libgpg-error-prefix=$INSTALLDIR --with-libassuan-prefix=$INSTALLDIR --prefix=$INSTALLDIR && make && make install && cd -
+    cd gnupg*        && ./configure --with-libgpg-error-prefix=$INSTALLDIR --with-libgcrypt-prefix=$INSTALLDIR --with-libassuan-prefix=$INSTALLDIR --with-ksba-prefix=$INSTALLDIR --with-npth-prefix=$INSTALLDIR --with-ntbtls-prefix=$INSTALLDIR --prefix=$INSTALLDIR && make && make install && cd -
 
     cd ..
     rm -rf tarballs

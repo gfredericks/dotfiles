@@ -184,3 +184,7 @@ __prompt_command() {
 
   PS1+="\n$LINE2\n$LINE3"
 }
+
+# See comment in the install-everything script; need to debug
+# it so that this line isn't necessary
+export LD_LIBRARY_PATH=~/.install-everything/gnupg/install/lib
