@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+rlwrap clojure -Sdeps '{:deps {org.clojure/clojurescript {:mvn/version "1.10.238"}}}' -m cljs.repl.node
