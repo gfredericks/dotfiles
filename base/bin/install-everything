@@ -230,10 +230,10 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/firefox
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://ftp.mozilla.org/pub/firefox/releases/50.1.0/linux-x86_64/en-US/firefox-50.1.0.tar.bz2
-    echo '3b7030ee82944036c1e32803a9cca96a08becc9fda6f2c77d1687163fc2810f3  firefox-50.1.0.tar.bz2' | \
+    wget http://ftp.mozilla.org/pub/firefox/releases/59.0/linux-x86_64/en-US/firefox-59.0.tar.bz2
+    echo 'c2498690540fd0c7457d7f0a565af8e18e0bd7bcbb8ad47667ac37f15f1efd14  firefox-59.0.tar.bz2' | \
         sha256sum -c
-    bsdtar xf firefox-50.1.0.tar.bz2
+    bsdtar xf firefox-59.0.tar.bz2
     rm -f ~/bin/firefox
     ln -s $BUILDDIR/firefox/firefox ~/bin/firefox
   fi
