@@ -40,7 +40,8 @@
   :injections [(do
                  (require 'com.gfredericks.dot-slash-2)
                  ((resolve 'com.gfredericks.dot-slash-2/!)
-                  '{. [clojure.java.shell/sh
+                  '{. [clojure.data/diff
+                       clojure.java.shell/sh
                        clojure.repl/apropos clojure.repl/doc
                        clojure.repl/pst clojure.repl/source
                        clojure.test/run-tests
