@@ -6,17 +6,16 @@ LOG=/dev/null
 BROWSER_COMMAND=${2:-firefox}
 I3_WORKSPACE=${3:-1}
 
-SOCKET_NAME=.remote-emacs-browser-`current-time-millis`.sock
-
 listen_for_open_url_requests(){
     set -e
-    nc -d -k -l 49634 2>>$LOG |
+    sleep 5 # hopefully other clients will have been killed by now
+    ssh -n "$HOST" nc -d -k -l $OPEN_URL_REMOTE_PORT 2>>$LOG |
         grep --line-buffered -oP '^http\S*' |
         while read REQ;
-        do
-            i3-msg workspace $I3_WORKSPACE      >> $LOG 2>&1
-            i3-msg exec "$BROWSER_COMMAND $REQ" >> $LOG 2>&1
-        done
+    do
+        i3-msg workspace $I3_WORKSPACE      >> $LOG 2>&1
+        i3-msg exec "$BROWSER_COMMAND $REQ" >> $LOG 2>&1
+    done
 }
 
 listen_for_open_url_requests &
@@ -25,7 +24,7 @@ listen_for_open_url_requests &
 URL_PID=$!
 trap "kill $URL_PID" EXIT
 
-ssh -R ~/$SOCKET_NAME:localhost:49634 -X -A "$HOST" -t /usr/bin/env bash -l -c $'
+ssh -X -A "$HOST" -t /usr/bin/env bash -l -c $'
   # Kill/cleanup other connections
   PID=`cat ~/.remote-emacs.pid`
   if [ ! -z "$PID" ]; then
@@ -33,9 +32,7 @@ ssh -R ~/$SOCKET_NAME:localhost:49634 -X -A "$HOST" -t /usr/bin/env bash -l -c $
       kill $PID
     fi
   fi
-
-  # cleanup old sockets
-  ls ~/.remote-emacs-browser*.sock | sort | head -n -1 | xargs rm
+  echo | nc localhost 49634 # make sure the old nc dies??? (!!??)
 
   echo $DISPLAY > ~/.xclip-display-fallback
   echo $$ > ~/.remote-emacs.pid

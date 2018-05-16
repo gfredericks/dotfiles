@@ -3,12 +3,7 @@
 URL="$1"
 
 bg(){
-    SOCKET=`ls ~/.remote-emacs-browser*.sock | sort | tail -1`
-    if [ -z "$SOCKET" ]; then
-        echo "$(date) Can't find ~/.remote-emacs-browser*.sock file!" >> /tmp/open-url-in-browser-from-remote.log
-    else
-        echo "$URL" | nc -U "$SOCKET"
-    fi
+  echo "$URL" | nc localhost 49634
 }
 
 bg &
