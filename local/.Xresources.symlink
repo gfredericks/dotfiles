@@ -12,6 +12,7 @@ XTerm*faceSize4: 16
 XTerm*faceSize5: 20
 XTerm*faceSize6: 32
 XTerm*utf8: 2
+XTerm*dynamicColors: true
 
 ! Gets the Alt key working
 XTerm*metaSendsEscape: true
