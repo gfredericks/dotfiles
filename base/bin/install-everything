@@ -300,9 +300,9 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/dynamic-colors
     rm -rf $BUILDDIR
-    git clone git@github.com:sos4nt/dynamic-colors.git $BUILDDIR
+    git clone git@github.com:gfredericks/dynamic-colors.git $BUILDDIR
     cd $BUILDDIR
-    git checkout 47a91bb6bf4091a282cc29aaf3375cdae1340ad0
+    git checkout 55c539b48c92f43ea121f906ca1470762ddfe13b
     BIN=$BUILDDIR/bin
     rm -f ~/bin/dynamic-colors.bin
     ln -s $BIN ~/bin/dynamic-colors.bin
