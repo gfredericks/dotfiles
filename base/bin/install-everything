@@ -7,7 +7,7 @@
 # everything should be installed in userland, in ~/.install-everything with symlinks
 # from ~/bin.
 
-set -e
+set -eou pipefail
 
 sudo apt-get update
 sudo apt-get install -y wget build-essential unzip
@@ -290,6 +290,24 @@ do
     BIN=$BUILDDIR/bin
     rm -f ~/bin/clojure.bin
     ln -s $BIN ~/bin/clojure.bin
+  fi
+
+  ###
+  ### dynamic-colors
+  ###
+
+  if [ "$1" == "all" -o "$1" == "dynamic-colors" ]
+  then
+    BUILDDIR=$BUILDDIRBASE/dynamic-colors
+    rm -rf $BUILDDIR
+    git clone git@github.com:gfredericks/dynamic-colors.git $BUILDDIR
+    cd $BUILDDIR
+    git checkout 55c539b48c92f43ea121f906ca1470762ddfe13b
+    BIN=$BUILDDIR/bin
+    rm -f ~/bin/dynamic-colors.bin
+    ln -s $BIN ~/bin/dynamic-colors.bin
+    rm -f ~/.dynamic-colors
+    ln -s $BUILDDIR ~/.dynamic-colors
   fi
 
   shift

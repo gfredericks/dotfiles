@@ -12,6 +12,7 @@ XTerm*faceSize4: 16
 XTerm*faceSize5: 20
 XTerm*faceSize6: 32
 XTerm*utf8: 2
+XTerm*dynamicColors: true
 
 ! Gets the Alt key working
 XTerm*metaSendsEscape: true
@@ -21,12 +22,13 @@ XTerm.fullscreen: never
 *customization:     -color
 XTerm*termName: xterm-256color
 
-!! Gets the clipboard & font resizing working like in gnome-terminal
 xterm*VT100.Translations: #override \
+                 Shift <Key>Up:        scroll-back(1) \n\
+                 Shift <Key>Down:      scroll-forw(1) \n\
                  Ctrl Shift <Key>V:    insert-selection(CLIPBOARD) \n\
                  Ctrl Shift <Key>C:    copy-selection(CLIPBOARD) \n\
                  Ctrl Shift <Key>=:    larger-vt-font() \n\
-                 Ctrl <Key>-:    smaller-vt-font()
+                 Ctrl <Key>-:          smaller-vt-font()
 
 !!
 !! Colors
