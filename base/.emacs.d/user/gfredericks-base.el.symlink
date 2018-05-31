@@ -143,3 +143,8 @@
 
 ;; keep the init.el clean
 (setq custom-file (concat user-emacs-directory "/user/custom.el"))
+
+;; suppress warnings for when automatically updating large generated
+;; org buffers
+(require 'warnings)
+(add-to-list 'warning-suppress-types '(undo discard-info))
