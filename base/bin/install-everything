@@ -50,13 +50,13 @@ do
   # servers
   if [ "$1" == "all" -o "$1" == "emacs" ]
   then
-    sudo apt-get install -y libncurses-dev asciidoc docbook2x
+    sudo apt-get install -y libncurses-dev asciidoc docbook2x libgnutls28-dev
     BUILDDIR=$BUILDDIRBASE/emacs
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget http://mirror.team-cymru.org/gnu/emacs/emacs-25.3.tar.gz
-    echo 'f72c6a1b48b6fbaca2b991eed801964a208a2f8686c70940013db26cd37983c9  emacs-25.3.tar.gz' | sha256sum -c
-    bsdtar xzf emacs-25.3.tar.gz
-    cd emacs-25.3
+    wget http://mirror.team-cymru.org/gnu/emacs/emacs-26.1.tar.gz
+    echo '760382d5e8cdc5d0d079e8f754bce1136fbe1473be24bb885669b0e38fc56aa3  emacs-26.1.tar.gz' | sha256sum -c
+    bsdtar xzf emacs-26.1.tar.gz
+    cd emacs-26.1
     ./configure \
         --without-x \
         --prefix=$BUILDDIR/install \
