@@ -64,9 +64,11 @@
       (message "Could not find git project root."))))
 (global-set-key (kbd "C-c C-t") 'neotree-toggle)
 
-
-;; line numbers
-(global-display-line-numbers-mode)
+(add-hook 'find-file-hook '
+          (lambda ()
+            (display-line-numbers-mode)
+            (make-local-variable 'scroll-margin)
+            (setq scroll-margin 3)))
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
