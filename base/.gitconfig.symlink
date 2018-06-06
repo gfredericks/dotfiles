@@ -23,7 +23,7 @@
   co = checkout
   br = branch
   lg = log --graph --branches --format=\"%C(bold blue)%h%Creset %C(bold red)%d%Creset %C(bold black)%an%Creset: %s\"
-  lgt = log --date=short --graph --all --format=\"%C(bold blue)%h%Creset[%C(bold green)%h%Creset] %C(bold red)%d%Creset %cd %C(bold black)%an%Creset: %s\"
+  lgt = log --date=short --graph --all --format=\"%C(bold blue)%h%Creset[%C(bold green)%t%Creset] %C(bold red)%d%Creset %cd %C(bold black)%an%Creset: %s\"
   wip = commit -a -m wip
   ca = commit --amend
   dc = diff --cached
