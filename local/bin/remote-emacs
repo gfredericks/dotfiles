@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 HOST="$1"
-OPEN_URL_REMOTE_PORT=49634
+HOSTHEX=`echo $HOST | shasum | cut -c 1-10`
+OPEN_URL_REMOTE_PORT=$(( 1024 + ( 0x$HOSTHEX % 48127 )))
 LOG=/dev/null
 BROWSER_COMMAND=${2:-firefox}
 I3_WORKSPACE=${3:-1}
@@ -10,7 +11,7 @@ SOCKET_NAME=.remote-emacs-browser-`current-time-millis`.sock
 
 listen_for_open_url_requests(){
     set -e
-    nc -d -k -l 49634 2>>$LOG |
+    nc -d -k -l $OPEN_URL_REMOTE_PORT 2>>$LOG |
         grep --line-buffered -oP '^http\S*' |
         while [ 1 ]; do
             if read -t 5 REQ; then
@@ -28,11 +29,11 @@ listen_for_open_url_requests(){
 
 listen_for_open_url_requests &
 
-# is this even necessary?
-URL_PID=$!
-trap "kill $URL_PID" EXIT
-
-ssh -R ~/$SOCKET_NAME:localhost:49634 -X -A "$HOST" -t /usr/bin/env bash -l -c $'
+ssh \
+    -R ~/$SOCKET_NAME:localhost:$OPEN_URL_REMOTE_PORT \
+    -X \
+    -A \
+    "$HOST" -t /usr/bin/env bash -l -c $'
   # Kill/cleanup other connections
   PID=`cat ~/.remote-emacs.pid`
   if [ ! -z "$PID" ]; then
