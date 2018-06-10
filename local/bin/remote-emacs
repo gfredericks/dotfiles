@@ -18,6 +18,7 @@ listen_for_open_url_requests(){
                 i3-msg workspace $I3_WORKSPACE      | sed "s/^/[$$] /" >> $LOG 2>&1
                 i3-msg exec "$BROWSER_COMMAND $REQ" | sed "s/^/[$$] /" >> $LOG 2>&1
             else
+                # 1 seems to mean EOF, while 142 means timeout
                 if [ $? -eq 1 ]; then
                     break
                 fi
