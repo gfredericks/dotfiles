@@ -1,39 +1,30 @@
 #!/usr/bin/env bash
 
 HOST="$1"
-HOSTHEX=`echo $HOST | shasum | cut -c 1-10`
-OPEN_URL_REMOTE_PORT=$(( 1024 + ( 0x$HOSTHEX % 48127 )))
+OPEN_URL_REMOTE_PORT=49634
 LOG=/dev/null
 BROWSER_COMMAND=${2:-firefox}
 I3_WORKSPACE=${3:-1}
 
-SOCKET_NAME=.remote-emacs-browser-`current-time-millis`.sock
-
 listen_for_open_url_requests(){
     set -e
-    nc -d -k -l $OPEN_URL_REMOTE_PORT 2>>$LOG |
+    sleep 5 # hopefully other clients will have been killed by now
+    ssh -n "$HOST" nc -d -k -l $OPEN_URL_REMOTE_PORT 2>>$LOG |
         grep --line-buffered -oP '^http\S*' |
-        while [ 1 ]; do
-            if read -t 5 REQ; then
-                echo "[$$] Read \"$REQ\"" >> $LOG
-                i3-msg workspace $I3_WORKSPACE      | sed "s/^/[$$] /" >> $LOG 2>&1
-                i3-msg exec "$BROWSER_COMMAND $REQ" | sed "s/^/[$$] /" >> $LOG 2>&1
-            else
-                # 1 seems to mean EOF, while 142 means timeout
-                if [ $? -eq 1 ]; then
-                    break
-                fi
-            fi
-        done
+        while read REQ;
+    do
+        i3-msg workspace $I3_WORKSPACE      >> $LOG 2>&1
+        i3-msg exec "$BROWSER_COMMAND $REQ" >> $LOG 2>&1
+    done
 }
 
 listen_for_open_url_requests &
 
-ssh \
-    -R ~/$SOCKET_NAME:localhost:$OPEN_URL_REMOTE_PORT \
-    -X \
-    -A \
-    "$HOST" -t /usr/bin/env bash -l -c $'
+# is this even necessary?
+URL_PID=$!
+trap "kill $URL_PID" EXIT
+
+ssh -X -A "$HOST" -t /usr/bin/env bash -l -c $'
   # Kill/cleanup other connections
   PID=`cat ~/.remote-emacs.pid`
   if [ ! -z "$PID" ]; then
@@ -41,9 +32,7 @@ ssh \
       kill $PID
     fi
   fi
-
-  # cleanup old sockets
-  ls ~/.remote-emacs-browser*.sock | sort | head -n -1 | xargs rm
+  echo | nc localhost 49634 # make sure the old nc dies??? (!!??)
 
   echo $DISPLAY > ~/.xclip-display-fallback
   echo $$ > ~/.remote-emacs.pid
