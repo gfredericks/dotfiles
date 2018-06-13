@@ -7,32 +7,76 @@ LOG=/dev/null
 BROWSER_COMMAND=${2:-firefox}
 I3_WORKSPACE=${3:-1}
 
-SOCKET_NAME=.remote-emacs-browser-`current-time-millis`.sock
-
 listen_for_open_url_requests(){
-    set -e
-    nc -d -k -l $OPEN_URL_REMOTE_PORT 2>>$LOG |
-        grep --line-buffered -oP '^http\S*' |
-        while [ 1 ]; do
-            if read -t 5 REQ; then
-                echo "[$$] Read \"$REQ\"" >> $LOG
-                i3-msg workspace $I3_WORKSPACE      | sed "s/^/[$$] /" >> $LOG 2>&1
-                i3-msg exec "$BROWSER_COMMAND $REQ" | sed "s/^/[$$] /" >> $LOG 2>&1
-            else
-                # 1 seems to mean EOF, while 142 means timeout
-                if [ $? -eq 1 ]; then
-                    break
-                fi
-            fi
-        done
+
+    python - $OPEN_URL_REMOTE_PORT "$BROWSER_COMMAND" "$I3_WORKSPACE" <<EOF
+import re
+import SocketServer
+import sys
+from socket import timeout,SHUT_RDWR
+from subprocess import call,Popen,PIPE
+
+class MyTCPHandler(SocketServer.BaseRequestHandler):
+    browser_command=sys.argv[2]
+    i3_workspace=sys.argv[3]
+    def handle(self):
+        sock = self.request
+        sock.settimeout(1)
+        s = sock.recv(5)
+        try:
+            if(s == 'copy '):
+                call(["notify-send","remote copy"])
+                p = Popen(["/usr/bin/env", "bash", "-c", "base64 -d | copy"],stdin=PIPE)
+                last_was_newline=False
+                while True:
+                    s = sock.recv(4096)
+                    if(len(s) == 0):
+                        break
+                    if(last_was_newline and s[0] == "\n"):
+                        break
+                    last_was_newline = (s[-1] == "\n")
+                    if("\n\n" in s):
+                        p.stdin.write(s.split("\n\n")[0])
+                        break
+                    else:
+                        p.stdin.write(s)
+                p.communicate()
+                sock.sendall("OK")
+            elif(s == 'paste'):
+                call(["notify-send","remote paste"])
+                call("paste", stdout=sock.fileno())
+            elif(s == 'open '):
+                call(["notify-send","remote open"])
+                s = s[5:-1] + sock.recv(4096)
+                if("\n" in s):
+                    url = s.split("\n")[0]
+                    # TODO: customizeableize
+                    call(["i3-msg","workspace",self.i3_workspace])
+                    call(["i3-msg","exec",self.browser_command,url])
+                else:
+                    sock.sendall("ERROR: EXPECTED URL+NEWLINE")
+            else:
+                sock.sendall("ERROR: BAD COMMAND")
+        except timeout:
+            sock.sendall("SOCKET TIMEOUT")
+        except:
+            sock.sendall("ERR ({})".format(sys.exc_info()))
+        sock.shutdown(SHUT_RDWR)
+        sock.close()
+
+if __name__ == "__main__":
+    HOST, PORT = "localhost", int(sys.argv[1])
+    server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
+    server.serve_forever()
+EOF
 }
 
 listen_for_open_url_requests &
 
 ssh \
-    -R ~/$SOCKET_NAME:localhost:$OPEN_URL_REMOTE_PORT \
-    -X \
     -A \
+    -R $OPEN_URL_REMOTE_PORT:localhost:$OPEN_URL_REMOTE_PORT \
+    -o "ExitOnForwardFailure yes" \
     "$HOST" -t /usr/bin/env bash -l -c $'
   # Kill/cleanup other connections
   PID=`cat ~/.remote-emacs.pid`
@@ -42,10 +86,7 @@ ssh \
     fi
   fi
 
-  # cleanup old sockets
-  ls ~/.remote-emacs-browser*.sock | sort | head -n -1 | xargs rm
-
-  echo $DISPLAY > ~/.xclip-display-fallback
+  echo $OPEN_URL_REMOTE_PORT > ~/.remote-emacs-clipboard-browser-port
   echo $$ > ~/.remote-emacs.pid
   export PATH=/home/gary/bin/emacs.bin:$PATH
   emacsclient -c -e \'(restore-longrunning-workgroup-setup)\'
