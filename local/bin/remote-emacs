@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 HOST="$1"
-HOSTHEX=`echo $HOST | shasum | cut -c 1-10`
+HOSTHEX=`echo $HOSTNAME-$HOST | shasum | cut -c 1-10`
 OPEN_URL_REMOTE_PORT=$(( 1024 + ( 0x$HOSTHEX % 48127 )))
 LOG=/dev/null
 BROWSER_COMMAND=${2:-firefox}
