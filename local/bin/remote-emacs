@@ -41,7 +41,6 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
                     else:
                         p.stdin.write(s)
                 p.communicate()
-                sock.sendall("OK")
             elif(s == 'paste'):
                 call(["notify-send","remote paste"])
                 call("paste", stdout=sock.fileno())
