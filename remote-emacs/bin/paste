@@ -1,1 +1,3 @@
+#!/usr/bin/env bash
+
 echo paste | nc localhost `cat ~/.remote-emacs-clipboard-browser-port`

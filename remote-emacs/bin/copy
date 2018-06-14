@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 base64 | \
        cat <(echo "copy ") - <(echo) | \
        nc localhost `cat ~/.remote-emacs-clipboard-browser-port`
