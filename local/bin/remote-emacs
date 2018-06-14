@@ -9,7 +9,7 @@ I3_WORKSPACE=${3:-1}
 
 listen_for_open_url_requests(){
 
-    python - $OPEN_URL_REMOTE_PORT "$BROWSER_COMMAND" "$I3_WORKSPACE" <<EOF
+    python - $OPEN_URL_REMOTE_PORT "$BROWSER_COMMAND" "$I3_WORKSPACE" > $LOG <<EOF
 import re
 import SocketServer
 import sys
@@ -41,7 +41,6 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
                     else:
                         p.stdin.write(s)
                 p.communicate()
-                sock.sendall("OK")
             elif(s == 'paste'):
                 call(["notify-send","remote paste"])
                 call("paste", stdout=sock.fileno())
@@ -66,6 +65,7 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", int(sys.argv[1])
+    SocketServer.TCPServer.allow_reuse_address = True
     server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
     server.serve_forever()
 EOF
@@ -86,7 +86,7 @@ ssh \
     fi
   fi
 
-  echo $OPEN_URL_REMOTE_PORT > ~/.remote-emacs-clipboard-browser-port
+  echo '$OPEN_URL_REMOTE_PORT$' > ~/.remote-emacs-clipboard-browser-port
   echo $$ > ~/.remote-emacs.pid
   export PATH=/home/gary/bin/emacs.bin:$PATH
   emacsclient -c -e \'(restore-longrunning-workgroup-setup)\'
