@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+# Script that reads a tar file from stdin and prints
+# filenames and hashes as if via sha256sum
+
+clojure -Sdeps '{:deps {org.apache.commons/commons-compress {:mvn/version "1.17"}}}' \
+        <(cat <<EOF
+(ns user
+  (:require
+   [clojure.java.shell :as sh]
+   [clojure.string     :as string])
+  (:import
+   (org.apache.commons.compress.archivers ArchiveStreamFactory)
+   (org.apache.commons.compress.archivers.tar TarArchiveEntry)))
+
+(with-open [s (.createArchiveInputStream (ArchiveStreamFactory.)
+                                         "tar"
+                                         System/in)]
+  (loop []
+    (when-let [e (.getNextEntry s)]
+      (when-not (.isDirectory e)
+        (let [{:keys [out exit]}
+              (sh/sh "sha256sum" :in s)]
+          (assert (zero? exit))
+          (print (string/replace out "-" (.getName e)))))
+      (recur))))
+
+(shutdown-agents)
+EOF
+)
