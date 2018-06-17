@@ -92,31 +92,6 @@ do
   fi
 
   ###
-  ### OpenSSH
-  ###
-
-  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "openssh" ]
-  then
-    sudo apt-get build-dep -y openssh
-    BUILDDIR=$BUILDDIRBASE/openssh
-    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://github.com/openssh/openssh-portable/archive/V_7_7_P1.tar.gz
-    echo '79d6708f00c2d6257afd3cb2adade76615a4a154025da5901429a88be080de1a  V_7_7_P1.tar.gz' | sha256sum -c
-    tar xzf V_7_7_P1.tar.gz
-    rm V_7_7_P1.tar.gz
-    INSTALLDIR=$BUILDDIR/install
-    mkdir $INSTALLDIR
-    cd openssh-portable-V_7_7_P1
-    autoreconf &&
-        ./configure --with-privsep-path=~/.openssh-privsep-empty &&
-        make prefix=$INSTALLDIR &&
-        make prefix=$INSTALLDIR install
-    cd -
-    rm -f ~/bin/openssh.bin
-    ln -s $INSTALLDIR/bin ~/bin/openssh.bin
-  fi
-
-  ###
   ### GnuPG
   ###
 
