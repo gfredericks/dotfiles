@@ -44,12 +44,18 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
             elif(s == 'paste'):
                 call(["notify-send","remote paste"])
                 call("paste", stdout=sock.fileno())
+            elif(s == 'note '):
+                s = s[5:-1] + sock.recv(4096)
+                if("\n" in s):
+                    title = s.split("\n")[0]
+                    call(["notify-send","remote note: {}".format(title)])
+                else:
+                    sock.sendall("ERROR: EXPECTED SINGLE LINE")
             elif(s == 'open '):
                 call(["notify-send","remote open"])
                 s = s[5:-1] + sock.recv(4096)
                 if("\n" in s):
                     url = s.split("\n")[0]
-                    # TODO: customizeableize
                     call(["i3-msg","workspace",self.i3_workspace])
                     call(["i3-msg","exec",self.browser_command,url])
                 else:
