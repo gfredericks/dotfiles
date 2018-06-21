@@ -77,6 +77,9 @@ if __name__ == "__main__":
 EOF
 }
 
+# Hoping this ensures the python process gets killed whenever ssh does
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+
 listen_for_open_url_requests &
 
 ssh \
