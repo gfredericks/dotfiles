@@ -38,12 +38,12 @@ xterm*VT100.Translations: #override \
 
 #define t_bg_floor     #FFFEF3
 #define t_bg_dip       #FFF9EE
-#define t_background   #FAF0E6
-#define t_bg_bump      #E7DFD5
-#define t_fg_comment   #8F98A1
-#define t_foreground   #69717A
-#define t_fg_highlight #5B636B
-#define t_fg_ceiling   #00020E
+#define t_background   #262626
+#define t_bg_bump      #303030
+#define t_fg_comment   #262626
+#define t_foreground   #919191
+#define t_fg_highlight #e8e8e8
+#define t_fg_ceiling   #f6f6f6
 
 XTerm*background: t_background
 XTerm*foreground: t_foreground
@@ -63,28 +63,32 @@ XTerm*color7: t_fg_highlight
 XTerm*color15: t_fg_ceiling
 
 ! RED
-XTerm*color1: #F46864
-XTerm*color9: #B42B33
+XTerm*color1: #dc322f
+XTerm*color9: #cb4b16
 
 ! YEL
-XTerm*color3: #AC9510
-XTerm*color11: #726000
+XTerm*color3: #b58900
+! XTerm*color11: #777777
+XTerm*color11: #fcffaa
 
 ! GRN
-XTerm*color2: #00AE58
-XTerm*color10: #007525
+XTerm*color2: #859900
+!XTerm*color10: #6a6a6a
+XTerm*color10: #bbf7a8
 
 ! CYN
-XTerm*color6: #00B0CC
-XTerm*color14: #007793
+XTerm*color6: #2aa198
+! XTerm*color14: #9e9e9e
+XTerm*color14: #eca9f2
 
 ! BLU
-XTerm*color4: #389BFF
-XTerm*color12: #0066CB
+XTerm*color4: #268bd2
+! XTerm*color12: #919191
+XTerm*color12: #82b1ff
 
 ! MAG
-XTerm*color5: #DC6DD2
-XTerm*color13: #A03398
+XTerm*color5: #d33682
+XTerm*color13: #6c71c4
 
 XTerm*color16: t_bg_floor
 XTerm*color17: t_bg_dip
