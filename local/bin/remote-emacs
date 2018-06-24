@@ -2,14 +2,14 @@
 
 HOST="$1"
 HOSTHEX=`echo $HOSTNAME-$HOST | shasum | cut -c 1-10`
-OPEN_URL_REMOTE_PORT=$(( 1024 + ( 0x$HOSTHEX % 48127 )))
+THE_PORT=$(( 1024 + ( 0x$HOSTHEX % 48127 )))
 LOG=/dev/null
 BROWSER_COMMAND=${2:-firefox}
 I3_WORKSPACE=${3:-1}
 
 listen_for_open_url_requests(){
 
-    python - $OPEN_URL_REMOTE_PORT "$BROWSER_COMMAND" "$I3_WORKSPACE" > $LOG <<EOF
+    python - $THE_PORT "$BROWSER_COMMAND" "$I3_WORKSPACE" > $LOG <<EOF
 import re
 import SocketServer
 import sys
@@ -82,24 +82,34 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 listen_for_open_url_requests &
 
-ssh \
-    -A \
-    -R $OPEN_URL_REMOTE_PORT:localhost:$OPEN_URL_REMOTE_PORT \
-    -o "ExitOnForwardFailure yes" \
-    "$HOST" -t /usr/bin/env bash -l -c $'
-  # Kill/cleanup other connections
-  PID=`cat ~/.remote-emacs.pid`
-  if [ ! -z "$PID" ]; then
-    if pstree $PID | grep -q emacsclient; then
-      kill $PID
+go(){
+  ssh \
+      -A \
+      -R $THE_PORT:localhost:$THE_PORT \
+      -o "ExitOnForwardFailure yes" \
+      "$HOST" -t /usr/bin/env bash -l -c $'
+    # Kill/cleanup other connections
+    PID=`cat ~/.remote-emacs.pid`
+    if [ ! -z "$PID" ]; then
+      if pstree $PID | grep -q emacsclient; then
+        kill $PID
+      fi
     fi
-  fi
 
-  echo '$OPEN_URL_REMOTE_PORT$' > ~/.remote-emacs-clipboard-browser-port
-  echo $$ > ~/.remote-emacs.pid
-  export PATH=/home/gary/bin/emacs.bin:$PATH
-  emacsclient -c -e \'(restore-longrunning-workgroup-setup)\'
-  # For some reason, making emacsclient not the last thing causes
-  # the server not to crash when we kill the client O_O
-  date > /tmp/this-should-not-be-necessary
+    echo '$THE_PORT$' > ~/.remote-emacs-clipboard-browser-port
+    echo $$ > ~/.remote-emacs.pid
+    export PATH=/home/gary/bin/emacs.bin:$PATH
+    emacsclient -c -e \'(restore-longrunning-workgroup-setup)\'
+    # For some reason, making emacsclient not the last thing causes
+    # the server not to crash when we kill the client O_O
+    date > /tmp/this-should-not-be-necessary
 '
+}
+
+go
+
+if [ "$?" -eq 255 ]; then
+  echo "Assuming port forwarding failed, doing ssh+kill and trying again..." >&2
+  ssh "$HOST" $'sudo netstat -tulpn | grep '$THE_PORT$' | grep -oP \'\d+/4\' | cut -f 1 -d / | head -1 | xargs kill'
+  go
+fi
