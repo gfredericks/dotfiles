@@ -280,10 +280,10 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/clojure
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://download.clojure.org/install/clojure-tools-1.9.0.348.tar.gz
-    echo '08392bcfdb926f369bea26970ab5c1b62c512490609966527668fb9db6be9b5a  clojure-tools-1.9.0.348.tar.gz' | \
+    wget https://download.clojure.org/install/clojure-tools-1.9.0.381.tar.gz
+    echo 'f1266ba95784e594bb9b643258b417ef03b0e24b995ddb3a7514ae6daa7458a1  clojure-tools-1.9.0.381.tar.gz' | \
         sha256sum -c
-    tar xzf clojure-tools-1.9.0.348.tar.gz
+    tar xzf clojure-tools-1.9.0.381.tar.gz
     cd clojure-tools
     ./install.sh $BUILDDIR
     cd -
