@@ -27,6 +27,8 @@
 (setq cider-pprint-fn 'puget)
 (setq cider-repl-use-pretty-printing t)
 
+(setq cider-show-error-buffer 'except-in-repl)
+
 ;; Auto-eval on save
 (defun reload-buffer-if-cider-running ()
   (interactive)
