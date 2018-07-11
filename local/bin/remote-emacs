@@ -106,10 +106,14 @@ go(){
 '
 }
 
+STARTED_AT=$SECONDS
+
 go
 
-if [ "$?" -eq 255 ]; then
-  echo "Assuming port forwarding failed, doing ssh+kill and trying again..." >&2
-  ssh "$HOST" $'sudo netstat -tulpn | grep '$THE_PORT$' | grep -oP \'\d+/\d+\' | cut -f 1 -d / | head -1 | xargs kill'
-  go
+if (( SECONDS - STARTED_AT < 10 )); then
+  if [ $? -eq 255 ] || [ $? -eq 1 ]; then
+    echo "Assuming port forwarding failed, doing ssh+kill and trying again..." >&2
+    ssh "$HOST" $'sudo netstat -tulpn | grep '$THE_PORT$' | grep -oP \'\d+/\d+\' | cut -f 1 -d / | head -1 | xargs kill'
+    go
+  fi
 fi
