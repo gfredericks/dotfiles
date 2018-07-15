@@ -135,6 +135,94 @@
         (or (org-get-next-sibling)
             (org-end-of-subtree t))))))
 
+(defun my-agenda-backlog-prefix-age ()
+  (let ((created (org-entry-get (point) "CREATED_AT")))
+    (if created
+        (let* ((days-old
+               (- (string-to-number
+                   (format "%s" (org-time-stamp-to-now
+                                 created)))))
+               (weeks-old (/ days-old 7)))
+          (if (< 2 weeks-old)
+              (format "%2dw " weeks-old)
+            "    "))
+      "??? ")))
+
+(defvar my-agenda-backlog-prefix-format
+  "%7e %-14:c %(my-agenda-backlog-prefix-age)")
+
+(defvar my-agenda-active-prefix-format
+  "%7e %-14:c")
+
+(defun my-agenda-section-active-todos
+    (header)
+  `(tags-todo
+    "SCHEDULED<>{.+}+DEADLINE<>{.+}|SCHEDULED<>{.+}+DEADLINE>\"<+7d>\""
+    ((org-agenda-prefix-format ,my-agenda-active-prefix-format)
+     (org-agenda-sorting-strategy '(priority-down effort-up))
+     (org-agenda-overriding-header ,header)
+     (org-agenda-dim-blocked-tasks 'invisible)
+     (org-agenda-skip-function 'skip-unless-empty-priority))))
+
+(defun my-agenda-section-on-deck
+    (header)
+  `(tags-todo "PRIORITY=\"0\""
+              ((org-agenda-sorting-strategy '(priority-down category-up))
+               (org-agenda-prefix-format ,my-agenda-backlog-prefix-format)
+               (org-agenda-overriding-header ,header))))
+
+(defun my-agenda-section-backlog
+    (header &optional extra-query)
+  `(tags-todo ,(concat "PRIORITY<>\"\"&PRIORITY<>\"0\"&SCHEDULED<>{.+}"
+                       (if extra-query
+                           (concat "&" extra-query)))
+              ((org-agenda-sorting-strategy '(priority-down category-up))
+               (org-agenda-prefix-format ,my-agenda-backlog-prefix-format)
+               (org-agenda-overriding-header ,header)
+               (org-agenda-skip-function 'skip-if-empty-priority))))
+
+(defun my-agenda-section-wholeweek
+    (header)
+  `(tags "wholeweek"
+         ((org-agenda-prefix-format "%-7e %-14:c")
+          (org-agenda-overriding-header ,header))))
+
+(defun my-agenda-section-done
+    (header)
+  `(tags "/DONE|TODO"
+         ((org-agenda-skip-function 'skip-unless-done-this-week)
+          (org-agenda-sorting-strategy '(priority-down effort-up))
+          (org-agenda-overriding-header ,header)
+          (org-agenda-prefix-format "%6e %-14:c"))))
+
+(defun my-agenda-section-calendar
+    (header span)
+  `(agenda ""
+           ((org-agenda-prefix-format "%-7e %-14:c%?-12t% s")
+            (org-agenda-skip-function 'skip-if-done-or-has-skip-property)
+            (org-agenda-span ,span)
+            (org-agenda-overriding-header ,header))))
+
+(defun my-agenda-capture-templates
+    (capture-file scratch-file)
+  `(("a" "Active" entry
+     (file+headline ,capture-file "Tasks")
+     "* TODO %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")
+    ("b" "On Deck" entry
+     (file+headline ,capture-file "Tasks")
+     "* TODO [#0] %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")
+    ("c" "Backlog" entry
+     (file+headline ,capture-file "Tasks")
+     "* TODO [#1] %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")
+    ("x" "Scratch Active" entry
+     (file+headline ,scratch-file "Tasks")
+     "* TODO %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")
+    ("y" "Scratch On Deck" entry
+     (file+headline ,scratch-file "Tasks")
+     "* TODO [#0] %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")
+    ("z" "Scratch Backlog" entry
+     (file+headline ,scratch-file "Tasks")
+     "* TODO [#1] %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Monkeypatching org-mode so the agenda export only exports
