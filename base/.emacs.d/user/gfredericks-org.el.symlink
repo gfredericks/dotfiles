@@ -89,9 +89,14 @@
       nil
     (save-excursion (org-end-of-subtree t))))
 
-(defun skip-if-done-or-has-skip-property ()
+(defun skip-if-done-or-has-skip-property-or-is-scheduled-in-the-past ()
   (or (org-agenda-skip-entry-if 'todo 'done)
-      (if (org-entry-get (point) "AGENDA_HIDE")
+      (if (or (org-entry-get (point) "AGENDA_HIDE")
+              (and (eq nil (org-entry-get (point) "DEADLINE"))
+                   (let ((s (org-entry-get (point) "SCHEDULED")))
+                     (and s
+                          (let ((my-t (org-time-string-to-time s)))
+                            (time-less-p my-t (current-time)))))))
           (save-excursion (org-end-of-subtree t))
         nil)))
 
@@ -157,7 +162,7 @@
 (defun my-agenda-section-active-todos
     (header)
   `(tags-todo
-    "SCHEDULED<>{.+}+DEADLINE<>{.+}|SCHEDULED<>{.+}+DEADLINE>\"<+7d>\""
+    "SCHEDULED<>{.+}+DEADLINE<>{.+}|SCHEDULED<>{.+}+DEADLINE>\"<+7d>\"|SCHEDULED<\"<now>\"+DEADLINE<>{.+}"
     ((org-agenda-prefix-format ,my-agenda-active-prefix-format)
      (org-agenda-sorting-strategy '(priority-down effort-up))
      (org-agenda-overriding-header ,header)
@@ -199,7 +204,7 @@
     (header span)
   `(agenda ""
            ((org-agenda-prefix-format "%-7e %-14:c%?-12t% s")
-            (org-agenda-skip-function 'skip-if-done-or-has-skip-property)
+            (org-agenda-skip-function 'skip-if-done-or-has-skip-property-or-is-scheduled-in-the-past)
             (org-agenda-span ,span)
             (org-agenda-overriding-header ,header))))
 
