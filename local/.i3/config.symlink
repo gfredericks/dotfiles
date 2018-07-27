@@ -131,9 +131,8 @@ bindsym $mod+8 workspace 8
 bindsym $mod+9 workspace 9
 bindsym $mod+0 workspace 10
 bindsym $mod+Tab workspace back_and_forth
-# don't go to these workspaces
-bindsym $mod+b workspace 11
-bindsym $mod+Shift+b workspace 12
+# random workspace, clears the screen
+bindsym $mod+b exec /bin/bash -c 'i3-msg workspace $((11 + RANDOM))'
 
 # move focused container to workspace
 bindsym $mod+Shift+1 move container to workspace 1
