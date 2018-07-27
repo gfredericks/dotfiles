@@ -74,9 +74,162 @@
   (interactive)
   (add-hook 'after-save-hook (lambda () (org-html-export-to-html)) t t))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; agenda/capture helpers
 
+(defun skip-unless-empty-priority ()
+  (if (< 0 (org-get-priority
+            (thing-at-point 'line t)))
+      (save-excursion (org-end-of-subtree t))
+    nil))
 
-;;
+(defun skip-if-empty-priority ()
+  (if (< 0 (org-get-priority
+            (thing-at-point 'line t)))
+      nil
+    (save-excursion (org-end-of-subtree t))))
+
+(defun skip-if-done-or-has-skip-property-or-is-scheduled-in-the-past ()
+  (or (org-agenda-skip-entry-if 'todo 'done)
+      (if (or (org-entry-get (point) "AGENDA_HIDE")
+              (and (eq nil (org-entry-get (point) "DEADLINE"))
+                   (let ((s (org-entry-get (point) "SCHEDULED")))
+                     (and s
+                          (let ((my-t (org-time-string-to-time s)))
+                            (time-less-p my-t (current-time)))))))
+          (save-excursion (org-end-of-subtree t))
+        nil)))
+
+(defun seconds-to-date-string (seconds)
+  "Returns \"YYYY-MM-DD DOW\"."
+  (with-temp-buffer
+    (org-insert-time-stamp (seconds-to-time seconds))
+    (buffer-substring 2 16)))
+
+(defun most-recent-monday* (seconds)
+  (let ((s (seconds-to-date-string seconds)))
+    (if (string= "Mon"
+                 (substring s 11 14))
+        s
+      (most-recent-monday* (- seconds 72000)))))
+
+(defun most-recent-monday ()
+  (most-recent-monday* (time-to-seconds (current-time))))
+
+(defun this-week-or-later? (time-string)
+  "Checks if the time string represents something from this week or later."
+  (not (string< (substring time-string 1 10)
+                (substring (most-recent-monday) 1 10))))
+
+(defun extract-local-date-string (s)
+  ;; Assume it starts at char one or two
+  (let ((c (string-to-char s)))
+    (if (<= 48 c 57)
+        (substring s 0 10)
+      (substring s 1 11))))
+
+(defun skip-unless-done-this-week ()
+  "Skip entries that weren't finished this week."
+  (let ((did-at (or (org-entry-get (point) "CLOSED")
+                    (org-entry-get (point) "LAST_REPEAT"))))
+    (if did-at
+        (if (not (this-week-or-later? (extract-local-date-string did-at)))
+            (save-excursion (org-end-of-subtree t))
+          nil)
+      (save-excursion
+        (or (org-get-next-sibling)
+            (org-end-of-subtree t))))))
+
+(defun my-agenda-backlog-prefix-age ()
+  (let ((created (org-entry-get (point) "CREATED_AT")))
+    (if created
+        (let* ((days-old
+               (- (string-to-number
+                   (format "%s" (org-time-stamp-to-now
+                                 created)))))
+               (weeks-old (/ days-old 7)))
+          (if (< 2 weeks-old)
+              (format "%2dw " weeks-old)
+            "    "))
+      "??? ")))
+
+(defvar my-agenda-backlog-prefix-format
+  "%7e %-14:c %(my-agenda-backlog-prefix-age)")
+
+(defvar my-agenda-active-prefix-format
+  "%7e %-14:c")
+
+(defun my-agenda-section-active-todos
+    (header)
+  `(tags-todo
+    "SCHEDULED<>{.+}+DEADLINE<>{.+}|SCHEDULED<>{.+}+DEADLINE>\"<+7d>\"|SCHEDULED<\"<now>\"+DEADLINE<>{.+}"
+    ((org-agenda-prefix-format ,my-agenda-active-prefix-format)
+     (org-agenda-sorting-strategy '(priority-down effort-up))
+     (org-agenda-overriding-header ,header)
+     (org-agenda-dim-blocked-tasks 'invisible)
+     (org-agenda-skip-function 'skip-unless-empty-priority))))
+
+(defun my-agenda-section-on-deck
+    (header)
+  `(tags-todo "PRIORITY=\"0\""
+              ((org-agenda-sorting-strategy '(priority-down category-up))
+               (org-agenda-prefix-format ,my-agenda-backlog-prefix-format)
+               (org-agenda-overriding-header ,header))))
+
+(defun my-agenda-section-backlog
+    (header &optional extra-query)
+  `(tags-todo ,(concat "PRIORITY<>\"\"&PRIORITY<>\"0\"&SCHEDULED<>{.+}"
+                       (if extra-query
+                           (concat "&" extra-query)))
+              ((org-agenda-sorting-strategy '(priority-down category-up))
+               (org-agenda-prefix-format ,my-agenda-backlog-prefix-format)
+               (org-agenda-overriding-header ,header)
+               (org-agenda-skip-function 'skip-if-empty-priority))))
+
+(defun my-agenda-section-wholeweek
+    (header)
+  `(tags "wholeweek"
+         ((org-agenda-prefix-format "%-7e %-14:c")
+          (org-agenda-overriding-header ,header))))
+
+(defun my-agenda-section-done
+    (header)
+  `(tags "/DONE|TODO"
+         ((org-agenda-skip-function 'skip-unless-done-this-week)
+          (org-agenda-sorting-strategy '(priority-down effort-up))
+          (org-agenda-overriding-header ,header)
+          (org-agenda-prefix-format "%6e %-14:c"))))
+
+(defun my-agenda-section-calendar
+    (header span)
+  `(agenda ""
+           ((org-agenda-prefix-format "%-7e %-14:c%?-12t% s")
+            (org-agenda-skip-function 'skip-if-done-or-has-skip-property-or-is-scheduled-in-the-past)
+            (org-agenda-span ,span)
+            (org-agenda-overriding-header ,header))))
+
+(defun my-agenda-capture-templates
+    (capture-file scratch-file)
+  `(("a" "Active" entry
+     (file+headline ,capture-file "Tasks")
+     "* TODO %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")
+    ("b" "On Deck" entry
+     (file+headline ,capture-file "Tasks")
+     "* TODO [#0] %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")
+    ("c" "Backlog" entry
+     (file+headline ,capture-file "Tasks")
+     "* TODO [#1] %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")
+    ("x" "Scratch Active" entry
+     (file+headline ,scratch-file "Tasks")
+     "* TODO %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")
+    ("y" "Scratch On Deck" entry
+     (file+headline ,scratch-file "Tasks")
+     "* TODO [#0] %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")
+    ("z" "Scratch Backlog" entry
+     (file+headline ,scratch-file "Tasks")
+     "* TODO [#1] %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Monkeypatching org-mode so the agenda export only exports
 ;; visible things
 ;;
