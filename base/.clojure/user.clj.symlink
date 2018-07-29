@@ -1,0 +1,36 @@
+(ns user
+  (:require [com.gfredericks.dot-slash-2 :as dot-slash-2]))
+
+(let [syms '[[clojure.data/diff false]
+             [clojure.java.shell/sh false]
+             [clojure.repl/apropos false]
+             [clojure.repl/dir true]
+             [clojure.repl/doc true]
+             [clojure.repl/pst false]
+             [clojure.repl/source true]
+             [clojure.test/run-tests false]
+             [clojure.tools.namespace.repl/refresh false]
+             [clojure.tools.namespace.repl/refresh-all false]
+             [com.gfredericks.repl/add-dep true]
+             [com.gfredericks.repl/bash false]
+             [com.gfredericks.repl/comment true]
+             [com.gfredericks.repl/def true]
+             [com.gfredericks.repl.mexpand/mexpand-all false]
+             [com.gfredericks.repl/pp false]
+             [com.gfredericks.repl/forever false]
+             [com.gfredericks.repl/locals true]
+             [com.gfredericks.repl/run-all-tests false]
+             [com.gfredericks.repl/throw-locals true]
+             [com.gfredericks.repl.bg/bg true]
+             [com.gfredericks.repl.bg/bg-deref false]
+             [com.gfredericks.repl.stashing/stash-everything! false]
+             [com.gfredericks.repl.stashing/get-stash false]
+             [com.gfredericks.repl.stashing/stashed-exceptions false]
+             [com.gfredericks.repl.stashing/clear-all-stashes! false]
+             [robert.hooke/add-hook false]
+             [robert.hooke/remove-hook false]]]
+  (dot-slash-2/!
+   {'. (for [[sym macro?] syms]
+         {:var sym
+          :lazy? true
+          :macro? macro?})}))
