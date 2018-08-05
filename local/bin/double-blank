@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# This is pretty janky; probably half the sleeps can be removed
+
+WS1=blank-$RANDOM
+WS2=blank-$RANDOM
+
+i3-msg workspace $WS1
+sleep 0.4
+i3-msg exec xterm
+sleep 0.4
+i3-msg workspace $WS2
+sleep 0.4
+i3-msg exec xterm
+sleep 0.4
+# the idea is exactly one of these two will have some effect
+i3-msg move workspace to output right
+i3-msg move workspace to output up
+sleep 0.4
+i3-msg kill
+sleep 0.4
+i3-msg workspace $WS1
+sleep 0.4
+i3-msg kill
