@@ -134,7 +134,8 @@ bindsym $mod+9 workspace 9
 bindsym $mod+0 workspace 10
 bindsym $mod+Tab workspace back_and_forth
 # random workspace, clears the screen
-bindsym $mod+b exec /bin/bash -c 'i3-msg workspace $((11 + RANDOM))'
+bindsym $mod+b exec /bin/bash -c 'i3-msg workspace blank-$RANDOM'
+bindsym $mod+Shift+b exec /bin/bash -c '~/dev/mine/dotfiles/local/bin/double-blank'
 
 # move focused container to workspace
 bindsym $mod+Shift+1 move container to workspace 1
@@ -199,3 +200,5 @@ exec "xmodmap ~/.Xmodmap"
 exec --no-startup-id dbus-send --session --dest=org.gnome.SessionManager /org/gnome/SessionManager org.gnome.SessionManager.RegisterClient string:i3.desktop string:''
 # Run this in gnome to get the bottom panel to go away
 # gsettings set org.gnome.gnome-panel.layout toplevel-id-list "['top-panel-0']"
+
+exec_always --no-startup-id xautolock -time 10 -locker "systemctl suspend" -detectsleep -notify 5 -notifier "notify-send -u critical -t 10000 -- 'SUSPENDING screen in 10 seconds'" -corners +00- -cornersize 10 -cornerdelay 5 -cornerredelay 30
