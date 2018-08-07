@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+# Since I can't get xautolock's -killtime feature to work, I have it
+# start this script just after running i3lock;
+#
+# This script runs `systemctl suspend` once five minutes have passed
+# AND it's between 9pm and 12am; if at any point before suspending it
+# notices that i3lock is no longer running, it exits.
+
+set -e
+
+IN_FIVE_MINUTES=$((SECONDS+300))
+LOGFILE=/tmp/x-suspender.log
+
+while true; do
+    if [ ! $(pgrep i3lock) ]; then
+        echo "$(inst) no more i3lock, exiting" >> $LOGFILE
+        exit 0
+    fi
+
+    if [ $SECONDS -gt $IN_FIVE_MINUTES ]; then
+        echo "$(inst) checking time of day..." >> $LOGFILE
+        if [ $(date +%H) -gt 20 ]; then
+            echo "$(inst) welp, it's late. Time to suspend." >> $LOGFILE
+            systemctl suspend
+            exit 0
+        fi
+    fi
+
+    echo "$(inst) sleeping..." >> $LOGFILE
+    sleep 29
+done

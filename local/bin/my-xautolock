@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+xautolock \
+    -time 5 \
+    -locker "i3lock -c 014d78 && x-suspender" \
+    -detectsleep \
+    -notify 10 \
+    -notifier "notify-send -u critical -t 10000 -- 'LOCKING SCREEN'" \
+    -corners +00- \
+    -cornersize 10 \
+    -cornerdelay 5 \
+    -cornerredelay 30
