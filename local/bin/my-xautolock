@@ -2,7 +2,7 @@
 
 xautolock \
     -time 5 \
-    -locker "i3lock -c 014d78 && x-suspender" \
+    -locker "lock" \
     -detectsleep \
     -notify 10 \
     -notifier "notify-send -u critical -t 10000 -- 'LOCKING SCREEN'" \
