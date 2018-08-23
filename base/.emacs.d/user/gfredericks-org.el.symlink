@@ -80,7 +80,7 @@
 (defvar my-org-open-subtree-in-web-browser-url nil)
 
 (defun my-org-open-subtree-in-web-browser ()
-  (inteactive)
+  (interactive)
   (let ((orig-oesteb org-export-show-temporary-export-buffer))
     (setq org-export-show-temporary-export-buffer nil)
     ;; I couldn't get the last arg of org-html-export-as-html to have
