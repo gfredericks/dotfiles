@@ -98,17 +98,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; agenda/capture helpers
 
+(defun my-get-point-of-next-thing ()
+  (save-excursion
+    (or (and (org-goto-first-child) (point))
+        (org-get-next-sibling)
+        (org-end-of-subtree t))))
+
 (defun skip-unless-empty-priority ()
   (if (< 0 (org-get-priority
             (thing-at-point 'line t)))
-      (save-excursion (org-end-of-subtree t))
+      (my-get-point-of-next-thing)
     nil))
 
 (defun skip-if-empty-priority ()
   (if (< 0 (org-get-priority
             (thing-at-point 'line t)))
       nil
-    (save-excursion (org-end-of-subtree t))))
+    (my-get-point-of-next-thing)))
 
 (defun skip-if-done-or-has-skip-property-or-is-scheduled-in-the-past ()
   (or (org-agenda-skip-entry-if 'todo 'done)
@@ -157,9 +163,7 @@
         (if (not (this-week-or-later? (extract-local-date-string did-at)))
             (save-excursion (org-end-of-subtree t))
           nil)
-      (save-excursion
-        (or (org-get-next-sibling)
-            (org-end-of-subtree t))))))
+      (my-get-point-of-next-thing))))
 
 (defun my-agenda-backlog-prefix-age ()
   (let ((created (org-entry-get (point) "CREATED_AT")))
