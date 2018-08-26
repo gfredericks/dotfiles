@@ -101,7 +101,15 @@
 (defun my-get-point-of-next-thing ()
   (save-excursion
     (or (and (org-goto-first-child) (point))
-        (org-get-next-sibling)
+        ;; org-get-next-sibling doesn't seem to do what its
+        ;; documentation suggests; looks like it moves to the next
+        ;; sibling OR the next heading of fewer stars, and always
+        ;; returns nil; so doing this bookkeeping works the way we
+        ;; need in this context
+        (let ((p (point)))
+          (org-get-next-sibling)
+          (let ((p2 (point)))
+            (if (= p p2) nil p2)))
         (org-end-of-subtree t))))
 
 (defun skip-unless-empty-priority ()
