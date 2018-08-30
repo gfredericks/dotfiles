@@ -12,7 +12,8 @@
     git-timemachine
     real-auto-save
     window-numbering
-    workgroups))
+    workgroups
+    yaml-mode))
 
 (dolist (package-name gfredericks-base-packages)
   (gfredericks-packages-install package-name))
