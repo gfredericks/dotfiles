@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
-# Script that reads a tar file from stdin and prints
-# filenames and hashes as if via sha256sum
+#! Script that reads a tar file from stdin and prints
+#! filenames and hashes as if via sha256sum
+":"; DEPS=\
+'{:deps
+  {org.apache.commons/commons-compress {:mvn/version "1.17"}}}'
+":"; exec clojure -Sdeps "$DEPS" "$0"
 
-clojure -Sdeps '{:deps {org.apache.commons/commons-compress {:mvn/version "1.17"}}}' \
-        <(cat <<EOF
 (ns user
   (:require
    [clojure.java.shell :as sh]
@@ -26,5 +28,3 @@ clojure -Sdeps '{:deps {org.apache.commons/commons-compress {:mvn/version "1.17"
       (recur))))
 
 (shutdown-agents)
-EOF
-)
