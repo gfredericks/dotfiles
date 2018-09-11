@@ -38,7 +38,6 @@
 ;; http://stackoverflow.com/questions/14444265/kill-the-terminal-buffer-with-c-d
 (defun term-handle-exit--close-buffer (&rest args)
   (when (null (get-buffer-process (current-buffer)))
-    (insert "Press <C-d> to kill the buffer.")
     (use-local-map (let ((map (make-sparse-keymap)))
                      (define-key map (kbd "C-d")
                        (lambda ()
