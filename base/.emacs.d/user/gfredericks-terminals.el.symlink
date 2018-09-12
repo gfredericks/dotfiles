@@ -48,13 +48,21 @@
 
 (global-set-key "\C-cs" 'my-start-term)
 
+(defun window-size-change-function-for-bug-workaround (_frame)
+  (window--adjust-process-windows))
+
 ;; make workgroup commands work in the terminal buffers
 (defun expose-global-binding-in-term (binding)
   (define-key term-raw-map binding
     (lookup-key (current-global-map) binding)))
+
 (add-hook 'term-load-hook
   (lambda ()
     (expose-global-binding-in-term (kbd "C-c C-g"))
     (expose-global-binding-in-term (kbd "C-c s"))
+    (define-key term-raw-map (kbd "C-x") 'nil)
 
-    (define-key term-raw-map (kbd "C-x") 'nil)))
+    ;; I reported this bug by email on 2018-09-12; haven't seen a
+    ;; ticket number yet
+    (add-hook 'window-size-change-functions
+              'window-size-change-function-for-bug-workaround)))
