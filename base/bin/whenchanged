@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Usage: whenchanged somefile a shell command
 
 FILE=$1
@@ -6,7 +8,7 @@ CMD="$@"
 
 MODTIME=`stat -c %Y $FILE`
 
-echo "$CMD" | /usr/bin/env bash -s  # why not run right up front
+"$@"
 
 while :
 do
@@ -15,7 +17,7 @@ do
   if [ "$NEW_MODTIME" -gt "$MODTIME" ]
     then
     echo "File updated, re-running..."
-    echo "$CMD" | /usr/bin/env bash -s
+    "$@"
   fi
   MODTIME=$NEW_MODTIME
 done
