@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-i3lock -c 014d78 && x-suspender
+# I had x-suspender here as well but I don't think I saw evidence that
+# it ever worked; need to debug it
+i3lock -c 014d78 && xset dpms force off
