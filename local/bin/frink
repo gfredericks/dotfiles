@@ -26,5 +26,7 @@ PID=$!
 sleep 1.5
 kill "$PID"
 
+rm "$F"
+
 echo -n "$URL" | copy
 echo "$URL"
