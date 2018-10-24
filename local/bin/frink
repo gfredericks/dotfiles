@@ -12,7 +12,7 @@ read key timestamp < <(
   curl -s https://frinkiac.com/api/random | jq -r '"\(.Episode.Key) \(.Frame.Timestamp)"'
 )
 
-memetext="$(echo -n "$@" | fold -s -w 28 | base64 | sed "s/\//_/g" | tr -d '\n')"
+memetext="$(echo -n "$@" | fold -s -w 25 | base64 | sed "s/\//_/g" | tr -d '\n')"
 
 URL="https://frinkiac.com/meme/$key/$timestamp.jpg?b64lines=$memetext"
 
