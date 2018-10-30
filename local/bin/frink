@@ -28,5 +28,7 @@ kill "$PID"
 
 rm "$F"
 
-echo -n "$URL" | copy
-echo "$URL"
+MARKDOWN="![]($URL =300x)"
+
+echo -n "$MARKDOWN" | copy
+echo "$MARKDOWN"
