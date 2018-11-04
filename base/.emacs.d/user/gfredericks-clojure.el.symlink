@@ -81,3 +81,29 @@
                  for> doseq> fn> defn> defprotocol> gen-for fnk
                  macrolet bg letfn> domonad checking))
   (put-clojure-indent macro 'defun))
+
+(defun my-number->bigdec
+    (num-s)
+  (format
+   "%sM"
+   (replace-regexp-in-string
+    "[,\\$]" ""
+    (replace-regexp-in-string "−" "-" num-s))))
+
+;; Convert the 12,345.67 under point to 12345.67M
+(defun my-bigdecify ()
+  (interactive)
+  (let ((orig-point (point)))
+    (if (or (= orig-point (line-end-position))
+            (string= " " (buffer-substring orig-point (+ 1 orig-point))))
+        (backward-char))
+    (paredit-forward)
+    (let ((end-point (point)))
+      (paredit-backward)
+      (letrec ((start-point (point))
+               (s (buffer-substring start-point end-point)))
+        (kill-region start-point end-point)
+        (insert (my-number->bigdec s))
+        (goto-char orig-point)))))
+
+(global-set-key (kbd "C-c q") 'my-bigdecify)
