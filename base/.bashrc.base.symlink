@@ -190,18 +190,31 @@ __prompt_command() {
     done <<< "$(for k in ${!PROMPT_COMPONENTS[@]}; do echo $k; done | sort)"
 
     FIRST=1
+    LINE_LEN=1
     for k in "${KEYS[@]}"; do
         if [ $FIRST -eq "0" ]; then
             LINE2="$LINE2 $CIRCLE"
         else
             FIRST=0
         fi
-        LINE2="$LINE2 ${PROMPT_COMPONENTS[$k]}"
+        COMP="${PROMPT_COMPONENTS[$k]}"
+        LINE_LEN=$(( $LINE_LEN + 3 + ${#COMP} ))
+        LINE2="$LINE2 $COMP"
     done
     LINE2="$LINE2 $Theme▶ $RCol"
     LINE3="${Theme}\$${RCol} "
 
-    PS1+="\n$LINE2\n$LINE3"
+    if [[ $LINE_LEN -gt $COLUMNS ]]; then
+        LINE2=""
+        for k in "${KEYS[@]}"; do
+            COMP="${PROMPT_COMPONENTS[$k]}"
+            LINE2="$LINE2$Theme◀$RCol $COMP\n"
+        done
+    else
+        LINE2="$LINE2\n"
+    fi
+
+    PS1+="\n$LINE2$LINE3"
     IN_PROMPT=1
 }
 
