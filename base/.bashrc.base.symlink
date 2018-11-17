@@ -198,6 +198,9 @@ __prompt_command() {
             FIRST=0
         fi
         COMP="${PROMPT_COMPONENTS[$k]}"
+        # counting the line length manually because the color codes
+        # make the length of the string and the actual display length
+        # different
         LINE_LEN=$(( $LINE_LEN + 3 + ${#COMP} ))
         LINE2="$LINE2 $COMP"
     done
