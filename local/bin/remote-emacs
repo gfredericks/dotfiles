@@ -98,7 +98,7 @@ go(){
 
     echo '$THE_PORT$' > ~/.remote-emacs-clipboard-browser-port
     echo $$ > ~/.remote-emacs.pid
-    export PATH=/home/gary/bin/emacs.bin:$PATH
+    export PATH=$(echo ~/bin/* | tr " " :):$PATH
     emacsclient -c -e \'(restore-longrunning-workgroup-setup)\'
     # For some reason, making emacsclient not the last thing causes
     # the server not to crash when we kill the client O_O
@@ -113,7 +113,7 @@ go
 if (( SECONDS - STARTED_AT < 10 )); then
   if [ $? -eq 255 ] || [ $? -eq 1 ]; then
     echo "Assuming port forwarding failed, doing ssh+kill and trying again..." >&2
-    ssh "$HOST" $'sudo netstat -tulpn | grep '$THE_PORT$' | grep -oP \'\d+/\d+\' | cut -f 1 -d / | head -1 | xargs kill'
+    ssh "$HOST" $'sudo netstat -tulpn | grep '$THE_PORT$' | grep -oP \'\d+/\d+\' | cut -f 1 -d / | head -1 | xargs --no-run-if-empty kill'
     go
   fi
 fi
