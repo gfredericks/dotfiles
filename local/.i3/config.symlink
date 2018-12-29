@@ -35,7 +35,7 @@ floating_modifier $mod
 
 # start a terminal
 bindsym $mod+Return exec xterm #gnome-terminal
-bindsym $mod+Shift+Return exec xterm -name "floating xterm"
+bindsym $mod+Shift+Return exec xterm -title "floating xterm"
 for_window [title="floating xterm"] floating enable
 for_window [class="floating"] floating enable
 
