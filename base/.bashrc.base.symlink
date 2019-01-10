@@ -120,6 +120,8 @@ parse_git_branch() {
     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
 }
 
+HAS_DONE_WALCOM=0
+
 PROMPT_COMMAND=__prompt_command
 
 __prompt_command() {
@@ -217,7 +219,13 @@ __prompt_command() {
         LINE2="$LINE2\n"
     fi
 
-    PS1+="\n$LINE2$LINE3"
+    WALCOM=""
+    if [ "$HAS_DONE_WALCOM" == "0" ]; then
+      HAS_DONE_WALCOM=1
+      WALCOM="\n${Theme}▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n▰                      ▰\n▰  WALCOM!!1 TO BASH!  ▰\n▰                      ▰\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n$RCol"
+    fi
+
+    PS1+="$WALCOM\n$LINE2$LINE3"
     IN_PROMPT=1
 }
 
