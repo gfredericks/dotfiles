@@ -16,6 +16,11 @@ memetext="$(echo -n "$@" | fold -s -w 25 | base64 | sed "s/\//_/g" | tr -d '\n')
 
 URL="https://frinkiac.com/meme/$key/$timestamp.jpg?b64lines=$memetext"
 
+MARKDOWN="![]($URL =300x)"
+
+echo -n "$MARKDOWN" | copy
+echo "$MARKDOWN"
+
 F=$(mktemp)
 
 curl -o "$F" -s "$URL"
@@ -27,8 +32,3 @@ sleep 1.5
 kill "$PID"
 
 rm "$F"
-
-MARKDOWN="![]($URL =300x)"
-
-echo -n "$MARKDOWN" | copy
-echo "$MARKDOWN"
