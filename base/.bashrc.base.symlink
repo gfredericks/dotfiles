@@ -177,11 +177,9 @@ __prompt_command() {
     [[ "$THEWD" =~ ^"$HOME"(/|$) ]] && THEWD="~${THEWD#$HOME}"
     PROMPT_COMPONENTS["1-pwd"]="$THEWD"
 
-    # I can enable this if I can figure out how to get emacs' term-mode
-    # to reset it so it doesn't start at 3
-    # if [ $SHLVL -gt 1 ]; then
-    #   PROMPT_COMPONENTS["00-shlvl"]="$SHLVL"
-    # fi
+    if [ $SHLVL -gt 1 ]; then
+      PROMPT_COMPONENTS["00-shlvl"]="$SHLVL"
+    fi
 
     for k in "${!EXTRA_PROMPT_COMPONENTS[@]}"; do
         v="${EXTRA_PROMPT_COMPONENTS[$k]}"
