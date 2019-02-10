@@ -3,6 +3,9 @@
 ;; requiring this ensures that we're using workgroups
 (require 'gfredericks-base)
 
+;; this way spawned bash sessions have SHLVL=1
+(setenv "SHLVL" "0")
+
 (defun my-start-term (prefix-arg)
   (interactive "P")
   (let* ((buffer-name-base

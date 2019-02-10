@@ -177,6 +177,10 @@ __prompt_command() {
     [[ "$THEWD" =~ ^"$HOME"(/|$) ]] && THEWD="~${THEWD#$HOME}"
     PROMPT_COMPONENTS["1-pwd"]="$THEWD"
 
+    if [ $SHLVL -gt 1 ]; then
+      PROMPT_COMPONENTS["00-shlvl"]="$SHLVL"
+    fi
+
     for k in "${!EXTRA_PROMPT_COMPONENTS[@]}"; do
         v="${EXTRA_PROMPT_COMPONENTS[$k]}"
         PROMPT_COMPONENTS["$k"]="$v"
