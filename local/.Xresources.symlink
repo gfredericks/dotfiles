@@ -23,12 +23,12 @@ XTerm.fullscreen: never
 XTerm*termName: xterm-256color
 
 xterm*VT100.Translations: #override \
-                 Shift <Key>Up:        scroll-back(1) \n\
-                 Shift <Key>Down:      scroll-forw(1) \n\
-                 Ctrl Shift <Key>V:    insert-selection(CLIPBOARD) \n\
-                 Ctrl Shift <Key>C:    copy-selection(CLIPBOARD) \n\
-                 Ctrl Shift <Key>=:    larger-vt-font() \n\
-                 Ctrl <Key>-:          smaller-vt-font()
+                       Shift <Key>Up:   scroll-back(1) \n\
+                       Shift <Key>Down: scroll-forw(1) \n\
+                 Ctrl  Shift <Key>V:    insert-selection(CLIPBOARD) \n\
+                 Ctrl  Shift <Key>C:    copy-selection(CLIPBOARD) \n\
+                 Ctrl  Shift <Key>=:    larger-vt-font() \n\
+                 Ctrl ~Shift <Key>-:    smaller-vt-font()
 
 !!
 !! Colors
