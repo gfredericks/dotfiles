@@ -114,7 +114,7 @@
  :debug-repl
  {:repl-options {:nrepl-middleware
                  [com.gfredericks.debug-repl/wrap-debug-repl]}
-  :dependencies [[com.gfredericks/debug-repl "0.0.8"]
+  :dependencies [[com.gfredericks/debug-repl "0.0.10"]
                  [com.gfredericks/dot-slash-2 "0.1.2"]]
   :injections [(do
                  (require 'com.gfredericks.dot-slash-2)
