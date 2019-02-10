@@ -12,6 +12,28 @@
 (setq org-default-priority ?9)
 (setq org-clock-into-drawer t)
 
+;; adapted from org-agenda-set-tags
+(defun my-org-agenda-toggle-focus-tag ()
+  (interactive)
+  (org-agenda-check-no-diary)
+  (if (and (org-region-active-p) (called-interactively-p 'any))
+      (call-interactively 'org-change-tag-in-region)
+    (let* ((hdmarker (or (org-get-at-bol 'org-hd-marker)
+			                   (org-agenda-error)))
+	         (buffer (marker-buffer hdmarker))
+	         (pos (marker-position hdmarker))
+	         (inhibit-read-only t)
+	         newhead)
+      (org-with-remote-undo buffer
+	      (with-current-buffer buffer
+	        (widen)
+	        (goto-char pos)
+	        (org-show-context 'agenda)
+          (org-toggle-tag "focus")
+	        (end-of-line 1)
+	        (setq newhead (org-get-heading)))
+	      (org-agenda-change-all-lines newhead hdmarker)
+	      (beginning-of-line 1)))))
 
 (defun org-custom ()
   "org-mode-hook"
@@ -23,7 +45,8 @@
   (org-defkey org-mode-map (kbd "C-c o p") 'org-move-subtree-up)
   (org-defkey org-mode-map (kbd "C-c o n") 'org-move-subtree-down)
   (org-defkey org-mode-map (kbd "C-c o z") 'org-add-note)
-  (org-defkey org-mode-map (kbd "C-c o o") 'my-org-open-subtree-in-web-browser))
+  (org-defkey org-mode-map (kbd "C-c o o") 'my-org-open-subtree-in-web-browser)
+  (org-defkey org-agenda-keymap (kbd "Z") 'my-org-agenda-toggle-focus-tag))
 (add-hook 'org-mode-hook 'org-custom)
 
 ;; so the org agenda doesn't give me this weird 3/4 window
@@ -186,11 +209,16 @@
             "    "))
       "??? ")))
 
+(defun my-agenda-focus-flag (&rest _args)
+  (let ((tags (org-get-tags-at)))
+    (if (member "focus" tags)
+        "▸" " ")))
+
 (defvar my-agenda-backlog-prefix-format
   "%7e %-14:c %(my-agenda-backlog-prefix-age)")
 
 (defvar my-agenda-active-prefix-format
-  "%7e %-14:c")
+  "%7e %-14:c%(my-agenda-focus-flag)")
 
 (defun my-agenda-section-active-todos
     (header)
