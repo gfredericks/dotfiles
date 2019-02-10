@@ -53,10 +53,11 @@ do
     sudo apt-get install -y libncurses-dev asciidoc docbook2x libgnutls28-dev
     BUILDDIR=$BUILDDIRBASE/emacs
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget http://mirror.team-cymru.org/gnu/emacs/emacs-26.1.tar.gz
-    echo '760382d5e8cdc5d0d079e8f754bce1136fbe1473be24bb885669b0e38fc56aa3  emacs-26.1.tar.gz' | sha256sum -c
-    bsdtar xzf emacs-26.1.tar.gz
-    cd emacs-26.1
+    # shallow because the emacs repo is super big/old
+    git clone --shallow-since=2019-01-01 git://git.sv.gnu.org/emacs.git $BUILDDIR
+    cd $BUILDDIR
+    git checkout b0b483d714e87ee0a4572f9c541514a1ac1a8226
+    ./autogen.sh
     ./configure \
         --without-x \
         --prefix=$BUILDDIR/install \
