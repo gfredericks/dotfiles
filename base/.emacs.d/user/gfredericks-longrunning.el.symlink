@@ -23,7 +23,8 @@
 
 (defun stash-my-working-config ()
   (interactive)
-  (unless during-switching?
+  (unless (or during-switching?
+              (active-minibuffer-window))
     (-when-let (the-workgroup (wg-current-workgroup t))
       (let ((the-wg-name (wg-name the-workgroup)))
         (my-puthash-nested (selected-frame)
