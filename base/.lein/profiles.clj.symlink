@@ -47,11 +47,9 @@
                        clojure.test/run-tests
                        clojure.tools.namespace.repl/refresh
                        clojure.tools.namespace.repl/refresh-all
-                       com.gfredericks.repl/add-dep
                        com.gfredericks.repl/bash
                        com.gfredericks.repl/comment
                        com.gfredericks.repl/def
-                       com.gfredericks.repl/dir
                        com.gfredericks.repl.mexpand/mexpand-all
                        com.gfredericks.repl/pp
                        com.gfredericks.repl/forever
@@ -68,7 +66,7 @@
                        robert.hooke/remove-hook]}))]}
 
  :cider
- {:dependencies [[cider/cider-nrepl "0.20.0"]]
+ {:dependencies [[cider/cider-nrepl "0.21.1"]]
   :repl-options {:nrepl-middleware
                  [cider.nrepl/wrap-apropos
                   cider.nrepl/wrap-classpath
