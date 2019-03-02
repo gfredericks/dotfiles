@@ -191,6 +191,9 @@ bar {
         font pango:Inconsolata 11
 }
 
+# Print screen
+bindsym --release Print exec gnome-screenshot
+bindsym --release Shift+Print exec gnome-screenshot -a
 
 exec "xmodmap ~/.Xmodmap"
 # This fixes a problem where gnome suddenly logs out after a minute or
