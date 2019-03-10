@@ -11,6 +11,7 @@
     magit
     git-timemachine
     real-auto-save
+    smex
     window-numbering
     workgroups
     yaml-mode))
@@ -79,6 +80,8 @@
 (ido-mode 1)
 (setq ido-max-directory-size 1000000)
 
+(require 'smex)
+(global-set-key (kbd "M-x") 'smex)
 
 ;; Windows
 (winner-mode 1)
