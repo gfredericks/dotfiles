@@ -86,15 +86,7 @@
                   cider.nrepl/wrap-trace
                   cider.nrepl/wrap-out
                   cider.nrepl/wrap-undef
-                  cider.nrepl/wrap-version]}
-  :injections
-  [(try
-     (require 'cider.inlined-deps.puget.v1v0v2.puget.printer)
-     (alter-var-root (resolve 'cider.inlined-deps.puget.v1v0v2.puget.printer/*options*)
-                     assoc :print-fallback :print)
-     (catch Exception t
-       (binding [*out* *err*]
-         (println "Can't monkey-patch cider-nrepl's copy of puget!"))))]}
+                  cider.nrepl/wrap-version]}}
 
  :local-injections
  {:injections
