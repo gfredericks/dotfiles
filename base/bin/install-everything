@@ -50,7 +50,7 @@ do
   # servers
   if [ "$1" == "all" -o "$1" == "emacs" ]
   then
-    sudo apt-get install -y libncurses-dev asciidoc docbook2x libgnutls28-dev
+    sudo apt-get install -y libncurses-dev asciidoc docbook2x libgnutls28-dev autoconf
     BUILDDIR=$BUILDDIRBASE/emacs
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
     # shallow because the emacs repo is super big/old
@@ -264,8 +264,8 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/lein
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://github.com/technomancy/leiningen/raw/2.7.1/bin/lein
-    echo '3f7c6474ff79ba90aa5fdf9f7d074d5d6b1f6cee6e10c917089f75a2fe24db37  lein' | \
+    wget https://raw.githubusercontent.com/technomancy/leiningen/2.9.1/bin/lein
+    echo '32acacc8354627724d27231bed8fa190d7df0356972e2fd44ca144c084ad4fc7  lein' | \
         sha256sum -c
     EX=$BUILDDIR/lein
     chmod +x $EX
