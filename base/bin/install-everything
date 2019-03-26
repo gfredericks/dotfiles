@@ -75,7 +75,7 @@ do
 
   if [ "$1" == "all" -o "$1" == "server" -o "$1" == "git" ]
   then
-    sudo apt-get install -y asciidoc docbook2x libssl-dev libcurl4-openssl-dev libexpat1-dev gettext
+    sudo apt-get install -y asciidoc docbook2x libssl-dev libcurl4-openssl-dev libexpat1-dev gettext zlib1g-dev
     BUILDDIR=$BUILDDIRBASE/git
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
     wget https://github.com/git/git/archive/v2.14.1.zip
