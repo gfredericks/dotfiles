@@ -66,15 +66,7 @@
                        robert.hooke/remove-hook]}))]}
 
  :cider
- {:plugins [[cider/cider-nrepl "0.21.1"]]
-  :injections
-  [(try
-     (require 'cider.inlined-deps.puget.v1v0v2.puget.printer)
-     (alter-var-root (resolve 'cider.inlined-deps.puget.v1v0v2.puget.printer/*options*)
-                     assoc :print-fallback :print)
-     (catch Exception t
-       (binding [*out* *err*]
-         (println "Can't monkey-patch cider-nrepl's copy of puget!"))))]}
+ {:plugins [[cider/cider-nrepl "0.21.1"]]}
 
  :local-injections
  {:injections
