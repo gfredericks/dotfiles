@@ -40,7 +40,7 @@
   :injections [(do
                  (require 'com.gfredericks.dot-slash-2)
                  ((resolve 'com.gfredericks.dot-slash-2/!)
-                  '{. [clojure.data/diff
+                  '{- [clojure.data/diff
                        clojure.java.shell/sh
                        clojure.repl/apropos clojure.repl/doc
                        clojure.repl/pst clojure.repl/source
@@ -145,7 +145,7 @@
   :jvm-opts ^:replace []}
 
  :clojure-test-ex-printing
- {:dependencies [[mvxcvi/puget "1.0.1"]]
+ {:dependencies [[mvxcvi/puget "1.1.1"]]
   :injections [(do
                  (require 'clojure.test 'puget.printer)
                  (binding [*ns* (the-ns 'clojure.test)]
