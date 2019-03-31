@@ -154,7 +154,7 @@ __prompt_command() {
         PROMPT_COMPONENTS["3-git-branch"]="$GIT_BRANCH"
     fi
 
-    JOBS=`jobs | wc -l`
+    local JOBS=`jobs | wc -l`
     if [ $JOBS -gt "0" ]; then
         if [ $JOBS -eq "1" ]; then
             PROMPT_COMPONENTS["2-jobs"]="1 job"
@@ -189,14 +189,14 @@ __prompt_command() {
     unset EXTRA_PROMPT_COMPONENTS
     declare -A EXTRA_PROMPT_COMPONENTS
 
-    LINE2="$Theme◀$RCol"
-    KEYS=()
+    local LINE2="$Theme◀$RCol"
+    local KEYS=()
     while read line; do
         KEYS+=("$line")
     done <<< "$(for k in ${!PROMPT_COMPONENTS[@]}; do echo $k; done | sort)"
 
-    FIRST=1
-    LINE_LEN=1
+    local FIRST=1
+    local LINE_LEN=1
     for k in "${KEYS[@]}"; do
         if [ $FIRST -eq "0" ]; then
             LINE2="$LINE2 $CIRCLE"
@@ -211,7 +211,7 @@ __prompt_command() {
         LINE2="$LINE2 $COMP"
     done
     LINE2="$LINE2 $Theme▶ $RCol"
-    LINE3="${Theme}\$${RCol} "
+    local LINE3="${Theme}\$${RCol} "
 
     if [[ $LINE_LEN -gt $COLUMNS ]]; then
         LINE2=""
@@ -223,7 +223,7 @@ __prompt_command() {
         LINE2="$LINE2\n"
     fi
 
-    WALCOM=""
+    local WALCOM=""
     if [ "$HAS_DONE_WALCOM" == "0" ]; then
       HAS_DONE_WALCOM=1
       WALCOM="\n${Theme}▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n▰                      ▰\n▰  WALCOM!!1 TO BASH!  ▰\n▰                      ▰\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n$RCol"
