@@ -172,7 +172,13 @@ __prompt_command() {
         PROMPT_COMPONENTS["5-timer"]="$THE_TIMER"
     fi
 
-    PROMPT_COMPONENTS["0-hostname"]="$HOSTNAME"
+    local H;
+    if [ ! -z "$BASH_PROMPT_HOSTNAME" ]; then
+      H="$BASH_PROMPT_HOSTNAME"
+    else
+      H="$HOSTNAME"
+    fi
+    PROMPT_COMPONENTS["0-hostname"]="$H"
     THEWD="$PWD"
     [[ "$THEWD" =~ ^"$HOME"(/|$) ]] && THEWD="~${THEWD#$HOME}"
     PROMPT_COMPONENTS["1-pwd"]="$THEWD"
