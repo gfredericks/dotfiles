@@ -13,7 +13,7 @@
         :local-user]
 
  :user-misc
- {:plugins [[lein-kibit "0.0.8"]
+ {:plugins [[lein-kibit "0.1.6"]
             [lein-lein "0.2.0"]
             [lein-oneoff "0.3.1"]
             [lein-pprint "1.1.1"]
