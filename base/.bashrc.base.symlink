@@ -113,8 +113,6 @@ function when-did-that-happen? {
   echo "That happened $___elapsed ago."
 }
 
-trap 'timer_start' DEBUG
-
 # Prompt
 parse_git_branch() {
     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
@@ -122,7 +120,13 @@ parse_git_branch() {
 
 HAS_DONE_WALCOM=0
 
-PROMPT_COMMAND=__prompt_command
+if [ "$NO_FANCY_PROMPT" == "1" ]; then
+  PS1="$ "
+  PROMPT_COMMAND=
+else
+  trap 'timer_start' DEBUG
+  PROMPT_COMMAND=__prompt_command
+fi
 
 __prompt_command() {
     local EXIT="$?"
