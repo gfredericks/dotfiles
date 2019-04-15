@@ -42,6 +42,7 @@
 
 ;; projectile
 (add-hook 'prog-mode-hook 'projectile-mode)
+(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 (setq projectile-project-root-files-functions
       ;; reordering these so that top-down comes before bottom-up, to
       ;; support git repos with multiple leiningen projects in them,
