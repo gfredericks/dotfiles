@@ -30,7 +30,7 @@
              [robert.hooke/add-hook false]
              [robert.hooke/remove-hook false]]]
   (dot-slash-2/!
-   {'. (for [[sym macro?] syms]
+   {'- (for [[sym macro?] syms]
          {:var sym
           :lazy? true
           :macro? macro?})}))
