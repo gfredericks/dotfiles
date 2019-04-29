@@ -8,6 +8,7 @@
     projectile
     idle-highlight-mode
     neotree
+    htmlize ;; used for org-mode exports
     magit
     git-timemachine
     real-auto-save
@@ -41,6 +42,7 @@
 (add-hook 'prog-mode-hook 'idle-highlight-mode)
 
 ;; projectile
+(require 'projectile)
 (add-hook 'prog-mode-hook 'projectile-mode)
 (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 (setq projectile-project-root-files-functions
