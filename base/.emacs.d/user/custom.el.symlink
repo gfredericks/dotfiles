@@ -8,6 +8,12 @@
     (real-auto-save workgroups window-numbering simple-httpd projectile paredit neotree multiple-cursors markdown-mode magit ivy idle-highlight-mode htmlize haskell-mode git-timemachine cider align-cljlet)))
  '(safe-local-variable-values
    '((gfredericks-autoexport-beamer . t)
+     (cider-comment-postfix . "")
+     (cider-comment-continued-prefix . "")
+     (cider-comment-prefix . "")
+     (cider-comment-postfix "")
+     (cider-comment-continued-prefix "")
+     (cider-comment-prefix "")
      (real-auto-save-interval . 1))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
