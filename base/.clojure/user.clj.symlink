@@ -23,6 +23,7 @@
              [com.gfredericks.repl/throw-locals true]
              [com.gfredericks.repl.bg/bg true]
              [com.gfredericks.repl.bg/bg-deref false]
+             [com.gfredericks.repl.bg/bg-search true]
              [com.gfredericks.repl.stashing/stash-everything! false]
              [com.gfredericks.repl.stashing/get-stash false]
              [com.gfredericks.repl.stashing/stashed-exceptions false]
