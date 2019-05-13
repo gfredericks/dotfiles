@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+# This could be better, but I think it's good enough for now.
+
+PARENTHESIZED="🄐🄑🄒🄓🄔🄕🄖🄗🄘🄙🄚🄛🄜🄝🄞🄟🄠🄡🄢🄣🄤🄥🄦🄧🄨🄩"
+
+SQUARED="🄰🄱🄲🄳🄴🄵🄶🄷🄸🄹🄺🄻🄼🄽🄾🄿🅀🅁🅂🅃🅄🅅🅆🅇🅈🅉"
+
+NEGATIVE_CIRCLED="🅐🅑🅒🅓🅔🅕🅖🅗🅘🅙🅚🅛🅜🅝🅞🅟🅠🅡🅢🅣🅤🅥🅦🅧🅨🅩"
+
+NEGATIVE_SQUARED="🅰🅱🅲🅳🅴🅵🅶🅷🅸🅹🅺🅻🅼🅽🅾🅿🆀🆁🆂🆃🆄🆅🆆🆇🆈🆉"
+
+# I think these have to have spaces around them or they'll
+# be rendered as flags
+REGIONAL_INDICATORS="🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿"
+
+# These don't quite look right, I'm confused
+FULLWIDTH="ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"
+
+ord() {
+  LC_CTYPE=C printf '%d' "'$1"
+}
+
+read line;
+for idx in $(seq 0 $(( ${#line} - 1))); do
+    C="${line:$idx:1}"
+    C="${C^^}"
+    if [[ $C =~ [A-Z] ]]; then
+        # echo -n "X"
+        IDX=$(( $(ord "$C") - 65))
+        case $(( RANDOM % 4 )) in
+            0)
+                C="${SQUARED:$IDX:1}"
+                ;;
+            1)
+                C="${NEGATIVE_CIRCLED:$IDX:1}"
+                ;;
+            2)
+                C="${NEGATIVE_SQUARED:$IDX:1}"
+                ;;
+            3)
+                IDX=$(( IDX *  2 ))
+                C=" ${REGIONAL_INDICATORS:$IDX:1} "
+                ;;
+        esac
+        echo -n "$C"
+    else
+        echo -n "$C"
+    fi
+done
