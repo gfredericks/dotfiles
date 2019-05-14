@@ -1,6 +1,18 @@
+#!/usr/bin/env bash
+
 # Outputs the first double-subdirectory under ~/dev that
 # matches the given pattern (with grep). For use with the
 # `d` function in the bashrc.
 
-DIR=`find -L ~/dev/* -maxdepth 1 -type d | grep '/' | grep $1 | awk '{ print length, $0 }' | sort -n | cut -d" " -f2- | head -1`
-echo $DIR
+cd ~/dev
+
+find -L ./* \
+     -maxdepth 1 \
+     -type d \
+    | grep '/' \
+    | grep "$1" \
+    | awk '{ print length, $0 }' \
+    | sort -n \
+    | cut -d" " -f2- \
+    | head -1 \
+    | xargs realpath
