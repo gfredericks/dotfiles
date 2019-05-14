@@ -10,6 +10,8 @@ NEGATIVE_CIRCLED="🅐🅑🅒🅓🅔🅕🅖🅗🅘🅙🅚🅛🅜🅝🅞�
 
 NEGATIVE_SQUARED="🅰🅱🅲🅳🅴🅵🅶🅷🅸🅹🅺🅻🅼🅽🅾🅿🆀🆁🆂🆃🆄🆅🆆🆇🆈🆉"
 
+CIRCLED="ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"
+
 # I think these have to have spaces around them or they'll
 # be rendered as flags
 REGIONAL_INDICATORS="🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿"
@@ -28,7 +30,7 @@ for idx in $(seq 0 $(( ${#line} - 1))); do
     if [[ $C =~ [A-Z] ]]; then
         # echo -n "X"
         IDX=$(( $(ord "$C") - 65))
-        case $(( RANDOM % 4 )) in
+        case $(( RANDOM % 5 )) in
             0)
                 C="${SQUARED:$IDX:1}"
                 ;;
@@ -41,6 +43,9 @@ for idx in $(seq 0 $(( ${#line} - 1))); do
             3)
                 IDX=$(( IDX *  2 ))
                 C=" ${REGIONAL_INDICATORS:$IDX:1} "
+                ;;
+            4)
+                C="${CIRCLED:$IDX:1}"
                 ;;
         esac
         echo -n "$C"
