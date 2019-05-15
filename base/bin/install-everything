@@ -314,6 +314,12 @@ do
     ln -s $BUILDDIR ~/.dynamic-colors
   fi
 
+  if [ "$1" == "all" -o "$1" == "extras" ]
+  then
+    # TODO: something for latex?
+    sudo apt-get install imagemagick dot
+  fi
+
   shift
 done
 
