@@ -311,6 +311,44 @@ do
     ln -s $BUILDDIR ~/.dynamic-colors
   fi
 
+  ###
+  ### weechat
+  ###
+
+  if [ "$1" == "all" -o "$1" == "weechat" ]
+  then
+    sudo apt-get install -y cmake libgcrypt20-dev
+    BUILDDIR=$BUILDDIRBASE/weechat
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    wget https://weechat.org/files/src/weechat-1.9.1.tar.gz
+    echo 'e52bb5239e24477ec38f2ad71cb2274e0ffc4226fc36ec00beeb7cf7e754a8c58d9bbc424cb0900e7c803ed47b0956e8f420eaa4cc9cf407ab6dd4769ec94326  weechat-1.9.1.tar.gz' | \
+        sha512sum -c
+    tar xzf weechat-1.9.1.tar.gz
+    INSTALLDIR=$BUILDDIR/install
+    mkdir $INSTALLDIR
+    cd weechat-1.9.1
+    mkdir build
+    cd build
+    cmake .. -DCMAKE_INSTALL_PREFIX=$(realpath "$INSTALLDIR")
+    make
+    make install
+    rm -f ~/bin/weechat.bin
+    ln -s $INSTALLDIR/bin ~/bin/weechat.bin
+
+    # Install wee-slack
+
+    BUILDDIR=$BUILDDIRBASE/wee-slack
+    rm -rf $BUILDDIR
+    pip3 install websocket-client
+    git clone git@github.com:wee-slack/wee-slack.git $BUILDDIR
+    cd $BUILDDIR
+    git checkout 8d3cbb892c20dbd5a01cfafa590b1e8ff2d59d5a
+    mkdir -p ~/.weechat/python/autoload
+    cp wee_slack.py ~/.weechat/python
+    cd ~/.weechat/python
+    ln -s ../wee_slack.py autoload
+  fi
+
   shift
 done
 
