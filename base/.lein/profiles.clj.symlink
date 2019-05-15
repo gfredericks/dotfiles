@@ -22,7 +22,7 @@
                  [com.gfredericks/repl-utils "0.2.21"]
                  [nrepl "0.6.0"]
                  [org.clojure/tools.namespace "0.2.11"]
-                 [com.gfredericks/dot-slash-2 "0.1.2"]]
+                 [com.gfredericks/dot-slash-2 "0.1.5"]]
   :aliases {"dct" ["do" "clean," "test"]
             "try" ["with-profile" "+lein-try" "try"]
             "slamhound" ["with-profile" "+slamhound" "run" "-m" "slam.hound"]
