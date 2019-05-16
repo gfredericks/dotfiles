@@ -58,7 +58,7 @@ do
     # shallow because the emacs repo is super big/old
     git clone --shallow-since=2019-04-01 git://git.sv.gnu.org/emacs.git $BUILDDIR
     cd $BUILDDIR
-    git checkout 5a4f58f7eef542a61663360866f69f477472090c
+    git checkout bc0adf112d82a9b89f858f80e04f1ee2f401fa05
     ./autogen.sh
     ./configure \
         --without-x \
