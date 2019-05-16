@@ -7,9 +7,17 @@
 ;; installed packages.  Don't delete this line.  If you don't want it,
 ;; just comment it out by adding a semicolon to the start of the line.
 ;; You may delete these explanatory comments.
-(package-initialize)
+;;
+;; Commented because it gets run in user/gfredericks-packages.el
+;; (package-initialize)
 
 (let ((user-init-dir (concat user-emacs-directory "user/")))
   (add-to-list 'load-path user-init-dir)
   (dolist (file (sort (directory-files user-init-dir nil "^.*\\.el$") 'string<))
-    (load (concat user-init-dir file))))
+    ;; we use require to avoid loading any given file more than once;
+    ;; but the init.foo.el files aren't expected to have a (provide
+    ;; ...) statement at the top, and shouldn't be required from
+    ;; anywhere else anyhow, so using load is fine
+    (if (string-match "^init\\..*\\.el$" file)
+        (load (concat user-init-dir file))
+      (require (intern (substring file 0 -3))))))
