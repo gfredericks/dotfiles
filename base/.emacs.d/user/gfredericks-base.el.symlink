@@ -113,7 +113,7 @@
         (shell-command "uuidgen" buff)
         (buffer-string))))))
 
-(global-set-key "\C-cr" 'rename-buffer)
+(global-set-key "\C-crr" 'rename-buffer)
 (global-set-key "\C-cb" 'bury-buffer)
 (global-set-key "\C-cg" 'magit-status)
 (global-set-key (kbd "C-c u u") 'insert-random-uuid)

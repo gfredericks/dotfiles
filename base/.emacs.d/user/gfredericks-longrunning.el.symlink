@@ -140,3 +140,6 @@
 
 ;; matches the org-mode binding
 (global-set-key (kbd "C-c C-o") 'call-browse-url-noninteractively)
+
+(global-set-key "\C-crc" 'remote-copy)
+(global-set-key "\C-crp" 'remote-paste)
