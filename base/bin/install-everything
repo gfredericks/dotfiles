@@ -321,14 +321,7 @@ do
   if [ "$1" == "all" -o "$1" == "extras" ]
   then
     sudo apt-get install imagemagick graphviz \
-      texlive{,-base,-latex-recommended,-latex-extra,-full} \
-      weechat python-pip
-    # for wee-slack
-    pip install websocket-client
-    mkdir -p ~/.weechat/python/autoload
-    cd ~/.weechat/python
-    wget https://raw.githubusercontent.com/wee-slack/wee-slack/3ab0be86bf7c49b423cbd1063dac431080bb12a6/wee_slack.py
-    ln -s ../wee_slack.py autoload
+      texlive{,-base,-latex-recommended,-latex-extra,-full}
   fi
 
   shift
