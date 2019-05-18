@@ -248,6 +248,6 @@ __prompt_command() {
 export LD_LIBRARY_PATH=~/.install-everything/gnupg/install/lib
 
 # Make sure the crontab is correct
-if [ -f ~/.bashrc ]; then
+if [ -e ~/.crontab ]; then
   diff ~/.crontab <(crontab -l) || echo "crontab doesn't match ~/.crontab !"
 fi
