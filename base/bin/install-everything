@@ -321,7 +321,8 @@ do
   if [ "$1" == "all" -o "$1" == "extras" ]
   then
     sudo apt-get install imagemagick graphviz \
-      texlive{,-base,-latex-recommended,-latex-extra,-full}
+         texlive{,-base,-latex-recommended,-latex-extra,-full} \
+         bsdgames
   fi
 
   shift
