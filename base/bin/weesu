@@ -20,6 +20,7 @@ print_usage_and_exit(){
 
     weesu catalog <source-id> <dirname>
       - writes a json file to stdout
+    NOT YET
     weesu merge <file1> <file2>
       - writes a json file to stdout
 EOF
