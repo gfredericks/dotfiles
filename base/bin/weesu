@@ -51,7 +51,7 @@ scan_dir(){
     local THE_DIR="$2"
     (
         cd "$THE_DIR"
-        ls | while read FILE; do
+        ls | while IFS= read FILE; do
             local THE_PATH="$BASE_PATH$FILE"
             if [[ -f "$FILE" ]]; then
                 local SHA="$(sha256sum -- "$FILE" | cut -d ' ' -f 1)"
