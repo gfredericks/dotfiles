@@ -54,8 +54,8 @@ scan_dir(){
         ls | while read FILE; do
             local THE_PATH="$BASE_PATH$FILE"
             if [[ -f "$FILE" ]]; then
-                local SHA="$(sha256sum "$FILE" | cut -d ' ' -f 1)"
-                local SIZE="$(stat --format=%s "$FILE")"
+                local SHA="$(sha256sum -- "$FILE" | cut -d ' ' -f 1)"
+                local SIZE="$(stat --format=%s -- "$FILE")"
                 write_output_line "$SHA" "$SIZE" "$THE_PATH"
                 if [[ "$FILE" == *.tgz || "$FILE" == *.tar.gz ]]; then
                     __WEESU_RECUR__=t \
