@@ -52,9 +52,8 @@ scan_dir(){
     local THE_DIR="$2"
     (
         cd "$THE_DIR"
-        # would ls -a be better? maybe leave it off and eventually add
-        # a -a flag to weesu to opt-in
-        ls | while IFS= read FILE; do
+        # Can add a -a flag to opt-in to hidden files at some point
+        for FILE in ./*; do
             local THE_PATH="$BASE_PATH$FILE"
             if [[ -f "$FILE" ]]; then
                 local SHA="$(sha256sum -- "$FILE" | cut -d ' ' -f 1)"
