@@ -43,7 +43,7 @@ write_output_line(){
        --arg sha "$SHA" \
        --arg size "$SIZE" \
        --argjson obs "$OBS" \
-       '._sha256 = $sha | .size = $size | .observations = [$obs]'
+       '._sha256 = $sha | .size = $size | .seen = [$obs]'
 }
 
 scan_dir(){
@@ -88,11 +88,10 @@ if [[ -n "${__WEESU_RECUR__+x}" ]]; then
     if [[ "$TAR_FILENAME" == *.tgz || "$TAR_FILENAME" == *.tar.gz ]]; then
         PIPE=$(mktemp -u)
         mkfifo $PIPE
-        # TODO: propogate errors from this subprocess, however that
-        # gets done
         (
             __WEESU_PATH__="$__WEESU_PATH__$TAR_FILENAME//" tar --to-command="$0" -zx <$PIPE
         ) &
+        PID=$!
     else
         PIPE=/dev/null
     fi
@@ -100,7 +99,7 @@ if [[ -n "${__WEESU_RECUR__+x}" ]]; then
     if [[ $PIPE != "/dev/null" ]]; then rm $PIPE; fi
     read SIZE <&3
     exec 3>&-
-    wait
+    if [[ -n "${PID:-}" ]]; then wait $PID; fi
     write_output_line "$SHA" "$SIZE" "$__WEESU_PATH__$TAR_FILENAME"
     exit 0
 elif [[ "$#" -eq 0 ]]; then
@@ -110,16 +109,16 @@ fi
 merge(){
     local JSON1="$1"
     local JSON2="$2"
-    local JSON1NOOBS="$(echo "$JSON1" | jq -cMS 'del(.observations)')"
-    local JSON2NOOBS="$(echo "$JSON2" | jq -cMS 'del(.observations)')"
+    local JSON1NOOBS="$(echo "$JSON1" | jq -cMS 'del(.seen)')"
+    local JSON2NOOBS="$(echo "$JSON2" | jq -cMS 'del(.seen)')"
     # sanity check
     if [[ "$JSON1NOOBS" == "$JSON2NOOBS" ]]; then
         # it'd also be nice to check that there are no redundant
-        # observations, but that sounds harder; only relevant for
+        # seens, but that sounds harder; only relevant for
         # real merging
         echo "$JSON1" | \
             jq -cMS --argjson json2 "$JSON2" \
-               '.observations+=$json2.observations'
+               '.seen+=$json2.seen'
     else
         echo "IMPOSSIBLE ERROR" >&2
         exit 42
@@ -142,7 +141,14 @@ case "$1" in
             MERGER={}
             scan_dir "${__WEESU_PATH__:-}" "$THE_DIR" | \
                 sort | \
+                cat - <(echo LAST_LINE) | \
                 while read NEXT_LINE; do
+                    if [[ "$NEXT_LINE" == LAST_LINE ]]; then
+                        if [[ "$MERGER" != "{}" ]]; then
+                            echo "$MERGER"
+                        fi
+                        break;
+                    fi
                     SHA1="$(echo "$MERGER" | jq -cMS ._sha256)"
                     SHA2="$(echo "$NEXT_LINE" | jq -cMS ._sha256)"
                     if [[ "$SHA1" == "$SHA2" ]]; then
@@ -154,14 +160,7 @@ case "$1" in
                         MERGER="$NEXT_LINE"
                     fi
                 done
-            if [[ "$MERGER" != "{}" ]]; then
-                echo "$MERGER"
-            fi
-        ) | sed s/_sha/sha/
-
-        # TODO: we might want these to come out in alphabetical order,
-        # and also it's totally plausible that a sha shows up several
-        # times, so we might want to merge as well
+        ) | sed s/_sha/sha/ # rename the key, but keep it first
 
         ;;
     *)
