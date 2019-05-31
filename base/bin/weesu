@@ -53,7 +53,7 @@ scan_dir(){
     (
         cd "$THE_DIR"
         # Can add a -a flag to opt-in to hidden files at some point
-        for FILE in ./*; do
+        for FILE in *; do
             local THE_PATH="$BASE_PATH$FILE"
             if [[ -f "$FILE" ]]; then
                 local SHA="$(sha256sum -- "$FILE" | cut -d ' ' -f 1)"
