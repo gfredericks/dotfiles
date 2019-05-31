@@ -1,0 +1,175 @@
+#!/usr/bin/env bash
+
+# A script for creating and managing records of where
+# (presumably large) files are.
+#
+# Can read a directory and create a JSON file describing
+# its contents (including recursing into tarballs and
+# zip files), merge JSON files together, and query
+# and edit JSON files
+
+set -Ceou pipefail
+
+if [[ -z "${__WEESU_TIME__+x}" ]]; then
+    export __WEESU_TIME__="$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
+fi
+
+print_usage_and_exit(){
+    cat >&2 <<EOF
+    Usage:
+
+    weesu catalog <source-id> <dirname>
+      - writes a json file to stdout
+    NOT YET
+    weesu merge <file1> <file2>
+      - writes a json file to stdout
+EOF
+    exit 1
+}
+
+write_output_line(){
+    SHA="$1"
+    SIZE="$2"
+    THE_PATH="$3"
+    OBS="$(jq -cnM \
+              --arg source_id "$__WEESU_SOURCE_ID__" \
+              --arg at "$__WEESU_TIME__" \
+              --arg path "$THE_PATH" \
+              '.source_id = $source_id | .at = $at | .path = $path'
+           )"
+    # using the "_sha256" key here so that it sorts to the front,
+    # making the lines generically sortable; the underscore gets
+    # stripped off later
+    jq -cnMS \
+       --arg sha "$SHA" \
+       --arg size "$SIZE" \
+       --argjson obs "$OBS" \
+       '._sha256 = $sha | .size = $size | .seen = [$obs]'
+}
+
+scan_dir(){
+    local BASE_PATH="$1"
+    local THE_DIR="$2"
+    (
+        cd "$THE_DIR"
+        # would ls -a be better? maybe leave it off and eventually add
+        # a -a flag to weesu to opt-in
+        ls | while IFS= read FILE; do
+            local THE_PATH="$BASE_PATH$FILE"
+            if [[ -f "$FILE" ]]; then
+                local SHA="$(sha256sum -- "$FILE" | cut -d ' ' -f 1)"
+                local SIZE="$(stat --format=%s -- "$FILE")"
+                write_output_line "$SHA" "$SIZE" "$THE_PATH"
+                # I'd like to get .zip files too, but I don't think
+                # the zip program has an easy enumeration option like
+                # tar does
+                if [[ "$FILE" == *.tgz || "$FILE" == *.tar.gz ]]; then
+                    __WEESU_RECUR__=t \
+                                   __WEESU_PATH__="$BASE_PATH$FILE//" \
+                                   tar --to-command="$0" -zxf "$FILE"
+                fi
+            elif [[ -d "$FILE" ]]; then
+                scan_dir "$BASE_PATH$FILE/" "$FILE"
+            else
+                >&2 echo "WARNING: skipping $(printf %q "$FILE"), which is not a file or directory"
+            fi
+        done
+    )
+}
+
+if [[ -n "${__WEESU_RECUR__+x}" ]]; then
+    # This is the portion called by tar when enumerating the
+    # elements of a tarball
+    #
+    # Tricky stuff here -- we want to read the input two or three
+    # times (once to get the SHA, once to get the size, and possibly
+    # a third time if it's a tarball, to enumerate the contents), but
+    # in a streaming fashion; so make a couple pipes and copy to them
+    # with tee.
+    PIPE=$(mktemp -u)
+    mkfifo $PIPE
+    exec 3<>$PIPE
+    rm $PIPE
+
+    if [[ "$TAR_FILENAME" == *.tgz || "$TAR_FILENAME" == *.tar.gz ]]; then
+        PIPE=$(mktemp -u)
+        mkfifo $PIPE
+        (
+            __WEESU_PATH__="$__WEESU_PATH__$TAR_FILENAME//" tar --to-command="$0" -zx <$PIPE
+        ) &
+        PID=$!
+    else
+        PIPE=/dev/null
+    fi
+    SHA="$(tee >(wc -c >&3) $PIPE | sha256sum | cut -d ' ' -f 1)"
+    if [[ $PIPE != "/dev/null" ]]; then rm $PIPE; fi
+    read SIZE <&3
+    exec 3>&-
+    if [[ -n "${PID:-}" ]]; then wait $PID; fi
+    write_output_line "$SHA" "$SIZE" "$__WEESU_PATH__$TAR_FILENAME"
+    exit 0
+elif [[ "$#" -eq 0 ]]; then
+    print_usage_and_exit
+fi
+
+merge(){
+    local JSON1="$1"
+    local JSON2="$2"
+    local JSON1NOOBS="$(<<< "$JSON1" jq -cMS 'del(.seen)')"
+    local JSON2NOOBS="$(<<< "$JSON2" jq -cMS 'del(.seen)')"
+    # sanity check
+    if [[ "$JSON1NOOBS" == "$JSON2NOOBS" ]]; then
+        # it'd also be nice to check that there are no redundant
+        # seens, but that sounds harder; only relevant for
+        # real merging
+        <<< "$JSON1" \
+            jq -cMS --argjson json2 "$JSON2" \
+            '.seen+=$json2.seen'
+    else
+        echo "IMPOSSIBLE ERROR" >&2
+        exit 42
+    fi
+}
+
+case "$1" in
+    "catalog")
+        if [[ "$#" -ne 3 ]]; then
+            print_usage_and_exit
+        fi
+        export __WEESU_SOURCE_ID__="$2"
+        THE_DIR="$3"
+        if [[ ! -d "$THE_DIR" ]]; then
+            echo "$THE_DIR is not a directory!" >&2
+            exit 1
+        fi
+
+        (
+            MERGER={}
+            scan_dir "${__WEESU_PATH__:-}" "$THE_DIR" | \
+                sort | \
+                cat - <(echo LAST_LINE) | \
+                while read NEXT_LINE; do
+                    if [[ "$NEXT_LINE" == LAST_LINE ]]; then
+                        if [[ "$MERGER" != "{}" ]]; then
+                            echo "$MERGER"
+                        fi
+                        break;
+                    fi
+                    SHA1="$(<<< "$MERGER" jq -cMS ._sha256)"
+                    SHA2="$(<<< "$NEXT_LINE" jq -cMS ._sha256)"
+                    if [[ "$SHA1" == "$SHA2" ]]; then
+                        MERGER="$(merge "$MERGER" "$NEXT_LINE")"
+                    else
+                        if [[ "$MERGER" != "{}" ]]; then
+                            echo "$MERGER"
+                        fi
+                        MERGER="$NEXT_LINE"
+                    fi
+                done
+        ) | sed s/_sha/sha/ # rename the key, but keep it first
+
+        ;;
+    *)
+        print_usage_and_exit
+        ;;
+esac
