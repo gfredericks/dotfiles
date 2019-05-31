@@ -69,7 +69,7 @@ scan_dir(){
                 fi
             elif [[ -d "$FILE" ]]; then
                 scan_dir "$BASE_PATH$FILE/" "$FILE"
-            else
+            elif [[ -e "$FILE" ]]; then
                 >&2 echo "WARNING: skipping $(printf %q "$FILE"), which is not a file or directory"
             fi
         done
