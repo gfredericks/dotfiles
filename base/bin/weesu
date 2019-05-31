@@ -36,29 +36,31 @@ write_output_line(){
               --arg path "$THE_PATH" \
               '.source_id = $source_id | .at = $at | .path = $path'
            )"
+    # using the "_sha256" key here so that it sorts to the front,
+    # making the lines generically sortable; the underscore gets
+    # stripped off later
     jq -cnMS \
        --arg sha "$SHA" \
        --arg size "$SIZE" \
        --argjson obs "$OBS" \
-       '.sha256 = $sha | .size = $size | .observations = [$obs]'
+       '._sha256 = $sha | .size = $size | .observations = [$obs]'
 }
 
-# TODO there's some kind of bug here where some paths can get
-# erroneously prefixed to others; probably some of these variables
-# have broader scopes than I'm assuming
 scan_dir(){
-    BASE_PATH="$1"
-    THE_DIR="$2"
+    local BASE_PATH="$1"
+    local THE_DIR="$2"
     (
         cd "$THE_DIR"
         ls | while read FILE; do
-            THE_PATH="$BASE_PATH$FILE"
+            local THE_PATH="$BASE_PATH$FILE"
             if [[ -f "$FILE" ]]; then
-                SHA="$(sha256sum "$FILE" | cut -d ' ' -f 1)"
-                SIZE="$(stat --format=%s "$FILE")"
+                local SHA="$(sha256sum "$FILE" | cut -d ' ' -f 1)"
+                local SIZE="$(stat --format=%s "$FILE")"
                 write_output_line "$SHA" "$SIZE" "$THE_PATH"
                 if [[ "$FILE" == *.tgz || "$FILE" == *.tar.gz ]]; then
-                    __WEESU_RECUR__=t __WEESU_PATH__="$BASE_PATH$FILE//" tar --to-command="$0" -zxf "$FILE"
+                    __WEESU_RECUR__=t \
+                                   __WEESU_PATH__="$BASE_PATH$FILE//" \
+                                   tar --to-command="$0" -zxf "$FILE"
                 fi
             elif [[ -d "$FILE" ]]; then
                 scan_dir "$BASE_PATH$FILE/" "$FILE"
@@ -105,6 +107,25 @@ elif [[ "$#" -eq 0 ]]; then
     print_usage_and_exit
 fi
 
+merge(){
+    local JSON1="$1"
+    local JSON2="$2"
+    local JSON1NOOBS="$(echo "$JSON1" | jq -cMS 'del(.observations)')"
+    local JSON2NOOBS="$(echo "$JSON2" | jq -cMS 'del(.observations)')"
+    # sanity check
+    if [[ "$JSON1NOOBS" == "$JSON2NOOBS" ]]; then
+        # it'd also be nice to check that there are no redundant
+        # observations, but that sounds harder; only relevant for
+        # real merging
+        echo "$JSON1" | \
+            jq -cMS --argjson json2 "$JSON2" \
+               '.observations+=$json2.observations'
+    else
+        echo "IMPOSSIBLE ERROR" >&2
+        exit 42
+    fi
+}
+
 case "$1" in
     "catalog")
         if [[ "$#" -ne 3 ]]; then
@@ -117,7 +138,26 @@ case "$1" in
             exit 1
         fi
 
-        scan_dir "${__WEESU_PATH__:-}" "$THE_DIR"
+        (
+            MERGER={}
+            scan_dir "${__WEESU_PATH__:-}" "$THE_DIR" | \
+                sort | \
+                while read NEXT_LINE; do
+                    SHA1="$(echo "$MERGER" | jq -cMS ._sha256)"
+                    SHA2="$(echo "$NEXT_LINE" | jq -cMS ._sha256)"
+                    if [[ "$SHA1" == "$SHA2" ]]; then
+                        MERGER="$(merge "$MERGER" "$NEXT_LINE")"
+                    else
+                        if [[ "$MERGER" != "{}" ]]; then
+                            echo "$MERGER"
+                        fi
+                        MERGER="$NEXT_LINE"
+                    fi
+                done
+            if [[ "$MERGER" != "{}" ]]; then
+                echo "$MERGER"
+            fi
+        ) | sed s/_sha/sha/
 
         # TODO: we might want these to come out in alphabetical order,
         # and also it's totally plausible that a sha shows up several
