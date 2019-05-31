@@ -51,12 +51,17 @@ scan_dir(){
     local THE_DIR="$2"
     (
         cd "$THE_DIR"
+        # would ls -a be better? maybe leave it off and eventually add
+        # a -a flag to weesu to opt-in
         ls | while IFS= read FILE; do
             local THE_PATH="$BASE_PATH$FILE"
             if [[ -f "$FILE" ]]; then
                 local SHA="$(sha256sum -- "$FILE" | cut -d ' ' -f 1)"
                 local SIZE="$(stat --format=%s -- "$FILE")"
                 write_output_line "$SHA" "$SIZE" "$THE_PATH"
+                # I'd like to get .zip files too, but I don't think
+                # the zip program has an easy enumeration option like
+                # tar does
                 if [[ "$FILE" == *.tgz || "$FILE" == *.tar.gz ]]; then
                     __WEESU_RECUR__=t \
                                    __WEESU_PATH__="$BASE_PATH$FILE//" \
@@ -109,16 +114,16 @@ fi
 merge(){
     local JSON1="$1"
     local JSON2="$2"
-    local JSON1NOOBS="$(echo "$JSON1" | jq -cMS 'del(.seen)')"
-    local JSON2NOOBS="$(echo "$JSON2" | jq -cMS 'del(.seen)')"
+    local JSON1NOOBS="$(<<< "$JSON1" jq -cMS 'del(.seen)')"
+    local JSON2NOOBS="$(<<< "$JSON2" jq -cMS 'del(.seen)')"
     # sanity check
     if [[ "$JSON1NOOBS" == "$JSON2NOOBS" ]]; then
         # it'd also be nice to check that there are no redundant
         # seens, but that sounds harder; only relevant for
         # real merging
-        echo "$JSON1" | \
+        <<< "$JSON1" \
             jq -cMS --argjson json2 "$JSON2" \
-               '.seen+=$json2.seen'
+            '.seen+=$json2.seen'
     else
         echo "IMPOSSIBLE ERROR" >&2
         exit 42
@@ -149,8 +154,8 @@ case "$1" in
                         fi
                         break;
                     fi
-                    SHA1="$(echo "$MERGER" | jq -cMS ._sha256)"
-                    SHA2="$(echo "$NEXT_LINE" | jq -cMS ._sha256)"
+                    SHA1="$(<<< "$MERGER" jq -cMS ._sha256)"
+                    SHA2="$(<<< "$NEXT_LINE" jq -cMS ._sha256)"
                     if [[ "$SHA1" == "$SHA2" ]]; then
                         MERGER="$(merge "$MERGER" "$NEXT_LINE")"
                     else
