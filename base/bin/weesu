@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+
+# A script for creating and managing records of where
+# (presumably large) files are.
+#
+# Can read a directory and create a JSON file describing
+# its contents (including recursing into tarballs and
+# zip files), merge JSON files together, and query
+# and edit JSON files
+
+set -Ceou pipefail
+
+if [[ -z "${__WEESU_TIME__+x}" ]]; then
+    export __WEESU_TIME__="$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
+fi
+
+print_usage_and_exit(){
+    cat >&2 <<EOF
+    Usage:
+
+    weesu catalog <source-id> <dirname>
+      - writes a json file to stdout
+    weesu merge <file1> <file2>
+      - writes a json file to stdout
+EOF
+    exit 1
+}
+
+write_output_line(){
+    SHA="$1"
+    SIZE="$2"
+    THE_PATH="$3"
+    OBS="$(jq -cnM \
+              --arg source_id "$__WEESU_SOURCE_ID__" \
+              --arg at "$__WEESU_TIME__" \
+              --arg path "$THE_PATH" \
+              '.source_id = $source_id | .at = $at | .path = $path'
+           )"
+    jq -cnMS \
+       --arg sha "$SHA" \
+       --arg size "$SIZE" \
+       --argjson obs "$OBS" \
+       '.sha256 = $sha | .size = $size | .observations = [$obs]'
+}
+
+# TODO there's some kind of bug here where some paths can get
+# erroneously prefixed to others; probably some of these variables
+# have broader scopes than I'm assuming
+scan_dir(){
+    BASE_PATH="$1"
+    THE_DIR="$2"
+    (
+        cd "$THE_DIR"
+        ls | while read FILE; do
+            THE_PATH="$BASE_PATH$FILE"
+            if [[ -f "$FILE" ]]; then
+                SHA="$(sha256sum "$FILE" | cut -d ' ' -f 1)"
+                SIZE="$(stat --format=%s "$FILE")"
+                write_output_line "$SHA" "$SIZE" "$THE_PATH"
+                if [[ "$FILE" == *.tgz || "$FILE" == *.tar.gz ]]; then
+                    __WEESU_RECUR__=t __WEESU_PATH__="$BASE_PATH$FILE//" tar --to-command="$0" -zxf "$FILE"
+                fi
+            elif [[ -d "$FILE" ]]; then
+                scan_dir "$BASE_PATH$FILE/" "$FILE"
+            else
+                >&2 echo "WARNING: skipping $(printf %q "$FILE"), which is not a file or directory"
+            fi
+        done
+    )
+}
+
+if [[ -n "${__WEESU_RECUR__+x}" ]]; then
+    # This is the portion called by tar when enumerating the
+    # elements of a tarball
+    #
+    # Tricky stuff here -- we want to read the input two or three
+    # times (once to get the SHA, once to get the size, and possibly
+    # a third time if it's a tarball, to enumerate the contents), but
+    # in a streaming fashion; so make a couple pipes and copy to them
+    # with tee.
+    PIPE=$(mktemp -u)
+    mkfifo $PIPE
+    exec 3<>$PIPE
+    rm $PIPE
+
+    if [[ "$TAR_FILENAME" == *.tgz || "$TAR_FILENAME" == *.tar.gz ]]; then
+        PIPE=$(mktemp -u)
+        mkfifo $PIPE
+        # TODO: propogate errors from this subprocess, however that
+        # gets done
+        (
+            __WEESU_PATH__="$__WEESU_PATH__$TAR_FILENAME//" tar --to-command="$0" -zx <$PIPE
+        ) &
+    else
+        PIPE=/dev/null
+    fi
+    SHA="$(tee >(wc -c >&3) $PIPE | sha256sum | cut -d ' ' -f 1)"
+    if [[ $PIPE != "/dev/null" ]]; then rm $PIPE; fi
+    read SIZE <&3
+    exec 3>&-
+    wait
+    write_output_line "$SHA" "$SIZE" "$__WEESU_PATH__$TAR_FILENAME"
+    exit 0
+elif [[ "$#" -eq 0 ]]; then
+    print_usage_and_exit
+fi
+
+case "$1" in
+    "catalog")
+        if [[ "$#" -ne 3 ]]; then
+            print_usage_and_exit
+        fi
+        export __WEESU_SOURCE_ID__="$2"
+        THE_DIR="$3"
+        if [[ ! -d "$THE_DIR" ]]; then
+            echo "$THE_DIR is not a directory!" >&2
+            exit 1
+        fi
+
+        scan_dir "${__WEESU_PATH__:-}" "$THE_DIR"
+
+        # TODO: we might want these to come out in alphabetical order,
+        # and also it's totally plausible that a sha shows up several
+        # times, so we might want to merge as well
+
+        ;;
+    *)
+        print_usage_and_exit
+        ;;
+esac
