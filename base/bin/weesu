@@ -56,19 +56,27 @@ scan_dir(){
         for FILE in *; do
             local THE_PATH="$BASE_PATH$FILE"
             if [[ -f "$FILE" ]]; then
-                local SHA="$(sha256sum -- "$FILE" | cut -d ' ' -f 1)"
-                local SIZE="$(stat --format=%s -- "$FILE")"
-                write_output_line "$SHA" "$SIZE" "$THE_PATH"
-                # I'd like to get .zip files too, but I don't think
-                # the zip program has an easy enumeration option like
-                # tar does
-                if [[ "$FILE" == *.tgz || "$FILE" == *.tar.gz ]]; then
-                    __WEESU_RECUR__=t \
-                                   __WEESU_PATH__="$BASE_PATH$FILE//" \
-                                   tar --to-command="$0" -zxf "$FILE"
+                if [[ -r "$FILE" ]]; then
+                    local SHA="$(sha256sum -- "$FILE" | cut -d ' ' -f 1)"
+                    local SIZE="$(stat --format=%s -- "$FILE")"
+                    write_output_line "$SHA" "$SIZE" "$THE_PATH"
+                    # I'd like to get .zip files too, but I don't think
+                    # the zip program has an easy enumeration option like
+                    # tar does
+                    if [[ "$FILE" == *.tgz || "$FILE" == *.tar.gz ]]; then
+                        __WEESU_RECUR__=t \
+                                       __WEESU_PATH__="$BASE_PATH$FILE//" \
+                                       tar --to-command="$0" -zxf "$FILE"
+                    fi
+                else
+                    >&2 echo "WARNING: skipping $(printf %q "$FILE"), which is not readable"
                 fi
             elif [[ -d "$FILE" ]]; then
-                scan_dir "$BASE_PATH$FILE/" "$FILE"
+                if [[ -r "$FILE" && -x "$FILE" ]]; then
+                    scan_dir "$BASE_PATH$FILE/" "$FILE"
+                else
+                    >&2 echo "WARNING: skipping directory $(printf %q "$FILE") due to insufficient permissions"
+                fi
             elif [[ -e "$FILE" ]]; then
                 >&2 echo "WARNING: skipping $(printf %q "$FILE"), which is not a file or directory"
             fi
