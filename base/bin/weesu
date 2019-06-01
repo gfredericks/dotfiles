@@ -57,7 +57,7 @@ scan_dir(){
             local THE_PATH="$BASE_PATH$FILE"
             if [[ -f "$FILE" ]]; then
                 if [[ -r "$FILE" ]]; then
-                    local SHA="$(sha256sum -- "$FILE" | cut -d ' ' -f 1)"
+                    local SHA="$(sha256sum < "$FILE" | cut -d ' ' -f 1)"
                     local SIZE="$(stat --format=%s -- "$FILE")"
                     write_output_line "$SHA" "$SIZE" "$THE_PATH"
                     # I'd like to get .zip files too, but I don't think
@@ -155,7 +155,7 @@ case "$1" in
             scan_dir "${__WEESU_PATH__:-}" "$THE_DIR" | \
                 sort | \
                 cat - <(echo LAST_LINE) | \
-                while read NEXT_LINE; do
+                while read -r NEXT_LINE; do
                     if [[ "$NEXT_LINE" == LAST_LINE ]]; then
                         if [[ "$MERGER" != "{}" ]]; then
                             echo "$MERGER"
