@@ -10,10 +10,6 @@
 
 set -Ceou pipefail
 
-if [[ -z "${__WEESU_TIME__+x}" ]]; then
-    export __WEESU_TIME__="$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
-fi
-
 print_usage_and_exit(){
     cat >&2 <<EOF
     Usage:
@@ -144,6 +140,8 @@ case "$1" in
             print_usage_and_exit
         fi
         export __WEESU_SOURCE_ID__="$2"
+        export __WEESU_TIME__="$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
+
         THE_DIR="$3"
         if [[ ! -d "$THE_DIR" ]]; then
             echo "$THE_DIR is not a directory!" >&2
