@@ -38,7 +38,7 @@ write_output_line(){
     # stripped off later
     jq -cnMS \
        --arg sha "$SHA" \
-       --arg size "$SIZE" \
+       --argjson size "$SIZE" \
        --argjson obs "$OBS" \
        '._sha256 = $sha | .size = $size | .seen = [$obs]'
 }
