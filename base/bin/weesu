@@ -112,29 +112,31 @@ elif [[ "$#" -eq 0 ]]; then
 fi
 
 merge_seens(){
-    JUST_READ=""
+    FIRST_TIME=1
+    # How about put the key and the rest of it on different lines, and
+    # do a fancier while true loop
     jq -cMS '[[.source_id, .path],.at,.]' \
         | sort \
-        | cat - <(echo LAST_LINE) \
-        | while read -r NEXT_LINE; do
-              if [[ "$NEXT_LINE" == LAST_LINE ]]; then
-                  if [[ -n "$JUST_READ" ]]; then
-                      echo "$JUST_READ"
+        | jq -cMS '.[0],.[2]' \
+        | while true; do
+              if [[ -n $FIRST_TIME ]]; then
+                  read -r KEY1 || break
+                  read -r VAL1
+                  FIRST_TIME=""
+              fi
+              if read -r KEY2; then
+                  read -r VAL2
+                  if [[ "$KEY1" != "$KEY2" ]]; then
+                      echo "$VAL1"
                   fi
+                  KEY1="$KEY2"
+                  VAL1="$VAL2"
+              else
+                  echo "$VAL1"
                   break
               fi
-              if [[ -n "$JUST_READ" ]]; then
-                  KEY1="$(jq -cMS .[0] <<< "$JUST_READ")"
-                  KEY2="$(jq -cMS .[0] <<< "$NEXT_LINE")"
-                  if [[ "$KEY1" != "$KEY2" ]]; then
-                      echo "$JUST_READ"
-                  fi
-                  JUST_READ="$NEXT_LINE"
-              else
-                  JUST_READ="$NEXT_LINE"
-              fi
           done \
-        | jq -cMS .[2] | jq -cMSs .
+        | jq -cMSs .
 }
 
 merge2(){
