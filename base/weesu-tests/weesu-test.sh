@@ -27,4 +27,28 @@ echo "more-tarballs.tar.gz//test-files-2/a-direcotry/tamborine.tgz//test-files/f
 echo $'278\n608\n12\n51\n0' \
      | diff - <(< $CATALOG1 jq '.size')
 
+# hidden files aren't included
+! grep hidden-file $CATALOG1 || exit 1
+
+CATALOG3=$(mktemp)
+weesu merge $CATALOG1 $CATALOG2 >| $CATALOG3
+
+# merging produces seen entries for both sources
+< $CATALOG3 grep b17171dbad37 \
+    | jq -r '.seen[].source_id' \
+    | sort \
+    | uniq \
+    | diff - <(echo -e "anything\nanything else")
+
+# merging is idempotent
+diff $CATALOG3 <(weesu merge $CATALOG1 $CATALOG2)
+diff $CATALOG3 <(weesu merge $CATALOG1 $CATALOG3)
+diff $CATALOG3 <(weesu merge $CATALOG2 $CATALOG1)
+diff $CATALOG3 <(weesu merge $CATALOG2 $CATALOG3)
+diff $CATALOG3 <(weesu merge $CATALOG3 $CATALOG1)
+diff $CATALOG3 <(weesu merge $CATALOG3 $CATALOG2)
+diff $CATALOG3 <(weesu merge $CATALOG3 $CATALOG3)
+
+# TODO: merging chooses the latest seen record by source_id
+
 echo Tests passed\!

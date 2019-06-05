@@ -16,7 +16,6 @@ print_usage_and_exit(){
 
     weesu catalog <source-id> <dirname>
       - writes a json file to stdout
-    NOT YET
     weesu merge <file1> <file2>
       - writes a json file to stdout
 EOF
@@ -33,14 +32,11 @@ write_output_line(){
               --arg path "$THE_PATH" \
               '.source_id = $source_id | .at = $at | .path = $path'
            )"
-    # using the "_sha256" key here so that it sorts to the front,
-    # making the lines generically sortable; the underscore gets
-    # stripped off later
     jq -cnMS \
        --arg sha "$SHA" \
        --argjson size "$SIZE" \
        --argjson obs "$OBS" \
-       '._sha256 = $sha | .size = $size | .seen = [$obs]'
+       '.sha256 = $sha | .size = $size | .seen = [$obs]'
 }
 
 scan_dir(){
@@ -115,23 +111,89 @@ elif [[ "$#" -eq 0 ]]; then
     print_usage_and_exit
 fi
 
-merge(){
+merge_seens(){
+    JUST_READ=""
+    jq -cMS '[[.source_id, .path],.at,.]' \
+        | sort \
+        | cat - <(echo LAST_LINE) \
+        | while read -r NEXT_LINE; do
+              if [[ "$NEXT_LINE" == LAST_LINE ]]; then
+                  if [[ -n "$JUST_READ" ]]; then
+                      echo "$JUST_READ"
+                  fi
+                  break
+              fi
+              if [[ -n "$JUST_READ" ]]; then
+                  KEY1="$(jq -cMS .[0] <<< "$JUST_READ")"
+                  KEY2="$(jq -cMS .[0] <<< "$NEXT_LINE")"
+                  if [[ "$KEY1" != "$KEY2" ]]; then
+                      echo "$JUST_READ"
+                  fi
+                  JUST_READ="$NEXT_LINE"
+              else
+                  JUST_READ="$NEXT_LINE"
+              fi
+          done \
+        | jq -cMS .[2] | jq -cMSs .
+}
+
+merge2(){
     local JSON1="$1"
     local JSON2="$2"
-    local JSON1NOOBS="$(<<< "$JSON1" jq -cMS 'del(.seen)')"
-    local JSON2NOOBS="$(<<< "$JSON2" jq -cMS 'del(.seen)')"
+    local JSON1NOSEEN="$(<<< "$JSON1" jq -cMS 'del(.seen)')"
+    local JSON2NOSEEN="$(<<< "$JSON2" jq -cMS 'del(.seen)')"
     # sanity check
-    if [[ "$JSON1NOOBS" == "$JSON2NOOBS" ]]; then
+    if [[ "$JSON1NOSEEN" == "$JSON2NOSEEN" ]]; then
         # it'd also be nice to check that there are no redundant
         # seens, but that sounds harder; only relevant for
         # real merging
-        <<< "$JSON1" \
-            jq -cMS --argjson json2 "$JSON2" \
-            '.seen+=$json2.seen'
+        SEENS="$(jq -cnMS \
+                 --argjson json1 "$JSON1" \
+                 --argjson json2 "$JSON2" \
+                 '$json1.seen + $json2.seen | .[]' \
+                 | merge_seens)"
+        <<< "$JSON1" jq -cMS --argjson seens "$SEENS" '.seen=$seens'
     else
         echo "IMPOSSIBLE ERROR" >&2
         exit 42
     fi
+}
+
+# Prints one object per line with the sha256 key first
+sort_and_normalize(){
+    # rename the sha256 key so it sorts to the front
+    jq -cMS '[.sha256,(._sha256 = .sha256 | del(.sha256))]' \
+        | sort \
+        | jq -cMS '.[1]' \
+        | sed s/_sha/sha/
+}
+
+# I think I want to rename the sha thing here
+merge_lines(){
+    MERGER={}
+    # start by renaming the sha256 key so it sorts to the
+    # front
+    sort_and_normalize \
+        | cat - <(echo LAST_LINE) \
+        | while read -r NEXT_LINE; do
+              if [[ "$NEXT_LINE" == LAST_LINE ]]; then
+                  if [[ "$MERGER" != "{}" ]]; then
+                      echo "$MERGER"
+                  fi
+                  break;
+              fi
+              SHA1="$(<<< "$MERGER" jq -cMS .sha256)"
+              SHA2="$(<<< "$NEXT_LINE" jq -cMS .sha256)"
+              if [[ "$SHA1" == "$SHA2" ]]; then
+                  MERGER="$(merge2 "$MERGER" "$NEXT_LINE")"
+              else
+                  if [[ "$MERGER" != "{}" ]]; then
+                      echo "$MERGER"
+                  fi
+                  MERGER="$NEXT_LINE"
+              fi
+          done \
+        | sort_and_normalize
 }
 
 case "$1" in
@@ -148,31 +210,16 @@ case "$1" in
             exit 1
         fi
 
-        (
-            MERGER={}
-            scan_dir "${__WEESU_PATH__:-}" "$THE_DIR" | \
-                sort | \
-                cat - <(echo LAST_LINE) | \
-                while read -r NEXT_LINE; do
-                    if [[ "$NEXT_LINE" == LAST_LINE ]]; then
-                        if [[ "$MERGER" != "{}" ]]; then
-                            echo "$MERGER"
-                        fi
-                        break;
-                    fi
-                    SHA1="$(<<< "$MERGER" jq -cMS ._sha256)"
-                    SHA2="$(<<< "$NEXT_LINE" jq -cMS ._sha256)"
-                    if [[ "$SHA1" == "$SHA2" ]]; then
-                        MERGER="$(merge "$MERGER" "$NEXT_LINE")"
-                    else
-                        if [[ "$MERGER" != "{}" ]]; then
-                            echo "$MERGER"
-                        fi
-                        MERGER="$NEXT_LINE"
-                    fi
-                done
-        ) | sed s/_sha/sha/ # rename the key, but keep it first
+        scan_dir "${__WEESU_PATH__:-}" "$THE_DIR" | merge_lines
 
+        ;;
+    "merge")
+        FILE1="$2"
+        FILE2="$3"
+        sort -m \
+             <(sort_and_normalize < "$FILE1") \
+             <(sort_and_normalize < "$FILE2") \
+            | merge_lines
         ;;
     *)
         print_usage_and_exit
