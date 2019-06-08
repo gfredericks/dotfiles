@@ -20,9 +20,13 @@ print_usage_and_exit(){
       - writes a json file to stdout
     weesu stale
       - reads json records from stdin and prints
-        a summary of objects that were previously
+        a summary of blobs that were previously
         seen at a source but not in the latest
         viewing of that source
+    weesu histogram
+      - reads json records from stdin and prints
+        a count of what combinations of sources
+        blobs appear in
 EOF
     exit 1
 }
@@ -285,6 +289,13 @@ case "$CMD" in
                       ;;
                   esac
         done
+        ;;
+    "histogram")
+        if [[ "$#" -ne 0 ]]; then
+            print_usage_and_exit
+        fi
+        JQ_FILTER='.seen | map(.source_id) | unique'
+        jq -cMS "$JQ_FILTER" | sort | uniq -c
         ;;
     *)
         print_usage_and_exit
