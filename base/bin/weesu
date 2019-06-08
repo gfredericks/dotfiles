@@ -177,11 +177,11 @@ sort_and_normalize(){
         | sed s/_sha/sha/
 }
 
-# I think I want to rename the sha thing here
+# I suspect that the per-line jq calls are what slow this down the
+# most; I also believe all of them could be converted to streaming
+# calls with some clever formatting
 merge_lines(){
     MERGER={}
-    # start by renaming the sha256 key so it sorts to the
-    # front
     sort_and_normalize \
         | cat - <(echo LAST_LINE) \
         | while read -r NEXT_LINE; do
