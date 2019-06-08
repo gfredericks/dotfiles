@@ -6,8 +6,15 @@ set -eouC pipefail
 
 cd $(dirname "$0")
 
-CATALOG1=$(mktemp)
-CATALOG2=$(mktemp)
+THE_TMP_DIR=$(mktemp -d weesu-tests-XXXXXXXXX)
+trap "{ rm -rf $THE_TMP_DIR; }" EXIT
+_mktemp(){
+    mktemp ${1:-} $THE_TMP_DIR/XXXXXXXXXXXXX.json
+}
+
+TMP_FILE=$(_mktemp)
+CATALOG1=$(_mktemp)
+CATALOG2=$(_mktemp)
 weesu catalog anything test-files >| $CATALOG1
 weesu catalog anything\ else test-files-2 >| $CATALOG2
 
@@ -30,7 +37,7 @@ echo $'278\n608\n12\n51\n0' \
 # hidden files aren't included
 ! grep hidden-file $CATALOG1 || exit 1
 
-CATALOG3=$(mktemp)
+CATALOG3=$(_mktemp)
 weesu merge $CATALOG1 $CATALOG2 >| $CATALOG3
 
 # merging produces seen entries for both sources
@@ -54,6 +61,48 @@ weesu stale < $CATALOG3 \
     | wc -l \
     | diff <(echo 0) -
 
+# stale when a file disappears
+(
+    A_DIR=$(_mktemp -du)
+    CATALOG1=$(_mktemp -u)
+    CATALOG2=$(_mktemp -u)
+    cp -r test-files-2 $A_DIR
+    weesu catalog thesource $A_DIR > $CATALOG1
+    rm $A_DIR/snarf
+    sleep 0.1 # make sure timestamp is later
+    weesu catalog thesource $A_DIR > $CATALOG2
+    LINE_COUNT="$(weesu merge $CATALOG1 $CATALOG2 \
+                      | weesu stale \
+                      | tee $TMP_FILE \
+                      | wc -l)"
+    [[ "$LINE_COUNT" -eq 1 ]] || exit 1
+    grep -Pq 'STALE BLOB \(bce919ddb1\) LAST SEEN IN thesource AT .{24} AT snarf' $TMP_FILE
+)
+
+# like the last one, but different, including a file being renamed
+(
+    A_DIR=$(_mktemp -d)
+    CATALOG1=$(_mktemp -u)
+    CATALOG2=$(_mktemp -u)
+    echo foobar > $A_DIR/foo.txt
+    echo blazzy > $A_DIR/bar.txt
+    weesu catalog sourceid $A_DIR > $CATALOG1
+    rm $A_DIR/foo.txt
+    mv $A_DIR/{bar,baz}.txt
+    weesu catalog sourceid $A_DIR > $CATALOG2
+    rm $TMP_FILE
+    LINE_COUNT="$(weesu merge $CATALOG1 $CATALOG2 \
+                      | weesu stale \
+                      | tee $TMP_FILE \
+                      | wc -l)"
+    [[ "$LINE_COUNT" -eq 1 ]] || exit 1
+    grep -Pq 'STALE BLOB \(aec070645f\) LAST SEEN IN sourceid AT .{24} AT foo.txt' \
+         $TMP_FILE
+)
+
+
 # TODO: merging chooses the latest seen record by source_id
 
+
+rm -rf $THE_TMP_DIR
 echo Tests passed\!

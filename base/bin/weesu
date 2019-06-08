@@ -112,8 +112,6 @@ if [[ -n "${__WEESU_RECUR__+x}" ]]; then
     if [[ -n "${PID:-}" ]]; then wait $PID; fi
     write_output_line "$SHA" "$SIZE" "$__WEESU_PATH__$TAR_FILENAME"
     exit 0
-elif [[ "$#" -eq 0 ]]; then
-    print_usage_and_exit
 fi
 
 merge_seens(){
@@ -203,15 +201,34 @@ merge_lines(){
         | sort_and_normalize
 }
 
-case "$1" in
+# Like uniq, but only considers the first three "columns";
+# uniq seems incapable of doing this
+uniq13(){
+    CURRENT_K=""
+    while read A B C MORE; do
+        K="$A $B $C"
+        if [[ "$CURRENT_K" != "$K" ]]; then
+            echo "$K $MORE"
+            CURRENT_K="$K"
+        fi
+    done
+}
+
+if [[ "$#" -eq 0 ]]; then
+    print_usage_and_exit
+fi
+
+CMD="$1"; shift
+
+case "$CMD" in
     "catalog")
-        if [[ "$#" -ne 3 ]]; then
+        if [[ "$#" -ne 2 ]]; then
             print_usage_and_exit
         fi
-        export __WEESU_SOURCE_ID__="$2"
+        export __WEESU_SOURCE_ID__="$1"
         export __WEESU_TIME__="$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
 
-        THE_DIR="$3"
+        THE_DIR="$2"
         if [[ ! -d "$THE_DIR" ]]; then
             echo "$THE_DIR is not a directory!" >&2
             exit 1
@@ -221,56 +238,45 @@ case "$1" in
 
         ;;
     "merge")
-        FILE1="$2"
-        FILE2="$3"
+        if [[ "$#" -ne 2 ]]; then
+            print_usage_and_exit
+        fi
+        FILE1="$1"
+        FILE2="$2"
         sort -m \
              <(sort_and_normalize < "$FILE1") \
              <(sort_and_normalize < "$FILE2") \
             | merge_lines
         ;;
     "stale")
-        # we first want: a mapping from source IDs to the latest timestamp
-        # associated with them
-        #
-        # then for each SHA, we want to know its latest timestamp for
-        # each source, and compare that with the globally latest timestamp
-        # for each source
-        # could sort -u help with this? "output only the first of an equal run"
-        # I think the only problem is that source_ids can have whitespace (or any
-        # given practical delimeter!); I
-        # wish there were a way to hex encode them OH HEY THERE IS BASE64!!!
-        #
-        #
-        # Okay okay what if we output things so that we arrange for info about
-        # each source to be grouped together; then we dupe information so that
-        # first we get a generic record of all the timestamps for the source,
-        # with the latest one sorted to the top, and then underneath that we have
-        # information for each blob, sorted so that we get the latest timestamp
-        # for that THIS'LL BE GREAT
+        if [[ "$#" -ne 0 ]]; then
+            print_usage_and_exit
+        fi
         JQ_FILTER='. as $rec
                    | .seen[]
-                   | [(.source_id | @base64),"source_global",null,.at],
-                     [(.source_id | @base64),"blob",$rec.sha256,.at,.path]'
+                   | (.source_id | @base64) as $source64
+                   | (.path | @base64) as $path64
+                   | "\($source64) source_global null \(.at)",
+                     "\($source64) blob \($rec.sha256) \(.at) \($path64)"'
         SOURCE_ID=""
         SOURCE_AT=""
-        jq -cMS "$JQ_FILTER" \
-            | LC_ALL=C sort -u -t , -k 1,3 -r \
-            | while read LINE; do
-                  LINE_TYPE="$(<<< "$LINE" cut -d , -f 2)"
-                  case "${LINE_TYPE:1:-1}" in
+        jq -rcMS "$JQ_FILTER" \
+            | LC_ALL=C sort -k 1,3 -r \
+            | tee /tmp/phase1.txt \
+            | uniq13 \
+            | tee /tmp/phase2.txt \
+            | while read SOURCE_ID_64 LINE_TYPE X AT Y; do
+                  case "$LINE_TYPE" in
                       "source_global")
-                          SOURCE_ID_HEX_JSON="$(<<< "$LINE" cut -d , -f 1)"
-                          SOURCE_ID="$(echo "${SOURCE_ID_HEX_JSON:2:-1}" | base64 -d)"
-                          SOURCE_AT="$(<<< "$LINE" cut -d , -f 4)"
-                          SOURCE_AT="${SOURCE_AT:1:-2}"
+                          SOURCE_ID="$(<<< "$SOURCE_ID_64" base64 -d)"
+                          SOURCE_AT="$AT"
                       ;;
                       "blob")
-                          BLOB_AT="$(<<< "$LINE" cut -d , -f 4)"
-                          BLOB_AT="${BLOB_AT:1:-1}"
+                          BLOB_AT="$AT"
                           if [[ "$BLOB_AT" < "$SOURCE_AT" ]]; then
-                              SHA="$(<<< "$LINE" cut -d , -f 3)"
-                              THE_PATH="$(<<< "$LINE" cut -d , -f 5-)"
-                              echo "STALE BLOB (${SHA:1:10}) LAST SEEN IN $SOURCE_ID AT $BLOB_AT AT ${THE_PATH:1:-2}, LATEST SOURCE MEASUREMENT AT $SOURCE_AT"
+                              SHA="$X"
+                              THE_PATH="$(<<< "$Y" base64 -d)"
+                              echo "STALE BLOB (${SHA:0:10}) LAST SEEN IN $SOURCE_ID AT $BLOB_AT AT $THE_PATH, LATEST SOURCE MEASUREMENT AT $SOURCE_AT"
                           fi
                       ;;
                       *)
