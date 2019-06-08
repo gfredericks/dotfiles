@@ -49,6 +49,11 @@ diff $CATALOG3 <(weesu merge $CATALOG3 $CATALOG1)
 diff $CATALOG3 <(weesu merge $CATALOG3 $CATALOG2)
 diff $CATALOG3 <(weesu merge $CATALOG3 $CATALOG3)
 
+weesu stale < $CATALOG3
+weesu stale < $CATALOG3 \
+    | wc -l \
+    | diff <(echo 0) -
+
 # TODO: merging chooses the latest seen record by source_id
 
 echo Tests passed\!
