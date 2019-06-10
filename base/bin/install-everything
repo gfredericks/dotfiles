@@ -39,7 +39,9 @@ do
   if [ "$1" == "all" -o "$1" == "server" -o "$1" == "misc" ]
   then
       # better to put latex stuff in one place or something?
-    sudo apt-get install -y tree htop texlive-latex-extra python-pygments xclip rlwrap xautolock
+      sudo apt-get install -y tree htop texlive-latex-extra \
+           python-pygments xclip rlwrap xautolock \
+           net-tools # net-tools has netstat, used by remote-emacs
   fi
 
   ###
