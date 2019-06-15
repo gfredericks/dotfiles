@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 # script for building everything I can't easily get via a package
-# manager. essentially it's an ad-hoc, informally-specified,
-# bug-ridden, slow implementation of half of nix.
+# manager (either at all, or at least a recent-enough version
+# of). essentially it's an ad-hoc, informally-specified, bug-ridden,
+# slow implementation of half of nix.
 
 # everything should be installed in userland, in ~/.install-everything with symlinks
 # from ~/bin.
