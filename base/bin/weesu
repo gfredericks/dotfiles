@@ -31,24 +31,7 @@ EOF
     exit 1
 }
 
-write_output_line(){
-    SHA="$1"
-    SIZE="$2"
-    THE_PATH="$3"
-    OBS="$(jq -cnM \
-              --arg source_id "$__WEESU_SOURCE_ID__" \
-              --arg at "$__WEESU_TIME__" \
-              --arg path "$THE_PATH" \
-              '.source_id = $source_id | .at = $at | .path = $path'
-           )"
-    jq -cnMS \
-       --arg sha "$SHA" \
-       --argjson size "$SIZE" \
-       --argjson obs "$OBS" \
-       '.sha256 = $sha | .size = $size | .seen = [$obs]'
-}
-
-scan_dir(){
+scan_dir_inner(){
     local BASE_PATH="$1"
     local THE_DIR="$2"
     (
@@ -60,7 +43,7 @@ scan_dir(){
                 if [[ -r "$FILE" ]]; then
                     local SHA="$(sha256sum < "$FILE" | cut -d ' ' -f 1)"
                     local SIZE="$(stat --format=%s -- "$FILE")"
-                    write_output_line "$SHA" "$SIZE" "$THE_PATH"
+                    echo "$SHA $SIZE $(echo -n "$THE_PATH" | base64 -w0)"
                     # I'd like to get .zip files too, but I don't think
                     # the zip program has an easy enumeration option like
                     # tar does
@@ -74,7 +57,7 @@ scan_dir(){
                 fi
             elif [[ -d "$FILE" ]]; then
                 if [[ -r "$FILE" && -x "$FILE" ]]; then
-                    scan_dir "$BASE_PATH$FILE/" "$FILE"
+                    scan_dir_inner "$BASE_PATH$FILE/" "$FILE"
                 else
                     >&2 echo "WARNING: skipping directory $(printf %q "$FILE") due to insufficient permissions"
                 fi
@@ -83,6 +66,20 @@ scan_dir(){
             fi
         done
     )
+}
+
+scan_dir(){
+    local JQ_FILTER='. / " "
+                     | {sha256: .[0],
+                        size:   (.[1] | tonumber),
+                        seen:   [{source_id: $source_id,
+                                  at:        $at,
+                                  path:      (.[2] | @base64d)}]}'
+    scan_dir_inner "$1" "$2" \
+    | jq -cMSR \
+         --arg source_id "$__WEESU_SOURCE_ID__" \
+         --arg at "$__WEESU_TIME__" \
+         "$JQ_FILTER"
 }
 
 if [[ -n "${__WEESU_RECUR__+x}" ]]; then
@@ -114,7 +111,7 @@ if [[ -n "${__WEESU_RECUR__+x}" ]]; then
     read SIZE <&3
     exec 3>&-
     if [[ -n "${PID:-}" ]]; then wait $PID; fi
-    write_output_line "$SHA" "$SIZE" "$__WEESU_PATH__$TAR_FILENAME"
+    echo "$SHA $SIZE $(echo -n "$__WEESU_PATH__$TAR_FILENAME" | base64 -w0)"
     exit 0
 fi
 
@@ -220,6 +217,9 @@ uniq13(){
 
 if [[ "$#" -eq 0 ]]; then
     print_usage_and_exit
+elif [[ "$(jq --version)" != "jq-1.6" ]]; then
+    echo "weesu requires JQ version 1.6!" >&2
+    exit 42
 fi
 
 CMD="$1"; shift
