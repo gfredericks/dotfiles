@@ -31,7 +31,65 @@ EOF
     exit 1
 }
 
-scan_dir_inner(){
+# Unrolled format:
+# "$SHA $SIZE $SOURCE_ID_BASE64 $PATH_BASE64 $AT"
+
+# Converts the line format to the json format, removing any adjacent
+# lines that are identical but for the final timestamp (retaining the
+# latest timestamp)
+rollup(){
+    # Might be able to do this all in jq with recursive functions; no
+    # guess whether that'd be faster though; it'd at least avoid
+    # moderately long lines
+    THIS_SHA=""
+    THIS_SIZE=""
+    THIS_DOUBLET=""
+    THIS_AT=""
+    THESE_TRIPLETS=()
+    cat - <(echo LAST_LINE) \
+        | while read SHA SIZE SOURCE_ID_BASE64 PATH_BASE64 AT; do
+        if [[ "$SHA" == "LAST_LINE" ]]; then
+            if [[ "$THIS_SHA" != "" ]]; then
+                THESE_TRIPLETS+=("$(echo -n "$THIS_DOUBLET $THIS_AT" | base64 -w0)")
+                echo "$THIS_SHA $THIS_SIZE $(echo "${THESE_TRIPLETS[*]}")"
+            fi
+        elif [[ "$SHA" == "$THIS_SHA" ]]; then
+            NEW_DOUBLET="$SOURCE_ID_BASE64 $PATH_BASE64"
+            if [[ "$NEW_DOUBLET" == "$THIS_DOUBLET" ]]; then
+                if [[ "$AT" > "$THIS_AT" ]]; then
+                    THIS_AT="$AT"
+                fi
+            else
+                THESE_TRIPLETS+=("$(echo -n "$THIS_DOUBLET $THIS_AT" | base64 -w0)")
+                THIS_DOUBLET="$NEW_DOUBLET"
+                THIS_AT="$AT"
+            fi
+        else
+            if [[ "$THIS_SHA" != "" ]]; then
+                THESE_TRIPLETS+=("$(echo -n "$THIS_DOUBLET $THIS_AT" | base64 -w0)")
+                echo "$THIS_SHA $THIS_SIZE $(echo "${THESE_TRIPLETS[*]}")"
+            fi
+            THIS_SHA="$SHA"
+            THIS_SIZE="$SIZE"
+            THIS_DOUBLET="$SOURCE_ID_BASE64 $PATH_BASE64"
+            THIS_AT="$AT"
+            THESE_TRIPLETS=()
+        fi
+    done \
+        | jq -cMR '. / " " | .[0] as $SHA | .[1] as $SIZE | .[2:] | map(@base64d | . / " " | {source_id: (.[0] | @base64d), path: (.[1] | @base64d), at:(.[2])}) | {sha256: $SHA, size: ($SIZE | tonumber), seen: .}'
+}
+
+# Converts the json format to the line format
+unrollup(){
+    jq -crM '. as $rec | .seen[] | "\($rec.sha256) \($rec.size) \(.source_id | @base64) \(.path | @base64) \(.at)"'
+}
+
+sort_and_rollup(){
+    LC_ALL=C sort | rollup
+}
+
+# Prints unrolled lines
+scan_dir(){
     local BASE_PATH="$1"
     local THE_DIR="$2"
     (
@@ -43,7 +101,7 @@ scan_dir_inner(){
                 if [[ -r "$FILE" ]]; then
                     local SHA="$(sha256sum < "$FILE" | cut -d ' ' -f 1)"
                     local SIZE="$(stat --format=%s -- "$FILE")"
-                    echo "$SHA $SIZE $(echo -n "$THE_PATH" | base64 -w0)"
+                    echo "$SHA $SIZE $__WEESU_SOURCE_ID_BASE64__ $(echo -n "$THE_PATH" | base64 -w0) $__WEESU_TIME__"
                     # I'd like to get .zip files too, but I don't think
                     # the zip program has an easy enumeration option like
                     # tar does
@@ -57,7 +115,7 @@ scan_dir_inner(){
                 fi
             elif [[ -d "$FILE" ]]; then
                 if [[ -r "$FILE" && -x "$FILE" ]]; then
-                    scan_dir_inner "$BASE_PATH$FILE/" "$FILE"
+                    scan_dir "$BASE_PATH$FILE/" "$FILE"
                 else
                     >&2 echo "WARNING: skipping directory $(printf %q "$FILE") due to insufficient permissions"
                 fi
@@ -66,20 +124,6 @@ scan_dir_inner(){
             fi
         done
     )
-}
-
-scan_dir(){
-    local JQ_FILTER='. / " "
-                     | {sha256: .[0],
-                        size:   (.[1] | tonumber),
-                        seen:   [{source_id: $source_id,
-                                  at:        $at,
-                                  path:      (.[2] | @base64d)}]}'
-    scan_dir_inner "$1" "$2" \
-    | jq -cMSR \
-         --arg source_id "$__WEESU_SOURCE_ID__" \
-         --arg at "$__WEESU_TIME__" \
-         "$JQ_FILTER"
 }
 
 if [[ -n "${__WEESU_RECUR__+x}" ]]; then
@@ -111,7 +155,7 @@ if [[ -n "${__WEESU_RECUR__+x}" ]]; then
     read SIZE <&3
     exec 3>&-
     if [[ -n "${PID:-}" ]]; then wait $PID; fi
-    echo "$SHA $SIZE $(echo -n "$__WEESU_PATH__$TAR_FILENAME" | base64 -w0)"
+    echo "$SHA $SIZE $__WEESU_SOURCE_ID_BASE64__ $(echo -n "$__WEESU_PATH__$TAR_FILENAME" | base64 -w0) $__WEESU_TIME__"
     exit 0
 fi
 
@@ -165,43 +209,6 @@ merge2(){
     fi
 }
 
-# Prints one object per line with the sha256 key first
-sort_and_normalize(){
-    # rename the sha256 key so it sorts to the front
-    jq -cMS '[.sha256,(._sha256 = .sha256 | del(.sha256))]' \
-        | sort \
-        | jq -cMS '.[1]' \
-        | sed s/_sha/sha/
-}
-
-# I suspect that the per-line jq calls are what slow this down the
-# most; I also believe all of them could be converted to streaming
-# calls with some clever formatting
-merge_lines(){
-    MERGER={}
-    sort_and_normalize \
-        | cat - <(echo LAST_LINE) \
-        | while read -r NEXT_LINE; do
-              if [[ "$NEXT_LINE" == LAST_LINE ]]; then
-                  if [[ "$MERGER" != "{}" ]]; then
-                      echo "$MERGER"
-                  fi
-                  break;
-              fi
-              SHA1="$(<<< "$MERGER" jq -cMS .sha256)"
-              SHA2="$(<<< "$NEXT_LINE" jq -cMS .sha256)"
-              if [[ "$SHA1" == "$SHA2" ]]; then
-                  MERGER="$(merge2 "$MERGER" "$NEXT_LINE")"
-              else
-                  if [[ "$MERGER" != "{}" ]]; then
-                      echo "$MERGER"
-                  fi
-                  MERGER="$NEXT_LINE"
-              fi
-          done \
-        | sort_and_normalize
-}
-
 # Like uniq, but only considers the first three "columns";
 # uniq seems incapable of doing this
 uniq13(){
@@ -229,7 +236,7 @@ case "$CMD" in
         if [[ "$#" -ne 2 ]]; then
             print_usage_and_exit
         fi
-        export __WEESU_SOURCE_ID__="$1"
+        export __WEESU_SOURCE_ID_BASE64__="$(echo -n "$1" | base64 -w0)"
         export __WEESU_TIME__="$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
 
         THE_DIR="$2"
@@ -238,7 +245,13 @@ case "$CMD" in
             exit 1
         fi
 
-        scan_dir "${__WEESU_PATH__:-}" "$THE_DIR" | merge_lines
+        JQ_FILTER='. / " "
+                   | {sha256: .[0],
+                      size:   (.[1] | tonumber),
+                      seen:   [{source_id: $source_id,
+                                at:        $at,
+                                path:      (.[2] | @base64d)}]}'
+        scan_dir "${__WEESU_PATH__:-}" "$THE_DIR" | sort_and_rollup
 
         ;;
     "merge")
@@ -247,10 +260,7 @@ case "$CMD" in
         fi
         FILE1="$1"
         FILE2="$2"
-        sort -m \
-             <(sort_and_normalize < "$FILE1") \
-             <(sort_and_normalize < "$FILE2") \
-            | merge_lines
+        cat <(unrollup < "$FILE1") <(unrollup < "$FILE2") | sort_and_rollup
         ;;
     "stale")
         if [[ "$#" -ne 0 ]]; then
@@ -266,9 +276,7 @@ case "$CMD" in
         SOURCE_AT=""
         jq -rcMS "$JQ_FILTER" \
             | LC_ALL=C sort -k 1,3 -r \
-            | tee /tmp/phase1.txt \
             | uniq13 \
-            | tee /tmp/phase2.txt \
             | while read SOURCE_ID_64 LINE_TYPE X AT Y; do
                   case "$LINE_TYPE" in
                       "source_global")
