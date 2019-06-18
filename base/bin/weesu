@@ -38,9 +38,9 @@ EOF
 # lines that are identical but for the final timestamp (retaining the
 # latest timestamp)
 rollup(){
-    # Might be able to do this all in jq with recursive functions; no
-    # guess whether that'd be faster though; it'd at least avoid
-    # moderately long lines
+    # Might be able to do this all in jq with foreach; no guess
+    # whether that'd be faster though; it'd at least avoid moderately
+    # long lines
     THIS_SHA=""
     THIS_SIZE=""
     THIS_DOUBLET=""
