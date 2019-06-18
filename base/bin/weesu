@@ -159,56 +159,6 @@ if [[ -n "${__WEESU_RECUR__+x}" ]]; then
     exit 0
 fi
 
-merge_seens(){
-    FIRST_TIME=1
-    # How about put the key and the rest of it on different lines, and
-    # do a fancier while true loop
-    jq -cMS '[[.source_id, .path],.at,.]' \
-        | sort \
-        | jq -cMS '.[0],.[2]' \
-        | while true; do
-              if [[ -n $FIRST_TIME ]]; then
-                  read -r KEY1 || break
-                  read -r VAL1
-                  FIRST_TIME=""
-              fi
-              if read -r KEY2; then
-                  read -r VAL2
-                  if [[ "$KEY1" != "$KEY2" ]]; then
-                      echo "$VAL1"
-                  fi
-                  KEY1="$KEY2"
-                  VAL1="$VAL2"
-              else
-                  echo "$VAL1"
-                  break
-              fi
-          done \
-        | jq -cMSs .
-}
-
-merge2(){
-    local JSON1="$1"
-    local JSON2="$2"
-    local JSON1NOSEEN="$(<<< "$JSON1" jq -cMS 'del(.seen)')"
-    local JSON2NOSEEN="$(<<< "$JSON2" jq -cMS 'del(.seen)')"
-    # sanity check
-    if [[ "$JSON1NOSEEN" == "$JSON2NOSEEN" ]]; then
-        # it'd also be nice to check that there are no redundant
-        # seens, but that sounds harder; only relevant for
-        # real merging
-        SEENS="$(jq -cnMS \
-                 --argjson json1 "$JSON1" \
-                 --argjson json2 "$JSON2" \
-                 '$json1.seen + $json2.seen | .[]' \
-                 | merge_seens)"
-        <<< "$JSON1" jq -cMS --argjson seens "$SEENS" '.seen=$seens'
-    else
-        echo "IMPOSSIBLE ERROR" >&2
-        exit 42
-    fi
-}
-
 # Like uniq, but only considers the first three "columns";
 # uniq seems incapable of doing this
 uniq13(){
