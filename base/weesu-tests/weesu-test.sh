@@ -103,6 +103,12 @@ weesu stale < $CATALOG3 \
 
 # TODO: merging chooses the latest seen record by source_id
 
+# symlinks shouldn't be followed
+(
+    weesu catalog yeezy diabolical-symlink 2>/dev/null \
+        | wc -l \
+        | diff <(echo 1) -
+)
 
 rm -rf $THE_TMP_DIR
 echo Tests passed\!

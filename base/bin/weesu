@@ -113,7 +113,7 @@ scan_dir(){
                 else
                     >&2 echo "WARNING: skipping $(printf %q "$FILE"), which is not readable"
                 fi
-            elif [[ -d "$FILE" ]]; then
+            elif [[ -d "$FILE" && ! -L "$FILE" ]]; then
                 if [[ -r "$FILE" && -x "$FILE" ]]; then
                     scan_dir "$BASE_PATH$FILE/" "$FILE"
                 else
