@@ -5,3 +5,4 @@ gitignored
 /.lein-repl-history
 /.nrepl-port
 .projectile
+/.cpcache
