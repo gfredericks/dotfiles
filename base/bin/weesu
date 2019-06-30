@@ -78,6 +78,11 @@ rollup(){
                 echo "$THIS_SHA $THIS_SIZE $(echo "${THESE_TRIPLETS[*]}")"
             fi
         elif [[ "$SHA" == "$THIS_SHA" ]]; then
+            [[ "$SIZE" == "$THIS_SIZE" ]] || \
+                {
+                    echo "UNEXPECTED SIZE MISMATCH: SHA=$SHA, SIZE1=$SIZE, SIZE2=$THIS_SIZE" >&2
+                    exit 1
+                }
             NEW_DOUBLET="$SOURCE_ID_BASE64 $PATH_BASE64"
             if [[ "$NEW_DOUBLET" == "$THIS_DOUBLET" ]]; then
                 if [[ "$AT" > "$THIS_AT" ]]; then
@@ -121,7 +126,9 @@ scan_dir(){
         # Can add a -a flag to opt-in to hidden files at some point
         for FILE in *; do
             local THE_PATH="$BASE_PATH$FILE"
-            if [[ -f "$FILE" ]]; then
+            if [[ -L "$FILE" ]]; then
+                >&2 echo "WARNING: skipping symlink $(printf %q "$FILE")"
+            elif [[ -f "$FILE" ]]; then
                 if [[ -r "$FILE" ]]; then
                     local SHA="$(sha256sum < "$FILE" | cut -d ' ' -f 1)"
                     local SIZE="$(stat --format=%s -- "$FILE")"
@@ -137,14 +144,14 @@ scan_dir(){
                 else
                     >&2 echo "WARNING: skipping $(printf %q "$FILE"), which is not readable"
                 fi
-            elif [[ -d "$FILE" && ! -L "$FILE" ]]; then
+            elif [[ -d "$FILE" ]]; then
                 if [[ -r "$FILE" && -x "$FILE" ]]; then
                     scan_dir "$BASE_PATH$FILE/" "$FILE"
                 else
                     >&2 echo "WARNING: skipping directory $(printf %q "$FILE") due to insufficient permissions"
                 fi
-            elif [[ -e "$FILE" ]]; then
-                >&2 echo "WARNING: skipping $(printf %q "$FILE"), which is not a file or directory"
+            else
+                >&2 echo "WARNING: skipping $(printf %q "$FILE"), which is of unknown type"
             fi
         done
     )
