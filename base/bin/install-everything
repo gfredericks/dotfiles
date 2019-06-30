@@ -10,6 +10,12 @@
 
 set -Ceou pipefail
 
+if [ $# -eq 0 ]
+then
+    echo "USAGE: install-everything [all | <thing>]" 1>&2
+    exit 1
+fi
+
 sudo apt-get update
 sudo apt-get install -y wget build-essential unzip
 
@@ -23,12 +29,6 @@ sudo apt-get install -y --no-install-recommends bsdtar
 
 BUILDDIRBASE=~/.install-everything
 mkdir -p ~/bin
-
-if [ $# -eq 0 ]
-then
-    echo "USAGE: install-everything [all | <thing>]" 1>&2
-    exit 1
-fi
 
 while [ $# -ne 0 ]
 do
