@@ -134,5 +134,15 @@ weesu stale < $CATALOG3 \
         | diff <(echo 1) -
 )
 
+# merge-bug-1 regression
+(
+    FILE1=$(_mktemp)
+    cd merge-bug-1
+    weesu merge merge1.json merge2.json \
+        | jq '.seen[] | .source_id' \
+        | wc -l \
+        | diff <(echo 2) -
+)
+
 rm -rf $THE_TMP_DIR
 echo Tests passed\!
