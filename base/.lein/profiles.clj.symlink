@@ -99,7 +99,8 @@
  {:deploy-repositories [["releases" :clojars]]}
 
  :lib-dev
- {:release-tasks [["clean"]
+ {:plugins [[com.gfredericks/corncob-cigar "0.1.7"]]
+  :release-tasks [["clean"]
                   ["vcs" "assert-committed"]
                   ["change" "version"
                    "leiningen.release/bump-version" "release"]
