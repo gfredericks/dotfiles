@@ -2,7 +2,31 @@
 
 # Assumes the version of weesu meant to be tested is on the PATH
 
-set -eouC pipefail
+function emit-stack-trace {
+    local -i x
+    local -i stack_frames="${#FUNCNAME[@]}"
+
+    {
+        echo "ERROR in ${FUNCNAME[1]}() at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}"
+
+        for (( x=2; x < stack_frames; x++ ))
+        do
+            echo "    called by ${FUNCNAME[x]}() at ${BASH_SOURCE[x]}:${BASH_LINENO[x - 1]}"
+        done
+    } >&2
+}
+
+function be-strict {
+    set -o errexit    # Die on non-0 exit codes other than inside conditions.
+    set -o noclobber  # Do not overwrite files without being explicit about it.
+    set -o nounset    # Do not allow using unset variables.
+    set -o pipefail   # Cause errors in the middle of pipelines to be caught.
+    set -o errtrace   # ERR trap works in functions, subshells, etc.
+
+    trap emit-stack-trace ERR
+}
+
+be-strict
 
 cd $(dirname "$0")
 
