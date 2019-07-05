@@ -201,16 +201,44 @@ do
 
   if [ "$1" == "all" -o "$1" == "server" -o "$1" == "java" ]
   then
-    BUILDDIR=$BUILDDIRBASE/jdk
-    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget --header "Cookie: oraclelicense=accept-securebackup-cookie" \
-         https://download.oracle.com/otn-pub/java/jdk/12.0.1+12/69cfe15208a647278a19ef0990eea691/jdk-12.0.1_linux-x64_bin.tar.gz
-         # https://download.oracle.com/otn-pub/java/jdk/12+33/312335d836a34c7c8bba9d963e26dc23/jdk-12_linux-x64_bin.tar.gz
-    echo '9fd6dcdaf2cfca7da59e39b009a0f5bcd53bec2fb16105f7ca8d689cdab68d75  jdk-12.0.1_linux-x64_bin.tar.gz' | \
-        sha256sum -c
-    bsdtar xzf jdk-12.0.1_linux-x64_bin.tar.gz
-    rm -f ~/bin/jdk.bin
-    ln -s $BUILDDIR/jdk-12.0.1/bin ~/bin/jdk.bin
+      # JDKs seem hard to get in an automated fashion, so I just
+      # assume that appropriate tarballs have already been acquired
+      install_java(){
+          version="$1"
+          tarball_path="$2"
+          sha256="$3"
+
+          BUILDDIR=$BUILDDIRBASE/tmp
+          rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+          if [[ ! -f "$tarball_path" ]]; then
+              >&2 echo "Can't find expected tarball $tarball_path"
+              exit 1
+          fi
+          echo "$sha256  $tarball_path" | sha256sum -c >/dev/null
+          bsdtar xzf $tarball_path
+          TARBALL="$(ls)"
+          cd ..
+          rm -rf $TARBALL
+          mv tmp/$TARBALL .
+          SYMLINK=jdk-$version
+          rm -f $SYMLINK && ln -s $TARBALL $SYMLINK
+          echo $PWD/$SYMLINK/bin
+      }
+      install_java \
+          8 \
+          ~/.install-everything/jdk-tarballs/jdk-8u191-linux-x64.tar.gz \
+          53c29507e2405a7ffdbba627e6d64856089b094867479edc5ede4105c1da0d65
+      install_java \
+          11 \
+          ~/.install-everything/jdk-tarballs/jdk-11.0.1_linux-x64_bin.tar.gz \
+          e7fd856bacad04b6dbf3606094b6a81fa9930d6dbb044bbd787be7ea93abc885
+      JAVA_12_BIN="$(install_java \
+                         12 \
+                         ~/.install-everything/jdk-tarballs/jdk-12.0.1_linux-x64_bin.tar.gz \
+                         9fd6dcdaf2cfca7da59e39b009a0f5bcd53bec2fb16105f7ca8d689cdab68d75)"
+
+      rm -f ~/bin/jdk.bin
+      ln -s $JAVA_12_BIN ~/bin/jdk.bin
   fi
 
   ###
