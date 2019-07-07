@@ -38,7 +38,7 @@ print_usage_and_exit(){
     cat >&2 <<EOF
     Usage:
 
-    weesu catalog <source-id> <dirname>
+    weesu catalog [--filter=jq-regex] <source-id> <dirname>
       - writes a json file to stdout
     weesu merge <file1> <file2>
       - writes a json file to stdout
@@ -214,6 +214,17 @@ CMD="$1"; shift
 
 case "$CMD" in
     "catalog")
+        # oh; um actually this is a bit weird because if we're just doing
+        # it in jq we can't stop it from scanning all these files, and we
+        # have to filter afterwards; so no time savings...maybe we should
+        # just reorganize files so we don't have to do this?
+        __WEESU_REGEX__=""
+        if [[ "$1" =~ ^--filter= ]]; then
+            __WEESU_REGEX__="${1:9}"
+            shift
+        fi
+        export __WEESU_REGEX__
+        if [[ "$1" == "--" ]]; then shift; fi
         if [[ "$#" -ne 2 ]]; then
             print_usage_and_exit
         fi

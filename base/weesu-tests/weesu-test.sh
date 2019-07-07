@@ -134,5 +134,8 @@ weesu stale < $CATALOG3 \
         | diff <(echo 1) -
 )
 
+# ignores paths based on --ignore; augh though calling `grep` every
+# time sounds not fun; would bash regexes be too weird?
+
 rm -rf $THE_TMP_DIR
 echo Tests passed\!
