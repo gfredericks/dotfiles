@@ -134,5 +134,14 @@ weesu stale < $CATALOG3 \
         | diff <(echo 1) -
 )
 
+# Ignores directories with .noweesu files inside
+(
+    weesu catalog schnaps ignored-subdir >| $CATALOG1
+
+    wc -l < $CATALOG1 | diff <(echo 1) -
+    jq -r .sha256 $CATALOG1 \
+       | diff - <(echo 808157a881c40fa6a64d600793c2e2451c8dd127c8034a280d8d992a30e60e30)
+)
+
 rm -rf $THE_TMP_DIR
 echo Tests passed\!

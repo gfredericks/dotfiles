@@ -123,6 +123,13 @@ scan_dir(){
     local THE_DIR="$2"
     (
         cd "$THE_DIR"
+
+        # insisting that the .noweesu file be of size 0 ensures that
+        # even if some weirdo names their files .noweesu, it will only
+        # be excluded when its contents are inconsequential
+        if [[ -f .noweesu && 0 == $(stat --format=%s .noweesu) ]]; then
+            exit 0
+        fi
         # Can add a -a flag to opt-in to hidden files at some point
         for FILE in *; do
             local THE_PATH="$BASE_PATH$FILE"
