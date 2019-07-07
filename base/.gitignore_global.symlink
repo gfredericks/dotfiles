@@ -6,3 +6,4 @@ gitignored
 /.nrepl-port
 .projectile
 /.cpcache
+.noweesu
