@@ -33,13 +33,21 @@ function be-strict {
 }
 
 be-strict
+shopt -s dotglob # so globbing gets hidden things
 
 print_usage_and_exit(){
     cat >&2 <<EOF
     Usage:
 
-    weesu catalog <source-id> <dirname>
+    weesu catalog <source-id> <dirname> [--exclude \$JQ_REGEX]
       - writes a json file to stdout
+      - if the exclusion regex is given, the following restrictions apply:
+        - no observation whose path matches the regex will be output
+        - if the path to an otherwise-output tarball with "//"
+          appended matches the regex, then none of the contents of the
+          tarball will be output
+        - if the path to a directory matches (without a trailing "/"), then
+          none of its contents will be output
     weesu merge <file1> <file2>
       - writes a json file to stdout
     weesu stale
@@ -117,50 +125,120 @@ sort_and_rollup(){
     LC_ALL=C sort | rollup
 }
 
-# Prints unrolled lines
-scan_dir(){
-    local BASE_PATH="$1"
-    local THE_DIR="$2"
-    (
-        cd "$THE_DIR"
+all_matching_dirs(){
+    local EXCLUSION_REGEX="$1"
+    # This is some crazy-go-nuts shell programming where we're just
+    # running two processes that are mutually connected by a pair of
+    # pipes, just for the sake of implementing a tree walker in bash
+    # where the filtering gets done by jq
+    #
+    # Also there's extra nonsense with base64 because I don't want to
+    # worry about all the weird edge cases (mostly whitespace) in
+    # passing paths around otherwise.
+    local PIPE1=$(mktemp -u)
+    mkfifo $PIPE1
+    exec 3<>$PIPE1
+    local PIPE2=$(mktemp -u)
+    mkfifo $PIPE2
+    exec 4<>$PIPE2
+    local JQ='(if @base64d | test($re;"m") then "N" else "Y" end) as $bool
+        | "\($bool) \(.)"'
+    jq <&3 >&4 \
+        -rR \
+        --arg re "$EXCLUSION_REGEX" \
+        --unbuffered \
+        "$JQ" &
+    local JQ_PID=$!
 
-        # insisting that the .noweesu file be of size 0 ensures that
-        # even if some weirdo names their files .noweesu, it will only
-        # be excluded when its contents are inconsequential
-        if [[ -f .noweesu && 0 == $(stat --format=%s .noweesu) ]]; then
-            exit 0
-        fi
-        # Can add a -a flag to opt-in to hidden files at some point
-        for FILE in *; do
-            local THE_PATH="$BASE_PATH$FILE"
-            if [[ -L "$FILE" ]]; then
-                >&2 echo "WARNING: skipping symlink $(printf %q "$FILE")"
-            elif [[ -f "$FILE" ]]; then
-                if [[ -r "$FILE" ]]; then
-                    local SHA="$(sha256sum < "$FILE" | cut -d ' ' -f 1)"
-                    local SIZE="$(stat --format=%s -- "$FILE")"
-                    echo "$SHA $SIZE $__WEESU_SOURCE_ID_BASE64__ $(echo -n "$THE_PATH" | base64 -w0) $__WEESU_TIME__"
-                    # I'd like to get .zip files too, but I don't think
-                    # the zip program has an easy enumeration option like
-                    # tar does
-                    if [[ "$FILE" == *.tgz || "$FILE" == *.tar.gz ]]; then
-                        __WEESU_RECUR__=t \
-                                       __WEESU_PATH__="$BASE_PATH$FILE//" \
-                                       tar --to-command="$0" -zxf "$FILE"
+    local WRITTEN=1
+    local READ=0
+    echo >&3 # kick it off
+    while [[ "$WRITTEN" -gt "$READ" ]]; do
+        read BOOL PATH64 <&4
+        READ=$((READ + 1))
+        if [[ "$BOOL" == "Y" ]]; then
+            echo "$PATH64"
+            local THE_PATH="$(echo "$PATH64" | base64 -d)"
+            pushd "$THE_PATH" >/dev/null
+            for DIR in *; do
+                if [[ ! -L "$DIR" && -d "$DIR" ]]; then
+                    if [[ "$THE_PATH" == "" ]]; then
+                      local NEW_PATH="$DIR"
+                    else
+                      local NEW_PATH="$THE_PATH/$DIR"
                     fi
-                else
-                    >&2 echo "WARNING: skipping $(printf %q "$FILE"), which is not readable"
+                    local B64="$(echo "$NEW_PATH" | base64 -w0)"
+                    echo "$B64" >&3
+                    WRITTEN=$((WRITTEN+1))
                 fi
-            elif [[ -d "$FILE" ]]; then
-                if [[ -r "$FILE" && -x "$FILE" ]]; then
-                    scan_dir "$BASE_PATH$FILE/" "$FILE"
+            done
+            popd >/dev/null
+        fi
+    done
+    exec 3<&-
+    exec 4<&-
+    # I don't know why the jq doesn't exit itself
+    kill $JQ_PID
+    wait $JQ_PID 2>/dev/null || true
+    rm "$PIPE1"
+    rm "$PIPE2"
+}
+
+all_matching_files(){
+    local EXCLUSION_REGEX="$1"
+    local JQ='if @base64d | test($re;"m") then empty else . end'
+    while read DIR64; do
+        local DIR="$(echo "$DIR64" | base64 -d)"
+        pushd "$DIR" >/dev/null
+        for FILE in *; do
+            if [[ ! -L "$FILE" && -f "$FILE" ]]; then
+                if [[ "$DIR" == "" ]]; then
+                    local THE_PATH="$FILE"
                 else
-                    >&2 echo "WARNING: skipping directory $(printf %q "$FILE") due to insufficient permissions"
+                    local THE_PATH="$DIR/$FILE"
                 fi
-            else
-                >&2 echo "WARNING: skipping $(printf %q "$FILE"), which is of unknown type"
+                echo "$THE_PATH" | base64 -w0
+                echo
+                if [[ "$FILE" == *.tgz || "$FILE" == *.tar.gz ]]; then
+                    echo "$THE_PATH//" | base64 -w0
+                    echo
+                fi
             fi
         done
+        popd >/dev/null
+    done  \
+        | jq -rR --arg re "$EXCLUSION_REGEX" "$JQ"
+}
+
+read_files(){
+    local EXCLUSION_REGEX="$1"
+    # at this point everything matches, except perhaps tarball
+    # contents
+    while read FILE64; do
+        local FILE="$(echo "$FILE64" | base64 -d)"
+        if [[ "$FILE" == *// ]]; then
+            local TARBALL="${FILE::-2}"
+            local JQ='if . / " " | .[3] | @base64d | test($re;"m") then empty else . end'
+            __WEESU_RECUR__=t \
+                           __WEESU_PATH__="$FILE" \
+                           tar --to-command="$0" -zxf "$TARBALL" \
+                | jq -rR --arg re "$EXCLUSION_REGEX" "$JQ"
+        else
+            local SHA="$(sha256sum < "$FILE" | cut -d ' ' -f 1)"
+            local SIZE="$(stat --format=%s -- "$FILE")"
+            echo "$SHA $SIZE $__WEESU_SOURCE_ID_BASE64__ $(echo -n "$FILE" | base64 -w0) $__WEESU_TIME__"
+        fi
+    done
+}
+
+scan_tree(){
+    local THE_DIR="$1"
+    local EXCLUSION_REGEX="$2"
+    (
+        cd "$THE_DIR"
+        all_matching_dirs "$EXCLUSION_REGEX" \
+            | all_matching_files "$EXCLUSION_REGEX" \
+            | read_files "$EXCLUSION_REGEX"
     )
 }
 
@@ -221,7 +299,7 @@ CMD="$1"; shift
 
 case "$CMD" in
     "catalog")
-        if [[ "$#" -ne 2 ]]; then
+        if [[ "$#" -lt 2 ]]; then
             print_usage_and_exit
         fi
         export __WEESU_SOURCE_ID_BASE64__="$(echo -n "$1" | base64 -w0)"
@@ -233,13 +311,18 @@ case "$CMD" in
             exit 1
         fi
 
-        JQ_FILTER='. / " "
-                   | {sha256: .[0],
-                      size:   (.[1] | tonumber),
-                      seen:   [{source_id: $source_id,
-                                at:        $at,
-                                path:      (.[2] | @base64d)}]}'
-        scan_dir "${__WEESU_PATH__:-}" "$THE_DIR" | sort_and_rollup
+        shift; shift
+        if [[ "$#" -eq 2 && "$1" == "--exclude" ]]; then
+            EXCLUSION_REGEX="$2"
+            shift; shift
+        else
+            EXCLUSION_REGEX='^///$' # shouldn't match anything
+        fi
+        if [[ "$#" -ne 0 ]]; then
+            print_usage_and_exit
+        fi
+
+        scan_tree "$THE_DIR" "$EXCLUSION_REGEX" | sort_and_rollup
 
         ;;
     "merge")

@@ -58,9 +58,6 @@ echo "more-tarballs.tar.gz//test-files-2/a-direcotry/tamborine.tgz//test-files/f
 echo $'278\n608\n12\n51\n0' \
      | diff - <(< $CATALOG1 jq '.size')
 
-# hidden files aren't included
-! grep hidden-file $CATALOG1 || exit 1
-
 CATALOG3=$(_mktemp)
 weesu merge $CATALOG1 $CATALOG2 >| $CATALOG3
 
@@ -131,17 +128,55 @@ weesu stale < $CATALOG3 \
 (
     weesu catalog yeezy diabolical-symlink 2>/dev/null \
         | wc -l \
-        | diff <(echo 1) -
+        | diff <(echo 2) -
 )
 
-# Ignores directories with .noweesu files inside
+# --exclusions
 (
-    weesu catalog schnaps ignored-subdir >| $CATALOG1
-
-    wc -l < $CATALOG1 | diff <(echo 1) -
-    jq -r .sha256 $CATALOG1 \
-       | diff - <(echo 808157a881c40fa6a64d600793c2e2451c8dd127c8034a280d8d992a30e60e30)
+    weesu catalog johmson exclusions \
+        | jq -r '.seen[] | .path' \
+        | diff - <(echo top-level-file
+                   echo .top-level-hidden-file
+                   echo jolly-tarball.tgz//tom-sawer/.hidden-jrames.txt
+                   echo just-a-directomy/josh.txt
+                   echo jolly-tarball.tgz//tom-sawer/jrames.txt
+                   echo jolly-tarball.tgz//echos-of-fellbert.txt
+                   echo jolly-tarball.tgz)
+    weesu catalog johmson exclusions --exclude '(^|/)\.' \
+        | jq -r '.seen[] | .path' \
+        | diff - <(echo top-level-file
+                   echo just-a-directomy/josh.txt
+                   echo jolly-tarball.tgz//tom-sawer/jrames.txt
+                   echo jolly-tarball.tgz//echos-of-fellbert.txt
+                   echo jolly-tarball.tgz)
+    weesu catalog johmson exclusions --exclude 'jolly-tarball.tgz//' \
+        | jq -r '.seen[] | .path' \
+        | diff - <(echo top-level-file
+                   echo .top-level-hidden-file
+                   echo just-a-directomy/josh.txt
+                   echo jolly-tarball.tgz)
+    weesu catalog johmson exclusions --exclude 'olly-tar' \
+        | jq -r '.seen[] | .path' \
+        | diff - <(echo top-level-file
+                   echo .top-level-hidden-file
+                   echo just-a-directomy/josh.txt)
+    weesu catalog johmson exclusions --exclude top-level \
+        | jq -r '.seen[] | .path' \
+        | diff - <(echo jolly-tarball.tgz//tom-sawer/.hidden-jrames.txt
+                   echo just-a-directomy/josh.txt
+                   echo jolly-tarball.tgz//tom-sawer/jrames.txt
+                   echo jolly-tarball.tgz//echos-of-fellbert.txt
+                   echo jolly-tarball.tgz)
+    weesu catalog johmson exclusions --exclude just-a-directomy \
+        | jq -r '.seen[] | .path' \
+        | diff - <(echo top-level-file
+                   echo .top-level-hidden-file
+                   echo jolly-tarball.tgz//tom-sawer/.hidden-jrames.txt
+                   echo jolly-tarball.tgz//tom-sawer/jrames.txt
+                   echo jolly-tarball.tgz//echos-of-fellbert.txt
+                   echo jolly-tarball.tgz)
 )
+# TODO maybe also stop auto-ignoring hidden files?
 
 rm -rf $THE_TMP_DIR
 echo Tests passed\!
