@@ -164,17 +164,11 @@ all_matching_dirs(){
     local READ=0
     local NEXT_BUFFER_FILE=0
     local LINES_IN_BUFFER=0
-    local BUFFER_FILE_SIZE=100
+    local BUFFER_FILE_SIZE=50
     echo >&3 # kick it off
     while true; do
         # Is the buffering algorithm here even deterministic? I don't know
-        if [[ "$WRITTEN" -gt "$((READ + BUFFER_FILE_SIZE))" ]]; then
-            # Why can't I use normal head here? Does it close the FD?
-            _head <&4 -n $BUFFER_FILE_SIZE > $OVERFLOW_DIR/$NEXT_BUFFER_FILE
-            READ=$((READ + BUFFER_FILE_SIZE))
-            NEXT_BUFFER_FILE=$((NEXT_BUFFER_FILE + 1))
-            LINES_IN_BUFFER=$((LINES_IN_BUFFER + BUFFER_FILE_SIZE))
-        elif [[ "$WRITTEN" -gt "$READ" ]] || [[ "$LINES_IN_BUFFER" -gt 0 ]]; then
+        if [[ "$WRITTEN" -gt "$READ" ]] || [[ "$LINES_IN_BUFFER" -gt 0 ]]; then
             if [[ "$WRITTEN" -gt "$READ" ]]; then
                 read BOOL PATH64 <&4
                 READ=$((READ + 1))
@@ -204,6 +198,13 @@ all_matching_dirs(){
                         local B64="$(echo "$NEW_PATH" | base64 -w0)"
                         echo "$B64" >&3
                         WRITTEN=$((WRITTEN+1))
+                        if [[ "$WRITTEN" -gt "$((READ + BUFFER_FILE_SIZE))" ]]; then
+                            # Why can't I use normal head here? Does it close the FD?
+                            _head <&4 -n $BUFFER_FILE_SIZE > $OVERFLOW_DIR/$NEXT_BUFFER_FILE
+                            READ=$((READ + BUFFER_FILE_SIZE))
+                            NEXT_BUFFER_FILE=$((NEXT_BUFFER_FILE + 1))
+                            LINES_IN_BUFFER=$((LINES_IN_BUFFER + BUFFER_FILE_SIZE))
+                        fi
                     fi
                 done
                 popd >/dev/null
