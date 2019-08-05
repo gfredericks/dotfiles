@@ -125,6 +125,15 @@ sort_and_rollup(){
     LC_ALL=C sort | rollup
 }
 
+_head(){
+    local N="$2"
+    while [[ "$N" -gt 0 ]]; do
+        read VAR;
+        N=$((N-1))
+        echo "$VAR"
+    done
+}
+
 all_matching_dirs(){
     local EXCLUSION_REGEX="$1"
     # This is some crazy-go-nuts shell programming where we're just
@@ -141,6 +150,7 @@ all_matching_dirs(){
     local PIPE2=$(mktemp -u)
     mkfifo $PIPE2
     exec 4<>$PIPE2
+    local OVERFLOW_DIR=$(mktemp -d)
     local JQ='(if @base64d | test($re;"m") then "N" else "Y" end) as $bool
         | "\($bool) \(.)"'
     jq <&3 >&4 \
@@ -152,27 +162,54 @@ all_matching_dirs(){
 
     local WRITTEN=1
     local READ=0
+    local NEXT_BUFFER_FILE=0
+    local LINES_IN_BUFFER=0
+    local BUFFER_FILE_SIZE=100
     echo >&3 # kick it off
-    while [[ "$WRITTEN" -gt "$READ" ]]; do
-        read BOOL PATH64 <&4
-        READ=$((READ + 1))
-        if [[ "$BOOL" == "Y" ]]; then
-            echo "$PATH64"
-            local THE_PATH="$(echo "$PATH64" | base64 -d)"
-            pushd "$THE_PATH" >/dev/null
-            for DIR in *; do
-                if [[ ! -L "$DIR" && -d "$DIR" ]]; then
-                    if [[ "$THE_PATH" == "" ]]; then
-                      local NEW_PATH="$DIR"
-                    else
-                      local NEW_PATH="$THE_PATH/$DIR"
+    while true; do
+        # Is the buffering algorithm here even deterministic? I don't know
+        if [[ "$WRITTEN" -gt "$((READ + BUFFER_FILE_SIZE))" ]]; then
+            # Why can't I use normal head here? Does it close the FD?
+            _head <&4 -n $BUFFER_FILE_SIZE > $OVERFLOW_DIR/$NEXT_BUFFER_FILE
+            READ=$((READ + BUFFER_FILE_SIZE))
+            NEXT_BUFFER_FILE=$((NEXT_BUFFER_FILE + 1))
+            LINES_IN_BUFFER=$((LINES_IN_BUFFER + BUFFER_FILE_SIZE))
+        elif [[ "$WRITTEN" -gt "$READ" ]] || [[ "$LINES_IN_BUFFER" -gt 0 ]]; then
+            if [[ "$WRITTEN" -gt "$READ" ]]; then
+                read BOOL PATH64 <&4
+                READ=$((READ + 1))
+            else
+                if [[ $((LINES_IN_BUFFER % BUFFER_FILE_SIZE)) -eq 0 ]]; then
+                    local NUM_TO_OPEN=$((NEXT_BUFFER_FILE - (LINES_IN_BUFFER / BUFFER_FILE_SIZE)))
+                    if [[ $NUM_TO_OPEN -gt 0 ]]; then
+                        exec 5<&-
+                        rm $OVERFLOW_DIR/$((NUM_TO_OPEN - 1))
                     fi
-                    local B64="$(echo "$NEW_PATH" | base64 -w0)"
-                    echo "$B64" >&3
-                    WRITTEN=$((WRITTEN+1))
+                    exec 5<$OVERFLOW_DIR/$NUM_TO_OPEN
                 fi
-            done
-            popd >/dev/null
+                read BOOL PATH64 <&5
+                LINES_IN_BUFFER=$((LINES_IN_BUFFER - 1))
+            fi
+            if [[ "$BOOL" == "Y" ]]; then
+                echo "$PATH64"
+                local THE_PATH="$(echo "$PATH64" | base64 -d)"
+                pushd "$THE_PATH" >/dev/null
+                for DIR in *; do
+                    if [[ ! -L "$DIR" && -d "$DIR" ]]; then
+                        if [[ "$THE_PATH" == "" ]]; then
+                          local NEW_PATH="$DIR"
+                        else
+                          local NEW_PATH="$THE_PATH/$DIR"
+                        fi
+                        local B64="$(echo "$NEW_PATH" | base64 -w0)"
+                        echo "$B64" >&3
+                        WRITTEN=$((WRITTEN+1))
+                    fi
+                done
+                popd >/dev/null
+            fi
+        else
+            break
         fi
     done
     exec 3<&-
@@ -182,6 +219,7 @@ all_matching_dirs(){
     wait $JQ_PID 2>/dev/null || true
     rm "$PIPE1"
     rm "$PIPE2"
+    rm -rf "$OVERFLOW_DIR"
 }
 
 all_matching_files(){

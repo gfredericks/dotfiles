@@ -176,7 +176,27 @@ weesu stale < $CATALOG3 \
                    echo jolly-tarball.tgz//echos-of-fellbert.txt
                    echo jolly-tarball.tgz)
 )
-# TODO maybe also stop auto-ignoring hidden files?
+
+# Shouldn't hang just because there's a lot of directory branching
+# (regression test for a bug where the mutually recursive pipes were
+#  filling up)
+(
+    cd $(_mktemp -d)
+    PRE="extra-jolly-good-pretty-well-long-directory-name-if-I-do-say-so-yourself-please-and-thank-you"
+    for d1 in $(seq 1 8); do
+        D1="$PRE-$d1"
+        for d2 in $(seq 1 8); do
+            D2="$PRE-$d2"
+            for d3 in $(seq 1 8); do
+                D3="$PRE-$d3"
+                mkdir -p "$D1/$D2/$D3"
+            done
+        done
+    done
+    # This should probably finish in around 5s; could do something fancy here
+    # where we time out after some time
+    weesu catalog johmson . | wc -l | diff - <(echo 0)
+)
 
 rm -rf $THE_TMP_DIR
 echo Tests passed\!
