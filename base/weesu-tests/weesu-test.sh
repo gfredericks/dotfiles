@@ -198,5 +198,17 @@ weesu stale < $CATALOG3 \
     weesu catalog johmson . | wc -l | diff - <(echo 0)
 )
 
+# Shouldn't hang just because a single directory has a heckabunch of
+# entries (variation on the previous test, that my first attempt was
+# vulnerable to)
+(
+    cd $(_mktemp -d)
+    PRE="extra-jolly-good-pretty-well-long-directory-name-if-I-do-say-so-yourself-please-and-thank-you"
+    for d in $(seq 1 1000); do
+        mkdir "$PRE-$d"
+    done
+    weesu catalog johmson . | wc -l | diff - <(echo 0)
+)
+
 rm -rf $THE_TMP_DIR
 echo Tests passed\!
