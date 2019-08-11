@@ -243,10 +243,6 @@ __prompt_command() {
     IN_PROMPT=1
 }
 
-# See comment in the install-everything script; need to debug
-# it so that this line isn't necessary
-export LD_LIBRARY_PATH=~/.install-everything/gnupg/install/lib
-
 # Make sure the crontab is correct
 if [ -e ~/.crontab ]; then
   diff ~/.crontab <(crontab -l) || echo "crontab doesn't match ~/.crontab !"
