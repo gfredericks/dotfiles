@@ -412,8 +412,17 @@ case "$CMD" in
         if [[ "$#" -ne 0 ]]; then
             print_usage_and_exit
         fi
-        JQ_FILTER='.seen | map(.source_id) | unique'
-        jq -cMS "$JQ_FILTER" | sort | uniq -c
+        JQ_FILTER='"\("\(.seen[0].source_id): \(.seen[0].path)" | @base64) \(.seen | map(.source_id) | unique) \(.sha256)"'
+        jq -cMSr "$JQ_FILTER" \
+            | sort -k 2,3 \
+            | awk '{ print $1, $2 }' \
+            | uniq -f 1 -c \
+            | while read CARDINALITY LOC64 SOURCES; do
+            echo "$CARDINALITY files found at $SOURCES"
+            echo "For example:"
+            echo "    $(echo "$LOC64" | base64 -d)"
+            echo
+        done
         ;;
     *)
         print_usage_and_exit
