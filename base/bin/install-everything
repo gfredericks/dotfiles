@@ -218,12 +218,13 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/gradle
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://services.gradle.org/distributions/gradle-5.5.1-bin.zip
-    echo '222a03fcf2fcaf3691767ce9549f78ebd4a77e73f9e23a396899fb70b420cd00  gradle-5.5.1-bin.zip' | \
+    VERSION=5.4
+    wget https://services.gradle.org/distributions/gradle-$VERSION-bin.zip
+    echo "c8c17574245ecee9ed7fe4f6b593b696d1692d1adbfef425bef9b333e3a0e8de  gradle-$VERSION-bin.zip" | \
         sha256sum -c
-    unzip gradle-5.5.1-bin.zip
+    unzip gradle-$VERSION-bin.zip
     rm -f ~/bin/gradle
-    ln -s $BUILDDIR/gradle-5.5.1/bin/gradle ~/bin/gradle
+    ln -s $BUILDDIR/gradle-$VERSION/bin/gradle ~/bin/gradle
   fi
 
   ###
