@@ -181,17 +181,17 @@ do
           8 \
           ~/.install-everything/jdk-tarballs/jdk-8u191-linux-x64.tar.gz \
           53c29507e2405a7ffdbba627e6d64856089b094867479edc5ede4105c1da0d65
-      install_java \
-          11 \
-          ~/.install-everything/jdk-tarballs/jdk-11.0.1_linux-x64_bin.tar.gz \
-          e7fd856bacad04b6dbf3606094b6a81fa9930d6dbb044bbd787be7ea93abc885
+      JAVA_11_BIN="$(install_java \
+                         11 \
+                         ~/.install-everything/jdk-tarballs/jdk-11.0.1_linux-x64_bin.tar.gz \
+                         e7fd856bacad04b6dbf3606094b6a81fa9930d6dbb044bbd787be7ea93abc885)"
       JAVA_12_BIN="$(install_java \
                          12 \
                          ~/.install-everything/jdk-tarballs/jdk-12.0.1_linux-x64_bin.tar.gz \
                          9fd6dcdaf2cfca7da59e39b009a0f5bcd53bec2fb16105f7ca8d689cdab68d75)"
 
       rm -f ~/bin/jdk.bin
-      ln -s $JAVA_12_BIN ~/bin/jdk.bin
+      ln -s $JAVA_11_BIN ~/bin/jdk.bin
   fi
 
   ###
