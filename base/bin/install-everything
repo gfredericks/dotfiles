@@ -211,6 +211,22 @@ do
   fi
 
   ###
+  ### Gradle
+  ###
+
+  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "gradle" ]
+  then
+    BUILDDIR=$BUILDDIRBASE/gradle
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    wget https://services.gradle.org/distributions/gradle-5.5.1-bin.zip
+    echo '222a03fcf2fcaf3691767ce9549f78ebd4a77e73f9e23a396899fb70b420cd00  gradle-5.5.1-bin.zip' | \
+        sha256sum -c
+    unzip gradle-5.5.1-bin.zip
+    rm -f ~/bin/gradle
+    ln -s $BUILDDIR/gradle-5.5.1/bin/gradle ~/bin/gradle
+  fi
+
+  ###
   ### jq
   ###
 
