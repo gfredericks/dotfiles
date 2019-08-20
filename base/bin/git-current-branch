@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+RET="$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')"
+
+if [[ -z "$RET" ]]; then
+    echo >&2 "Can't find branch!"
+    exit 1
+fi
+
+echo "$RET"
