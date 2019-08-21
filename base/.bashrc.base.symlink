@@ -155,7 +155,7 @@ __prompt_command() {
 
     GIT_BRANCH=$(parse_git_branch)
     if [[ "$GIT_BRANCH" ]]; then
-        PROMPT_COMPONENTS["3-git-branch"]="$GIT_BRANCH"
+        PROMPT_COMPONENTS["3-git-branch"]=$'\u001b[34;1mgit:\u001b[0m'"$GIT_BRANCH"
     fi
 
     local JOBS=`jobs | wc -l`
