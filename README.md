@@ -11,7 +11,7 @@ DOTFILES_DIR=~/dotfiles
 # incorporate other dotfiles directories.
 $DOTFILES_DIR/bootstrap $DOTFILES_DIR/base
 # Run all other bashrc files.
-for bashrc in ~/.bashrc.*; do
+for bashrc in $(ls ~/.bashrc.* | sort); do
   source $bashrc
 done
 ```

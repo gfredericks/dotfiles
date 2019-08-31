@@ -182,17 +182,17 @@ do
           8 \
           ~/.install-everything/jdk-tarballs/jdk-8u191-linux-x64.tar.gz \
           53c29507e2405a7ffdbba627e6d64856089b094867479edc5ede4105c1da0d65
-      install_java \
-          11 \
-          ~/.install-everything/jdk-tarballs/jdk-11.0.1_linux-x64_bin.tar.gz \
-          e7fd856bacad04b6dbf3606094b6a81fa9930d6dbb044bbd787be7ea93abc885
+      JAVA_11_BIN="$(install_java \
+                         11 \
+                         ~/.install-everything/jdk-tarballs/jdk-11.0.1_linux-x64_bin.tar.gz \
+                         e7fd856bacad04b6dbf3606094b6a81fa9930d6dbb044bbd787be7ea93abc885)"
       JAVA_12_BIN="$(install_java \
                          12 \
                          ~/.install-everything/jdk-tarballs/jdk-12.0.1_linux-x64_bin.tar.gz \
                          9fd6dcdaf2cfca7da59e39b009a0f5bcd53bec2fb16105f7ca8d689cdab68d75)"
 
       rm -f ~/bin/jdk.bin
-      ln -s $JAVA_12_BIN ~/bin/jdk.bin
+      ln -s $JAVA_11_BIN ~/bin/jdk.bin
   fi
 
   ###
@@ -209,6 +209,23 @@ do
     bsdtar xzf apache-maven-3.3.9-bin.tar.gz
     rm -f ~/bin/mvn
     ln -s $BUILDDIR/apache-maven-3.3.9/bin/mvn ~/bin/mvn
+  fi
+
+  ###
+  ### Gradle
+  ###
+
+  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "gradle" ]
+  then
+    BUILDDIR=$BUILDDIRBASE/gradle
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    VERSION=5.4
+    wget https://services.gradle.org/distributions/gradle-$VERSION-bin.zip
+    echo "c8c17574245ecee9ed7fe4f6b593b696d1692d1adbfef425bef9b333e3a0e8de  gradle-$VERSION-bin.zip" | \
+        sha256sum -c
+    unzip gradle-$VERSION-bin.zip
+    rm -f ~/bin/gradle
+    ln -s $BUILDDIR/gradle-$VERSION/bin/gradle ~/bin/gradle
   fi
 
   ###
@@ -291,7 +308,7 @@ do
   then
     sudo apt-get install -y imagemagick graphviz curl \
          texlive{,-base,-latex-recommended,-latex-extra,-full} \
-         bsdgames inkscape
+         bsdgames inkscape xterm xdotool sshfs
   fi
 
   shift

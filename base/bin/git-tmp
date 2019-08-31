@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+git checkout -b tmp-$(date +"%Y-%m-%dT%H%M")
