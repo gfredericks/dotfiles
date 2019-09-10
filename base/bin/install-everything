@@ -135,14 +135,15 @@ do
 
   if [ "$1" == "all" -o "$1" == "server" -o "$1" == "python3" ]
   then
+    sudo apt-get install -y libffi-dev
     BUILDDIR=$BUILDDIRBASE/python3
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://www.python.org/ftp/python/3.6.4/Python-3.6.4.tgz
-    echo '7dc453e1a93c083388eb1a23a256862407f8234a96dc4fae0fc7682020227486  Python-3.6.4.tgz' | \
+    wget https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tgz
+    echo 'd63e63e14e6d29e17490abbe6f7d17afb3db182dbd801229f14e55f4157c4ba3  Python-3.7.4.tgz' | \
         sha256sum -c
-    tar xzf Python-3.6.4.tgz
-    cd Python-3.6.4
-    INSTALLDIR=$BUILDDIR/install/python-3.6.4
+    tar xzf Python-3.7.4.tgz
+    cd Python-3.7.4
+    INSTALLDIR=$BUILDDIR/install/python-3.7.4
     ./configure --prefix=$INSTALLDIR && make && make install
     rm -f ~/bin/python3.bin
     ln -s $INSTALLDIR/bin ~/bin/python3.bin
@@ -307,7 +308,7 @@ do
   then
     sudo apt-get install -y imagemagick graphviz curl \
          texlive{,-base,-latex-recommended,-latex-extra,-full} \
-         bsdgames inkscape xterm xdotool
+         bsdgames inkscape xterm xdotool sshfs
   fi
 
   shift
