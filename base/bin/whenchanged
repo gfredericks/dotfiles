@@ -10,6 +10,7 @@ shift
 exec 3<&0
 
 (echo run it first; inotifywait \
+                        -q \
                         -e modify \
                         -e attrib \
                         -e move \
@@ -23,6 +24,17 @@ exec 3<&0
         read EV
         # read all other available lines
         while read -t 0.01; do true; done
-        # run the command
-        "$@" < /dev/null || true
+
+        # print header, then run the command
+        COLS=$(tput cols)
+        echo -n ┏
+        for i in $(seq 3 $COLS); do echo -n ━; done; echo ┓
+        "$@" < /dev/null && echo -e "\e[32m" || echo -e "\e[31m"
+
+        # print footer (colored by previous line)
+        COLS=$(tput cols)
+        echo
+        echo -n ┗
+        for i in $(seq 3 $COLS); do echo -n ━; done; echo -n ┛;
+        echo -e "\e[0m"
     done
