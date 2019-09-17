@@ -92,7 +92,7 @@ go(){
     PID=`cat ~/.remote-emacs.pid`
     if [ ! -z "$PID" ]; then
       if pstree $PID | grep -q emacsclient; then
-        kill $PID
+        kill $PID > /dev/null
       fi
     fi
 
