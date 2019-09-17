@@ -2,22 +2,39 @@
 
 # Usage: whenchanged somefile a shell command
 
-FILE=$1
+set -e
+
+THE_PATH=$1
 shift
-CMD="$@"
 
-MODTIME=`stat -c %Y $FILE`
+exec 3<&0
 
-"$@"
+(echo run it first; inotifywait \
+                        -q \
+                        -e modify \
+                        -e attrib \
+                        -e move \
+                        -e create \
+                        -e delete \
+                        -e move_self \
+                        -e delete_self \
+                        -rm \
+                        "$THE_PATH") |
+    while true; do
+        read EV
+        # read all other available lines
+        while read -t 0.01; do true; done
 
-while :
-do
-  sleep 0.3
-  NEW_MODTIME=`stat -c %Y $FILE`
-  if [ "$NEW_MODTIME" -gt "$MODTIME" ]
-    then
-    echo "File updated, re-running..."
-    "$@"
-  fi
-  MODTIME=$NEW_MODTIME
-done
+        # print header, then run the command
+        COLS=$(tput cols)
+        echo -n ┏
+        for i in $(seq 3 $COLS); do echo -n ━; done; echo ┓
+        "$@" < /dev/null && echo -e "\e[32m" || echo -e "\e[31m"
+
+        # print footer (colored by previous line)
+        COLS=$(tput cols)
+        echo
+        echo -n ┗
+        for i in $(seq 3 $COLS); do echo -n ━; done; echo -n ┛;
+        echo -e "\e[0m"
+    done
