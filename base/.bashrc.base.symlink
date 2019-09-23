@@ -132,8 +132,8 @@ __prompt_command() {
     local EXIT="$?"
     IN_PROMPT=0
     timer_stop
-    if [[ "$EXTRA_PROMPT_COMMAND" ]]; then
-        $EXTRA_PROMPT_COMMAND
+    if [[ -n "$EXTRA_PROMPT_COMMAND" ]]; then
+        eval "$EXTRA_PROMPT_COMMAND"
     fi
     PS1=""
 
