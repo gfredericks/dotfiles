@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+# Reads java code from a file or stdin and runs it.
+
+DIR=$(mktemp -d)
+
+cd $DIR
+
+cat > QuickJava.java <<-EOF
+  public class QuickJava {
+
+    public static void println(Object arg){
+      System.out.println(arg);
+    }
+
+    public static void main(String[] args){
+      $(if [[ 1 -eq "$#" ]]; then cat "$1"; else cat; fi)
+    }
+  }
+EOF
+
+# echo '' > QuickJava.java
+# echo '' >> Quick.java
+#  >> QuickJava.java
+# echo '}}' >> QuickJava.java
+
+javac QuickJava.java && java QuickJava
+
+cd
+rm -rf "$DIR"
