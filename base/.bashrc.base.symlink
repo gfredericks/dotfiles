@@ -46,6 +46,7 @@ alias ...='.. 2'
 alias ....='.. 3'
 alias .....='.. 4'
 alias ......='.. 5'
+alias .......='.. 6'
 alias cd-="cd -"
 
 # What does this even do?
