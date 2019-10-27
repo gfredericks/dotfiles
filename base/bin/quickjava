@@ -2,11 +2,8 @@
 
 # Reads java code from a file or stdin and runs it.
 
-DIR=$(mktemp -d)
-
-cd $DIR
-
-cat > QuickJava.java <<-EOF
+stdin2javaclass(){
+        cat <<-EOF
   public class QuickJava {
 
     public static void println(Object arg){
@@ -14,17 +11,27 @@ cat > QuickJava.java <<-EOF
     }
 
     public static void main(String[] args){
-      $(if [[ 1 -eq "$#" ]]; then cat "$1"; else cat; fi)
+EOF
+  cat
+  cat <<-EOF
     }
   }
 EOF
+}
 
-# echo '' > QuickJava.java
-# echo '' >> Quick.java
-#  >> QuickJava.java
-# echo '}}' >> QuickJava.java
+if [[ 1 -eq "$#" ]]; then
+    cat "$1"
+else
+    cat
+fi | (
 
-javac QuickJava.java && java QuickJava
+    DIR=$(mktemp -d)
+    cd $DIR
 
-cd
-rm -rf "$DIR"
+    stdin2javaclass > QuickJava.java
+
+    javac QuickJava.java && java QuickJava
+
+    cd
+    rm -rf "$DIR"
+)
