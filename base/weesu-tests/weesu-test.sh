@@ -36,6 +36,11 @@ _mktemp(){
     mktemp ${1:-} $THE_TMP_DIR/XXXXXXXXXXXXX.json
 }
 
+# removes timestamps so that otherwise-equivalent-files can be compared
+remove_ats(){
+    jq '.seen = (.seen | map(del(.at)))'
+}
+
 TMP_FILE=$(_mktemp)
 CATALOG1=$(_mktemp)
 CATALOG2=$(_mktemp)
@@ -208,6 +213,22 @@ weesu stale < $CATALOG3 \
         mkdir "$PRE-$d"
     done
     weesu catalog johmson . | wc -l | diff - <(echo 0)
+)
+
+# Should be able to remove entries from an existing file
+(
+    diff \
+        <(weesu catalog johmson exclusions --exclude 'jolly-tarball.tgz//' \
+         | remove_ats) \
+        <(weesu catalog johmson exclusions \
+              | weesu remove johmson 'jolly-tarball.tgz//' \
+              | remove_ats)
+    # but only applies to the specified source-id
+    diff \
+        <(weesu catalog johmson exclusions | remove_ats) \
+        <(weesu catalog johmson exclusions \
+              | weesu remove other-source-id 'jolly-tarball.tgz//' \
+              | remove_ats)
 )
 
 rm -rf $THE_TMP_DIR

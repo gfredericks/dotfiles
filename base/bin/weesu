@@ -39,7 +39,7 @@ print_usage_and_exit(){
     cat >&2 <<EOF
     Usage:
 
-    weesu catalog <source-id> <dirname> [--exclude \$JQ_REGEX]
+    weesu catalog <source-id> <dirname> [--exclude <jq-regex>]
       - writes a json file to stdout
       - if the exclusion regex is given, the following restrictions apply:
         - no observation whose path matches the regex will be output
@@ -50,6 +50,10 @@ print_usage_and_exit(){
           none of its contents will be output
     weesu merge <file1> <file2>
       - writes a json file to stdout
+    weesu remove <source-id> <jq-regex>
+      - reads lines from stdin and writes them to stdout, excluding lines
+        where the path matches the regex, as per the --exclude option in
+        catalog
     weesu stale
       - reads json records from stdin and prints
         a summary of blobs that were previously
@@ -281,6 +285,22 @@ scan_tree(){
     )
 }
 
+# input and output is line format
+remove(){
+    local SOURCE_ID="$1"
+    local EXCLUSION_REGEX="$2"
+    local JQ='(. / " ") as $WORDS
+              | if ($WORDS[3] | @base64d | test($re;"m")) and (($WORDS[2] | @base64d) as $THIS_SOURCE_ID | $sourceid == $THIS_SOURCE_ID)
+                then empty
+                else .
+                end'
+    jq \
+        -cMRr \
+        --arg sourceid "$SOURCE_ID" \
+        --arg re "$EXCLUSION_REGEX" \
+        "$JQ"
+}
+
 if [[ -n "${__WEESU_RECUR__+x}" ]]; then
     # This is the portion called by tar when enumerating the
     # elements of a tarball
@@ -371,6 +391,12 @@ case "$CMD" in
         FILE1="$1"
         FILE2="$2"
         cat <(unrollup < "$FILE1") <(unrollup < "$FILE2") | sort_and_rollup
+        ;;
+    "remove")
+        if [[ "$#" -ne 2 ]]; then
+            print_usage_and_exit
+        fi
+        unrollup | remove "$1" "$2" | rollup
         ;;
     "stale")
         if [[ "$#" -ne 0 ]]; then
