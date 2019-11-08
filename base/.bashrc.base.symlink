@@ -27,6 +27,26 @@ alias today="date +%Y-%m-%d"
 alias jqu="jq --unbuffered"
 alias pyc="ping -c 1 yahoo.com"
 alias emc="emacsclient"
+_find_root_of_git_dir(){
+  (
+    while [[ (! -e .git) && "$PWD" != / ]]; do
+        cd ..
+    done
+
+    if [[ "$PWD" != / ]]; then
+        echo "$PWD"
+    fi
+  )
+}
+gcd(){
+  ROOT_OF_GIT_DIR="$(_find_root_of_git_dir)"
+  if [[ -n "$ROOT_OF_GIT_DIR" ]]; then
+    cd "$ROOT_OF_GIT_DIR"
+  else
+    echo "Not in a git repo"\!
+    return 1
+  fi
+}
 
 # git shortcuts
 alias gs="git status"
