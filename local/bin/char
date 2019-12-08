@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# Looks up a unicode char using dmenu and then copies it to the
+# clipboard
+
+SELF="$(readlink -f "$0")"
+NAMESLIST="$(dirname "$(dirname "$SELF")")/NamesList.txt"
+SELECTION="$(grep -P '^[0-9A-F]{4,}\s+\w.*' "$NAMESLIST" | tr '\t' ' ' | dmenu -i -f -l 20)"
+HEX="$(echo "$SELECTION" | grep -oP '^\S*')"
+echo -e "\u$HEX" | copy
