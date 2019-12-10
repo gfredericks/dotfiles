@@ -95,6 +95,10 @@ d(){
   cd "$CDTO";
 }
 
+d-(){
+  ( d "$1"; bash; )
+}
+
 
 
 # Assemble ssh config from components
@@ -213,10 +217,6 @@ __prompt_command() {
     [[ "$THEWD" =~ ^"$HOME"(/|$) ]] && THEWD="~${THEWD#$HOME}"
     PROMPT_COMPONENTS["1-pwd"]="$THEWD"
 
-    if [ $SHLVL -gt 1 ]; then
-      PROMPT_COMPONENTS["00-shlvl"]="$SHLVL"
-    fi
-
     for k in "${!EXTRA_PROMPT_COMPONENTS[@]}"; do
         v="${EXTRA_PROMPT_COMPONENTS[$k]}"
         PROMPT_COMPONENTS["$k"]="$v"
@@ -225,17 +225,19 @@ __prompt_command() {
     unset EXTRA_PROMPT_COMPONENTS
     declare -A EXTRA_PROMPT_COMPONENTS
 
-    local LINE2="$Theme◀$RCol"
+    local MAIN_LINE="$Theme◀$RCol"
     local KEYS=()
     while read line; do
         KEYS+=("$line")
     done <<< "$(for k in ${!PROMPT_COMPONENTS[@]}; do echo $k; done | sort)"
 
+    local PROMPT_LINES=()
+
     local FIRST=1
     local LINE_LEN=1
     for k in "${KEYS[@]}"; do
         if [ $FIRST -eq "0" ]; then
-            LINE2="$LINE2 $CIRCLE"
+            MAIN_LINE="$MAIN_LINE $CIRCLE"
         else
             FIRST=0
         fi
@@ -244,20 +246,19 @@ __prompt_command() {
         # make the length of the string and the actual display length
         # different
         LINE_LEN=$(( $LINE_LEN + 3 + ${#COMP} ))
-        LINE2="$LINE2 $COMP"
+        MAIN_LINE="$MAIN_LINE $COMP"
     done
-    LINE2="$LINE2 $Theme▶ $RCol"
-    local LINE3="${Theme}\$${RCol} "
+    MAIN_LINE="$MAIN_LINE $Theme▶ $RCol"
 
     if [[ $LINE_LEN -gt $COLUMNS ]]; then
-        LINE2=""
         for k in "${KEYS[@]}"; do
             COMP="${PROMPT_COMPONENTS[$k]}"
-            LINE2="$LINE2$Theme◀$RCol $COMP\n"
+            PROMPT_LINES+=("$Theme◀$RCol $COMP")
         done
     else
-        LINE2="$LINE2\n"
+        PROMPT_LINES+=("$MAIN_LINE")
     fi
+    PROMPT_LINES+=("${Theme}\$${RCol} ")
 
     local WALCOM=""
     if [ "$HAS_DONE_WALCOM" == "0" ]; then
@@ -265,7 +266,19 @@ __prompt_command() {
       WALCOM="\n${Theme}▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n▰                      ▰\n▰  WALCOM!!1 TO BASH!  ▰\n▰                      ▰\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n$RCol"
     fi
 
-    PS1+="$WALCOM\n$LINE2$LINE3"
+    local PREFIX=""
+    if [[ "$SHLVL" -gt 1 ]]; then
+      local X="$SHLVL"
+      PREFIX="${Theme}"
+      while [[ "$X" -gt 1 ]]; do
+        PREFIX+="┃"
+        X=$((X - 1))
+      done
+      PREFIX+="$RCol "
+    fi
+
+    WITH_NEWLINES="$(printf $'\n'"$PREFIX"'%s' "${PROMPT_LINES[@]}")"
+    PS1+="$WALCOM$WITH_NEWLINES"
     IN_PROMPT=1
 }
 
