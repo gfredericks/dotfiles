@@ -7,4 +7,7 @@ SELF="$(readlink -f "$0")"
 NAMESLIST="$(dirname "$(dirname "$SELF")")/NamesList.txt"
 SELECTION="$(grep -P '^[0-9A-F]{4,}\s+\w.*' "$NAMESLIST" | tr '\t' ' ' | dmenu -i -f -l 20)"
 HEX="$(echo "$SELECTION" | grep -oP '^\S*')"
-echo -n -e "\u$HEX" | copy
+while [[ ${#HEX} -lt 8 ]]; do
+  HEX=0$HEX
+done
+echo -n -e "\U$HEX" | copy
