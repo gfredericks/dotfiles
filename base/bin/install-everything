@@ -105,12 +105,12 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/nodejs
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://nodejs.org/download/release/v9.6.1/node-v9.6.1-linux-x64.tar.xz
-    echo 'd38f1707faccc54fae3cb201c25b02c4a3474d2c409c64f2a1d08925b238f8ad  node-v9.6.1-linux-x64.tar.xz' | \
+    wget https://nodejs.org/dist/v12.14.0/node-v12.14.0-linux-x64.tar.xz
+    echo '82ae74ee0a204de7ebf7767eaa8e382518d9b49668dcbb5bd7fd003154445d1f  node-v12.14.0-linux-x64.tar.xz' | \
         sha256sum -c
-    bsdtar xJf node-v9.6.1-linux-x64.tar.xz
+    bsdtar xJf node-v12.14.0-linux-x64.tar.xz
     rm -f ~/bin/nodejs.bin
-    ln -s $BUILDDIR/node-v9.6.1-linux-x64/bin ~/bin/nodejs.bin
+    ln -s $BUILDDIR/node-v12.14.0-linux-x64/bin ~/bin/nodejs.bin
   fi
 
   ###
