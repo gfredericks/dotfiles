@@ -265,9 +265,11 @@ __prompt_command() {
     PROMPT_LINES+=("${Theme}\$${RCol} ")
 
     local WALCOM=""
-    if [ "$HAS_DONE_WALCOM" == "0" ]; then
-      HAS_DONE_WALCOM=1
-      WALCOM="\n${Theme}▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n▰                      ▰\n▰  WALCOM!!1 TO BASH!  ▰\n▰                      ▰\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n$RCol"
+    if [[ "$HAS_DONE_WALCOM" == "0" ]]; then
+      if [[ $SHLVL == 1 ]]; then
+        HAS_DONE_WALCOM=1
+        WALCOM="\n${Theme}▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n▰                      ▰\n▰  WALCOM!!1 TO BASH!  ▰\n▰                      ▰\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n$RCol"
+      fi
     fi
 
     local PREFIX=""
