@@ -182,6 +182,10 @@ __prompt_command() {
 
     declare -A PROMPT_COMPONENTS
 
+    if [[ -n "$PROMPT_LABEL" ]]; then
+        PROMPT_COMPONENTS["0-0label"]=$'\u001b[34;1m'"$PROMPT_LABEL"$'\u001b[0m'
+    fi
+
     GIT_BRANCH=$(parse_git_branch)
     if [[ "$GIT_BRANCH" ]]; then
         if [[ "$GIT_BRANCH" == "master" ]]; then
