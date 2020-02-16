@@ -236,7 +236,7 @@ __prompt_command() {
             cd $EXTRA_PROMPT_COMPONENTS_DIR
             while read line; do
                 PROMPT_COMPONENTS["9-extra-$line-$RANDOM$RANDOM"]="$line"
-            done < <(cat ./*)
+            done < <(find . -type f -print0 | xargs -0 cat)
             cd -
         } &> /dev/null
     fi
@@ -248,7 +248,7 @@ __prompt_command() {
     local KEYS=()
     while read line; do
         KEYS+=("$line")
-    done <<< "$(for k in ${!PROMPT_COMPONENTS[@]}; do echo $k; done | sort)"
+    done <<< "$(for k in "${!PROMPT_COMPONENTS[@]}"; do echo "$k"; done | sort)"
 
     local PROMPT_LINES=()
 
@@ -260,7 +260,7 @@ __prompt_command() {
         else
             FIRST=0
         fi
-        COMP="${PROMPT_COMPONENTS[$k]}"
+        COMP="${PROMPT_COMPONENTS["$k"]}"
         # counting the line length manually because the color codes
         # make the length of the string and the actual display length
         # different
@@ -271,7 +271,7 @@ __prompt_command() {
 
     if [[ $LINE_LEN -gt $COLUMNS ]]; then
         for k in "${KEYS[@]}"; do
-            COMP="${PROMPT_COMPONENTS[$k]}"
+            COMP="${PROMPT_COMPONENTS["$k"]}"
             PROMPT_LINES+=("$Theme◀$RCol $COMP")
         done
     else
