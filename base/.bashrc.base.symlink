@@ -230,6 +230,17 @@ __prompt_command() {
         PROMPT_COMPONENTS["$k"]="$v"
     done
 
+    local EXTRA_PROMPT_COMPONENTS_DIR="$HOME/tmp/.prompt-components"
+    if [[ -d $EXTRA_PROMPT_COMPONENTS_DIR ]]; then
+        {
+            cd $EXTRA_PROMPT_COMPONENTS_DIR
+            while read line; do
+                PROMPT_COMPONENTS["9-extra-$line-$RANDOM$RANDOM"]="$line"
+            done < <(cat ./*)
+            cd -
+        } &> /dev/null
+    fi
+
     unset EXTRA_PROMPT_COMPONENTS
     declare -A EXTRA_PROMPT_COMPONENTS
 
