@@ -1,26 +1,27 @@
+#!/usr/bin/env bash
+
 SKIP_FILE=~/.skip-dotfiles-bootstrap
 
-if [ -e $SKIP_FILE ]
-then
+# skip if we've done this in the last 12 hours
+if find "$SKIP_FILE" -mtime -12 2>/dev/null | grep -P '.*'; then
   exit 0
 fi
 
-touch $SKIP_FILE
+touch "$SKIP_FILE"
 
 for profile
 do
   cd $profile
 
-  # Try again...?
   find . -name '*.symlink' -print0 | while read -d $'\0' dotslashfile
   do
-    file=`echo $dotslashfile | cut -c 3-`
-    file_no_symlink=`echo $file | rev | cut -c 9- | rev`
+    file="$(echo "${dotslashfile:2}")"
+    file_no_symlink="$(echo "${file::-8}")"
     linkfile=$HOME/$file_no_symlink
     linkto=$profile/$file
     if [ -f $linkfile ] || [ -d $linkfile ] || [ -L $linkfile ]
     then
-      existing=`readlink $linkfile`
+      existing="$(readlink $linkfile)"
       if [ "$linkto" != "$existing" ]
       then
         echo "Warning! Existing dotfile is not the correct symlink: $linkfile"
@@ -29,28 +30,9 @@ do
       fi
     else
       echo "Linking $linkfile to $linkto"
-      parent=`dirname $linkfile`
-      `mkdir -p $parent`
+      parent="$(dirname $linkfile)"
+      mkdir -p $parent &>/dev/null
       ln -s $linkto $linkfile
     fi
   done
-
-
-  # for dotslashfile in "" #`find . -name '*.symlink'`
-  # do
-  #   file=`echo $dotslashfile | cut -c 3-`
-  #   file_no_symlink=`echo $file | rev | cut -c 9- | rev`
-  #   echo "dotslashfile='$dotslashfile', file='$file', file_no_symlink='$file_no_symlink'"
-  #   linkfile=$HOME/$file_no_symlink
-  #   if [ -f $linkfile ]
-  #   then
-  #     # TODO: check if it points to the same place
-  #     echo "File already exists!"
-  #   else
-  #     echo "Linking $linkfile..."
-  #     parent=`dirname $linkfile`
-  #     `mkdir -p $parent`
-  #     ln -s $profile/$file $linkfile
-  #   fi
-  # done
 done
