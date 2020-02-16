@@ -234,7 +234,13 @@ __prompt_command() {
     if [[ -d $EXTRA_PROMPT_COMPONENTS_DIR ]]; then
         {
             cd $EXTRA_PROMPT_COMPONENTS_DIR
+            X=0
             while read line; do
+                X=$((X+=1))
+                if [[ $X -gt 5 ]]; then
+                  PROMPT_COMPONENTS["8-err-too-many"]="${Red}Too many lines in ~/tmp/.prompt-components${RCol}"
+                  break
+                fi
                 PROMPT_COMPONENTS["9-extra-$line-$RANDOM$RANDOM"]="$line"
             done < <(find . -type f -print0 | xargs -0 cat)
             cd -
