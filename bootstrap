@@ -3,7 +3,7 @@
 SKIP_FILE=~/.skip-dotfiles-bootstrap
 
 # skip if we've done this in the last 12 hours
-if find "$SKIP_FILE" -mtime -12 2>/dev/null | grep -P '.*'; then
+if find "$SKIP_FILE" -mtime -12 2>/dev/null | grep -q -P '.*'; then
   exit 0
 fi
 
