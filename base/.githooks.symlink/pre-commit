@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Breaking up the forbidden word here so that this hook doesn't catch
+# itself
+if git --no-pager grep "NO"COMMIT >&2; then
+    echo >&2 $'\n'"As you can see above, the repo has NO""COMMIT in it, which is not okay."
+    exit 1
+fi

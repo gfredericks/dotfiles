@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+
+# Assuming this script is set to run minutely via cron, the following
+# behavior should result:
+#
+# | script-dir        | frequency |
+# |-------------------+-----------|
+# | ~/.checks/millis  | minutely  |
+# | ~/.checks/seconds | hourly    |
+# | ~/.checks/minutes | nightly   |
+# | ~/.checks/hours   | weekly    |
+
+LOGFILE=~/.checks/run-checks.log
+ERRFILE=~/tmp/.prompt-components/checks/run-checks
+exec >>$LOGFILE 2>>$ERRFILE
+
+log(){
+    echo "$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ") $1" >> "$LOGFILE"
+}
+
+function emit-stack-trace {
+    local -i x
+    local -i stack_frames="${#FUNCNAME[@]}"
+
+    {
+        echo "run-checks failed at $(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")" >| "$ERRFILE"
+        log "ERROR in ${FUNCNAME[1]}() at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}"
+
+        for (( x=2; x < stack_frames; x++ ))
+        do
+            echo "    called by ${FUNCNAME[x]}() at ${BASH_SOURCE[x]}:${BASH_LINENO[x - 1]}" >> "$LOGFILE"
+        done
+    }
+}
+
+function be-strict {
+    set -o errexit    # Die on non-0 exit codes other than inside conditions.
+    set -o noclobber  # Do not overwrite files without being explicit about it.
+    set -o nounset    # Do not allow using unset variables.
+    set -o pipefail   # Cause errors in the middle of pipelines to be caught.
+    set -o errtrace   # ERR trap works in functions, subshells, etc.
+
+    trap emit-stack-trace ERR
+}
+
+run_script_inside_flock(){
+    FILE="$1"
+    TMP="$(mktemp)"
+    RES="$HOME/tmp/.prompt-components/checks/$FILE"
+    mkdir -p $(dirname "$RES")
+    "$FILE" > "$TMP" && mv "$TMP" "$RES" || echo "$FILE failed"\! > $RES
+}
+
+run_script(){
+    FILE="$1"
+    (
+      (RECURSIVE_114517626="$FILE" flock -E42 -n "$FILE" "$0") &
+      PID=$!
+      log "started pid $PID"
+      wait "$PID" || \
+          if [[ $? -eq 42 ]]; then
+              echo >>"$ERRFILE" "flock failed for $FILE"
+          fi
+    ) &
+}
+
+run_all_scripts(){
+    DIR="$1"
+    log "Running all scripts in $DIR"
+    while read file; do
+        if [[ -x "$file" ]]; then
+            run_script "$file"
+        else
+            echo >> "$ERRFILE" "non executable file: $file"
+        fi
+    done < <(find "$DIR" -type f -o -type l)
+
+    log "Finished running all scripts in $DIR"
+}
+
+run_checks(){
+    be-strict
+    log "Starting"
+    for subdir in millis seconds minutes hours; do
+        mkdir -p ~/.checks/$subdir
+    done
+    cd ~/.checks
+
+    run_all_scripts millis
+    # run the seconds-long scripts every hour
+    if [[ 10#$(date +%M) -eq 0 ]]; then
+        run_all_scripts seconds
+      # run the minutes-long scripts every night after midnight
+      if [[ 10#$(date +%H) -eq 0 ]]; then
+        run_all_scripts minutes
+        # run the hours-long scripts every friday night after midnight
+        if [[ $(date +%u) -eq 6 ]]; then
+            run_all_scripts hours
+        fi
+      fi
+    fi
+
+    log "Finished"
+}
+
+if [[ -n "$RECURSIVE_114517626" ]]; then
+    run_script_inside_flock "$RECURSIVE_114517626"
+else
+    run_checks
+fi

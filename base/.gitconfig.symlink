@@ -2,6 +2,7 @@
   editor = editfast
   excludesfile = ~/.gitignore_global
   attributesfile = ~/.gitattributes
+  hooksPath = ~/.githooks
 [color]
   ui = auto
 [color "branch"]

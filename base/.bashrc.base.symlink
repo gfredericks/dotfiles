@@ -182,6 +182,10 @@ __prompt_command() {
 
     declare -A PROMPT_COMPONENTS
 
+    if [[ -n "$PROMPT_LABEL" ]]; then
+        PROMPT_COMPONENTS["0-0label"]=$'\u001b[34;1m'"$PROMPT_LABEL"$'\u001b[0m'
+    fi
+
     GIT_BRANCH=$(parse_git_branch)
     if [[ "$GIT_BRANCH" ]]; then
         if [[ "$GIT_BRANCH" == "master" ]]; then
@@ -226,6 +230,23 @@ __prompt_command() {
         PROMPT_COMPONENTS["$k"]="$v"
     done
 
+    local EXTRA_PROMPT_COMPONENTS_DIR="$HOME/tmp/.prompt-components"
+    if [[ -d $EXTRA_PROMPT_COMPONENTS_DIR ]]; then
+        {
+            cd $EXTRA_PROMPT_COMPONENTS_DIR
+            local X=0
+            while read line; do
+                X=$((X+=1))
+                if [[ $X -gt 5 ]]; then
+                  PROMPT_COMPONENTS["8-err-too-many"]="${Red}Too many lines in ~/tmp/.prompt-components${RCol}"
+                  break
+                fi
+                PROMPT_COMPONENTS["9-extra-$line-$RANDOM$RANDOM"]="$line"
+            done < <(find . -type f -print0 | xargs -0 cat)
+            cd -
+        } &> /dev/null
+    fi
+
     unset EXTRA_PROMPT_COMPONENTS
     declare -A EXTRA_PROMPT_COMPONENTS
 
@@ -233,7 +254,7 @@ __prompt_command() {
     local KEYS=()
     while read line; do
         KEYS+=("$line")
-    done <<< "$(for k in ${!PROMPT_COMPONENTS[@]}; do echo $k; done | sort)"
+    done <<< "$(for k in "${!PROMPT_COMPONENTS[@]}"; do echo "$k"; done | sort)"
 
     local PROMPT_LINES=()
 
@@ -245,7 +266,7 @@ __prompt_command() {
         else
             FIRST=0
         fi
-        COMP="${PROMPT_COMPONENTS[$k]}"
+        COMP="${PROMPT_COMPONENTS["$k"]}"
         # counting the line length manually because the color codes
         # make the length of the string and the actual display length
         # different
@@ -256,7 +277,7 @@ __prompt_command() {
 
     if [[ $LINE_LEN -gt $COLUMNS ]]; then
         for k in "${KEYS[@]}"; do
-            COMP="${PROMPT_COMPONENTS[$k]}"
+            COMP="${PROMPT_COMPONENTS["$k"]}"
             PROMPT_LINES+=("$Theme◀$RCol $COMP")
         done
     else
