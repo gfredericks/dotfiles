@@ -233,7 +233,6 @@ __prompt_command() {
     local EXTRA_PROMPT_COMPONENTS_DIR="$HOME/tmp/.prompt-components"
     if [[ -d $EXTRA_PROMPT_COMPONENTS_DIR ]]; then
         {
-            cd $EXTRA_PROMPT_COMPONENTS_DIR
             local X=0
             while read line; do
                 X=$((X+=1))
@@ -242,8 +241,7 @@ __prompt_command() {
                   break
                 fi
                 PROMPT_COMPONENTS["9-extra-$line-$RANDOM$RANDOM"]="$line"
-            done < <(find . -type f -print0 | xargs -0 cat)
-            cd -
+            done < <(find "$EXTRA_PROMPT_COMPONENTS_DIR" -type f -print0 | xargs -0 cat)
         } &> /dev/null
     fi
 
