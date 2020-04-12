@@ -371,3 +371,27 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   ()
   (interactive)
   (add-hook 'after-save-hook (lambda () (org-html-export-to-html)) t t))
+
+;; I'm sure there's an easier way to do this but I don't know how to
+;; pass an arg to org-time-stamp here
+(defun insert-inactive-time-stamp ()
+  (setq current-prefix-arg '(16))
+  (call-interactively 'org-time-stamp t)
+  (backward-delete-char 1)
+  (insert "]")
+  (backward-char 21)
+  (backward-delete-char 1)
+  (insert "[")
+  (forward-char 21))
+
+(defun ubercapture
+    (s)
+  (with-current-buffer "capture.org"
+    (goto-char (point-max))
+    (if (not (= 10 (preceding-char)))
+        (insert "\n"))
+    (insert "** TODO (uc) " s)
+    (insert "\n   :PROPERTIES:\n   :CREATED_AT: ")
+    (insert-inactive-time-stamp)
+    (insert "\n   :END:\n")
+    (save-buffer)))
