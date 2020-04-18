@@ -188,6 +188,7 @@ __prompt_command() {
 
     GIT_BRANCH=$(parse_git_branch)
     if [[ "$GIT_BRANCH" ]]; then
+        local V
         if [[ "$GIT_BRANCH" == "master" ]]; then
             V=$'\u001b[34;1mgit\u001b[0m'
         else
