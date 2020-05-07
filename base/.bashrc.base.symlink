@@ -224,6 +224,11 @@ __prompt_command() {
     PROMPT_COMPONENTS["0-hostname"]="$H"
     THEWD="$PWD"
     [[ "$THEWD" =~ ^"$HOME"(/|$) ]] && THEWD="~${THEWD#$HOME}"
+    local v
+    for k in "${!PROMPT_WD_SUBSTITUTIONS[@]}"; do
+        v="${PROMPT_WD_SUBSTITUTIONS["$k"]}"
+        THEWD="${THEWD/$k/$v}"
+    done
     PROMPT_COMPONENTS["1-pwd"]="$THEWD"
 
     for k in "${!EXTRA_PROMPT_COMPONENTS[@]}"; do
