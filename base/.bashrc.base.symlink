@@ -14,6 +14,11 @@ done
 export PATH=~/bin:$MYBIN:$PATH
 export EDITOR=edit
 
+declare -A PROMPT_WD_SUBSTITUTIONS
+PROMPT_WD_SUBSTITUTIONS[src/main/java]=$'\u001b[34;1m»smj\u001b[0m'
+PROMPT_WD_SUBSTITUTIONS[src/test/java]=$'\u001b[34;1m»stj\u001b[0m'
+PROMPT_WD_SUBSTITUTIONS[gitignored]=$'\u001b[34;1m»gig\u001b[0m'
+
 cdl(){ cd $1; ls; }
 cdll(){ cd $1; ls -l; }
 cdlla(){ cd $1; ls -la; }
@@ -147,6 +152,10 @@ parse_git_branch() {
     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
 }
 
+delete_ansi_codes() {
+    echo "$1" | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g"
+}
+
 HAS_DONE_WALCOM=0
 
 if [ "$NO_FANCY_PROMPT" == "1" ]; then
@@ -273,8 +282,10 @@ __prompt_command() {
         COMP="${PROMPT_COMPONENTS["$k"]}"
         # counting the line length manually because the color codes
         # make the length of the string and the actual display length
-        # different
-        LINE_LEN=$(( $LINE_LEN + 3 + ${#COMP} ))
+        # different; the color codes seem escaped at this point, which
+        # is surprising
+        COMP_NO_COLORS="$(delete_ansi_codes "$COMP")"
+        LINE_LEN=$(( $LINE_LEN + 3 + ${#COMP_NO_COLORS} ))
         MAIN_LINE="$MAIN_LINE $COMP"
     done
     MAIN_LINE="$MAIN_LINE $Theme▶ $RCol"
