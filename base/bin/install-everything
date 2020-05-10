@@ -111,6 +111,7 @@ do
     bsdtar xJf node-v12.14.0-linux-x64.tar.xz
     rm -f ~/bin/nodejs.bin
     ln -s $BUILDDIR/node-v12.14.0-linux-x64/bin ~/bin/nodejs.bin
+    ~/bin/nodejs.bin/npm install -g katex
   fi
 
   ###
