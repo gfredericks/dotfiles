@@ -321,6 +321,10 @@ __prompt_command() {
 
     WITH_NEWLINES="$(printf $'\n'"$PREFIX"'%s' "${PROMPT_LINES[@]}")"
     PS1+="$WALCOM$WITH_NEWLINES"
+
+    # So we can tell how long since the last command finished
+    SECONDS=0
+
     IN_PROMPT=1
 }
 
