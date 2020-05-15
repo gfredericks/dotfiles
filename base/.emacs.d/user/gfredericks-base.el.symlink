@@ -157,3 +157,15 @@
 ;; org buffers
 (require 'warnings)
 (add-to-list 'warning-suppress-types '(undo discard-info))
+
+(setq base-dotfiles-dir
+      ;; aren't computers great?
+      (letrec ((this-file (shell-command-to-string (concat "realpath " load-file-name)))
+               (user      (file-name-directory this-file))
+               (emacs     (file-name-directory (substring user 0 -1)))
+               (base      (file-name-directory (substring emacs 0 -1))))
+        (substring base 0 -1)))
+
+(defun bash-boilerplate
+    () (interactive)
+    (find-file (concat base-dotfiles-dir "/" "bash-boilerplate.sh")))
