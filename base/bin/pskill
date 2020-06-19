@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+if [[ $# -eq 2 ]]; then
+    SIG="$1"
+    shift
+else
+    SIG="-15"
+fi
+
+RE="$1"
+
+LINES=()
+
+while IFS= read -r LINE; do
+    LINES+=("$LINE")
+done < <(ps -efww | { sleep 0.1; grep -P "$RE"; } | cut -c 1-$((COLUMNS - 4)))
+
+select CHOICE in "${LINES[@]}"; do
+    if [[ -n "$CHOICE" ]]; then
+        PID="$(echo "$CHOICE" | grep -oP ' \d+ ' | head -n 1)"
+        (
+            set -x
+            kill "$SIG" $PID
+        )
+        break
+    fi
+done
