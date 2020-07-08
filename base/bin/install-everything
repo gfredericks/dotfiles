@@ -81,18 +81,27 @@ do
 
   if [ "$1" == "all" -o "$1" == "server" -o "$1" == "git" ]
   then
-    sudo apt-get install -y asciidoc docbook2x libssl-dev libcurl4-openssl-dev libexpat1-dev gettext zlib1g-dev
+    sudo apt-get install -y dh-autoreconf libcurl4-gnutls-dev libexpat1-dev \
+         gettext libz-dev libssl-dev
+    sudo apt-get install -y asciidoc xmlto docbook2x
+    sudo apt-get install -y install-info
     BUILDDIR=$BUILDDIRBASE/git
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://github.com/git/git/archive/v2.14.1.zip
-    echo '846e55e4fd8501db71b6b57ff6a1554a8a19a2ac20dc4c0864eeaed50a481122  v2.14.1.zip' | sha256sum -c
-    unzip v2.14.1.zip
-    cd git-2.14.1
+    wget https://github.com/git/git/archive/v2.27.0.zip
+    echo '4e1cae8547cb79f90d71d10bc2dfb8545b37f77b5c636213635a47cc5871dd35  v2.27.0.zip' | sha256sum -c
+    unzip v2.27.0.zip
+    cd git-2.27.0
     INSTALLDIR=$BUILDDIR/install
+    make configure
+    ./configure --prefix=$INSTALLDIR
     mkdir $INSTALLDIR
-    make prefix=$INSTALLDIR all doc info
+    # I had to comment out doc and install-doc from the next two
+    # things because of a weird bad-xml error that doesn't seem to be
+    # easily fixable; cursory googling only finds people brew
+    # installing things on their macs
+    make prefix=$INSTALLDIR all info # doc
     # skipping `install-html` because who even uses that
-    make prefix=$INSTALLDIR install install-doc install-info
+    make prefix=$INSTALLDIR install install-info # install-doc
     cd -
     rm -f ~/bin/git.bin
     ln -s $INSTALLDIR/bin ~/bin/git.bin
