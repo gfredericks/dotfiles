@@ -188,6 +188,7 @@ __prompt_command() {
     local Pur='\[\e[0;35m\]'
     local Theme=$Yellow
     local CIRCLE="$Theme●$RCol"
+    local INPUT_BLUE=$'\u001b[34;1m'
 
     declare -A PROMPT_COMPONENTS
 
@@ -298,7 +299,7 @@ __prompt_command() {
     else
         PROMPT_LINES+=("$MAIN_LINE")
     fi
-    PROMPT_LINES+=("${Theme}\$${RCol} ")
+    PROMPT_LINES+=("${Theme}\$${RCol} $INPUT_BLUE")
 
     local WALCOM=""
     if [[ "$HAS_DONE_WALCOM" == "0" ]]; then
@@ -321,6 +322,8 @@ __prompt_command() {
 
     WITH_NEWLINES="$(printf $'\n'"$PREFIX"'%s' "${PROMPT_LINES[@]}")"
     PS1+="$WALCOM$WITH_NEWLINES"
+    PS0="$RCol"
+    PS2="${Theme}> $INPUT_BLUE"
 
     # So we can tell how long since the last command finished
     SECONDS=0
