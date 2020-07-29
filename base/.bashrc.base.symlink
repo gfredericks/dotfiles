@@ -85,7 +85,7 @@ mkcd(){ mkdir -p $1; cd $1; }
 tmp(){ pushd `mktemp -d --tmpdir=/dev/shm`; }
 
 # devdir should be defined somewhere else, as a script that takes a
-# partial project name and prints a the full path to a project that
+# partial project name and prints the full path to a project that
 # is its best guess for that partial name
 d(){
   if [ $# -eq 0 ]; then
