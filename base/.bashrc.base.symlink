@@ -188,7 +188,7 @@ __prompt_command() {
     local Pur='\[\e[0;35m\]'
     local Theme=$Yellow
     local CIRCLE="$Theme●$RCol"
-    local INPUT_COLOR=$'\u001b[0;36m'
+    local INPUT_COLOR=$'\[\e[0;36m\]'
 
     declare -A PROMPT_COMPONENTS
 
