@@ -8,26 +8,49 @@
 
 (defun my-start-term (prefix-arg)
   (interactive "P")
-  (let* ((buffer-name-base
-          (-if-let (the-workgroup (wg-current-workgroup t))
-              (wg-name the-workgroup)
-            "default"))
-         (done? nil)
-         (idx 1))
-    (while (not done?)
-      (let ((buffer-name (if (= 1 idx)
-                             (format "*terminal-%s*" buffer-name-base)
-                           (format "*terminal-%s-%d*" buffer-name-base idx))))
-        (-if-let (b (get-buffer buffer-name))
-            (if (get-buffer-window b)
-                (setq idx (+ 1 idx))
-              (progn
-                (setq done? t)
-                (switch-to-buffer b)))
-          (progn
-            (setq done? t)
-            (term "/bin/bash")
-            (rename-buffer buffer-name)))))))
+  (if (= (prefix-numeric-value prefix-arg) 4)
+      (let* ((buffer-name (format "terminal-tmp-%s" (abs (random)))))
+        (progn
+          (set-buffer (make-term buffer-name ;; "terminal"
+                                 "/bin/bash"
+                                 nil
+                                 "-c"
+                                 "export PROMPT_LABEL='!tmp!tmp!'; exec /bin/bash -i"))
+          (term-mode)
+          (term-char-mode)
+          (switch-to-buffer (format "*%s*" buffer-name))))
+    (let* ((buffer-name-base
+            (-if-let (the-workgroup (wg-current-workgroup t))
+                (wg-name the-workgroup)
+              "default"))
+           (done? nil)
+           (idx 1))
+      (while (not done?)
+        (let ((buffer-name (if (= 1 idx)
+                               (format "*terminal-%s*" buffer-name-base)
+                             (format "*terminal-%s-%d*" buffer-name-base idx))))
+          (-if-let (b (get-buffer buffer-name))
+              (if (get-buffer-window b)
+                  (setq idx (+ 1 idx))
+                (progn
+                  (setq done? t)
+                  (switch-to-buffer b)))
+            (progn
+              (setq done? t)
+              ;; if I want to customize any env variables or anything like that,
+              ;; I don't think I can do it via term, but using the lower-level
+              ;; make-term seems to work, e.g.:
+              ;; (progn
+              ;;   (set-buffer (make-term "terminal"
+              ;;                          "/bin/bash"
+              ;;                          nil
+              ;;                          "-c"
+              ;;                          "export FOO=bar; exec /bin/bash -i"))
+              ;;   (term-mode)
+              ;;   (term-char-mode)
+              ;;   (switch-to-buffer "*terminal*"))
+              (term "/bin/bash")
+              (rename-buffer buffer-name))))))))
 
 (defun switch-term-buffers-to-char-mode (&rest args)
   ;; this way I can generally assume a term buffer is in char mode
