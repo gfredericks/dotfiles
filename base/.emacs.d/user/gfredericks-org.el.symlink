@@ -26,7 +26,9 @@
   (org-defkey org-mode-map (kbd "C-c o p") 'org-move-subtree-up)
   (org-defkey org-mode-map (kbd "C-c o n") 'org-move-subtree-down)
   (org-defkey org-mode-map (kbd "C-c o z") 'org-add-note)
-  (org-defkey org-mode-map (kbd "C-c o o") 'my-org-open-subtree-in-web-browser))
+  (org-defkey org-mode-map (kbd "C-c o o") 'my-org-open-subtree-in-web-browser)
+  (org-defkey org-agenda-keymap (kbd "+") 'my-org-agenda-inc-priority)
+  (org-defkey org-agenda-keymap (kbd "-") 'my-org-agenda-dec-priority))
 (add-hook 'org-mode-hook 'org-custom)
 
 ;; so the org agenda doesn't give me this weird 3/4 window
@@ -133,6 +135,76 @@
           nil)
       (my-get-point-of-next-thing))))
 
+(defvar gfredericks-org-min-priority 0)
+
+(defun sane-string-to-number
+    (s)
+  (let ((n (string-to-number s)))
+    (if (string= (number-to-string n) s)
+        n
+      nil)))
+
+(defun heading-to-priority
+    (s)
+  (let ((n (string-match "\\[#[0-9]+\\]" s)))
+    (if n
+        (string-to-number (substring s (+ n 2))))))
+
+(defun skip-unless-nil-or-min-priority ()
+  (letrec ((s (thing-at-point 'line t))
+           (priority (heading-to-priority s)))
+    (if (and priority (< priority gfredericks-org-min-priority))
+        (save-excursion (org-end-of-subtree t))
+      nil)))
+
+;; adapted from org-agenda-set-tags
+(defun my-org-agenda-update-priority (delta)
+  (interactive)
+  (org-agenda-check-no-diary)
+  (let* ((hdmarker (or (org-get-at-bol 'org-hd-marker)
+			                 (org-agenda-error)))
+	       (buffer (marker-buffer hdmarker))
+	       (pos (marker-position hdmarker))
+	       (inhibit-read-only t)
+         (top-priority 0)
+	       newhead)
+    ;; this isn't used most of the time, can we avoid doing it?
+    ;; just have to be able to switch back to the agenda buffer
+    (save-excursion
+      (beginning-of-buffer)
+      (while (re-search-forward "\\[#\\([0-9]+\\)\\]" nil t)
+        (let ((n (string-to-number (match-string 1))))
+          (setq top-priority (max n top-priority)))))
+    (org-with-remote-undo buffer
+	    (with-current-buffer buffer
+	      (widen)
+	      (goto-char pos)
+	      (org-show-context 'agenda)
+        (letrec ((line (thing-at-point 'line t))
+                 (priority (heading-to-priority line)))
+          (if priority
+              (progn
+                (re-search-forward "\\[#\\([0-9]+\\)\\]" nil t)
+                (backward-char)
+                (org-delete-backward-char (length (match-string 1)))
+                (message "INSERSTING %s" (+ delta priority))
+                (insert (number-to-string (+ delta priority))))
+            (progn
+              (re-search-forward "\\*+ [A-Z]+ " nil t)
+              (insert (format "[#%d]" top-priority)))))
+	      (end-of-line 1)
+	      (setq newhead (org-get-heading)))
+	    (org-agenda-change-all-lines newhead hdmarker)
+	    (beginning-of-line 1))))
+
+(defun my-org-agenda-inc-priority
+  () (interactive)
+  (my-org-agenda-update-priority 1))
+
+(defun my-org-agenda-dec-priority
+  () (interactive)
+  (my-org-agenda-update-priority -1))
+
 (defun my-agenda-backlog-prefix-age ()
   (let ((created (org-entry-get (point) "CREATED_AT")))
     (if created
@@ -152,16 +224,36 @@
 (defvar my-agenda-active-prefix-format
   "%7e %-14:c")
 
+(defun my-agenda-compare-by-priority
+    (entry-a entry-b)
+  (let ((pa (heading-to-priority entry-a))
+        (pb (heading-to-priority entry-b)))
+    (message "priorities are %s and %s" pa pb)
+    (if pa
+        (if pb
+            (if (< pa pb)
+                -1
+              (if (> pa pb)
+                  +1
+                0))
+          -1)
+      (if pb
+          +1
+        0))))
+
 (defun my-agenda-section-active-todos
-    (header)
+    (header min-priority)
   `(tags-todo
-    ,(concat "PRIORITY={A\\|B\\|C}+SCHEDULED<>{.+}+DEADLINE<>{.+}|"
-             "PRIORITY={A\\|B\\|C}+SCHEDULED<>{.+}+DEADLINE>\"<+7d>\"|"
-             "PRIORITY={A\\|B\\|C}+SCHEDULED<\"<now>\"+DEADLINE<>{.+}")
-    ((org-agenda-prefix-format ,my-agenda-active-prefix-format)
-     (org-agenda-sorting-strategy '(priority-down effort-up))
+    ,(concat "SCHEDULED<>{.+}+DEADLINE<>{.+}|"
+             "SCHEDULED<>{.+}+DEADLINE>\"<+7d>\"|"
+             "SCHEDULED<\"<now>\"+DEADLINE<>{.+}")
+    ((org-agenda-skip-function 'skip-unless-nil-or-min-priority)
+     (org-agenda-prefix-format ,my-agenda-active-prefix-format)
+     (org-agenda-sorting-strategy '(user-defined-down category-down effort-up alpha-down))
      (org-agenda-overriding-header ,header)
-     (org-agenda-dim-blocked-tasks 'invisible))))
+     (org-agenda-dim-blocked-tasks 'invisible)
+     (gfredericks-org-min-priority ,min-priority)
+     (org-agenda-cmp-user-defined 'my-agenda-compare-by-priority))))
 
 (defun my-agenda-section-backlog
     (header)
@@ -395,3 +487,39 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
     (insert-inactive-time-stamp)
     (insert "\n   :END:\n")
     (save-buffer)))
+
+;; Monkeypatch
+(defun org-agenda-fontify-priorities ()
+  "Make highest priority lines bold, and lowest italic."
+  (interactive)
+  (mapc (lambda (o) (when (eq (overlay-get o 'org-type) 'org-priority)
+		      (delete-overlay o)))
+	(overlays-in (point-min) (point-max)))
+  (save-excursion
+    (let (b e p ov h l)
+      (goto-char (point-min))
+      (while (re-search-forward "\\[#\\(.+\\)\\]" nil t)
+	(setq h (or (get-char-property (point) 'org-highest-priority)
+		    org-highest-priority)
+	      l (or (get-char-property (point) 'org-lowest-priority)
+		    org-lowest-priority)
+	      p (string-to-char (match-string 1))
+	      b (match-beginning 0)
+	      e (if (eq org-agenda-fontify-priorities 'cookies)
+		    (match-end 0)
+		  (point-at-eol))
+	      ov (make-overlay b e))
+	(overlay-put
+	 ov 'face
+	 (let ((special-face
+		(cond ((org-face-from-face-or-color
+			'priority 'org-priority
+			(cdr (assoc p org-priority-faces))))
+		      ((and (listp org-agenda-fontify-priorities)
+			    (org-face-from-face-or-color
+			     'priority 'org-priority
+			     (cdr (assoc p org-agenda-fontify-priorities)))))
+		      ((equal p l) 'italic)
+		      ((equal p h) 'bold))))
+	   (if special-face (list special-face 'org-priority) 'org-priority)))
+	(overlay-put ov 'org-type 'org-priority)))))
