@@ -1,0 +1,158 @@
+#!/usr/bin/env bash
+
+# runs grep -P on the staged content, and uses a cache to speed up
+# subsequent invocations
+
+
+################################################################################
+# Preamble
+
+function emit-stack-trace {
+    local -i x
+    local -i stack_frames="${#FUNCNAME[@]}"
+
+    {
+        echo "ERROR in ${FUNCNAME[1]}() at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}"
+
+        for (( x=2; x < stack_frames; x++ ))
+        do
+            echo "    called by ${FUNCNAME[x]}() at ${BASH_SOURCE[x]}:${BASH_LINENO[x - 1]}"
+        done
+    } >&2
+}
+
+function be-strict {
+    # credit to Elliot Shank
+    set -o errexit    # Die on non-0 exit codes other than inside conditions.
+    set -o noclobber  # Do not overwrite files without being explicit about it.
+    set -o nounset    # Do not allow using unset variables.
+    set -o pipefail   # Cause errors in the middle of pipelines to be caught.
+    set -o errtrace   # ERR trap works in functions, subshells, etc.
+
+    trap emit-stack-trace ERR
+}
+
+FINALLIES=()
+
+function finally {
+    for CODE in "${FINALLIES[@]}"; do
+        eval "$CODE" || echo >&2 "Error running $CODE"
+    done
+}
+
+be-strict
+trap finally EXIT
+
+
+################################################################################
+# Regular stuff
+
+if [[ $# -ne 1 ]]; then
+    echo >&2 "USAGE: $0 \$GREP_DASH_P_PATTERN"
+fi
+
+GREP_PATTERN="$1"
+RUNTIME="$(date +%s%3N)"
+ROOT_TREE_ID="$(git write-tree)"  # good stuff
+CACHE_FILE=".git-cached-grep-staged-$(md5sum <<< "$GREP_PATTERN" | cut -d ' ' -f 1)"
+CACHE_SIZE=1000
+
+declare -A CACHE_MATCH_COUNT
+declare -A CACHE_LAST_ACCESS
+
+go_tree(){
+    local TREE_ID="$1"
+    local PREFIX="$2"
+    local CACHE_PENALTY="$3"
+
+    local CACHED_MATCH_COUNT="${CACHE_MATCH_COUNT[$TREE_ID]:-}"
+    if [[ -z "$CACHED_MATCH_COUNT" ]] || [[ "$CACHED_MATCH_COUNT" -gt 0 ]]; then
+        local MATCH_COUNT_TREE=0
+        while IFS= read -r -d $'\x00' LINE; do
+            # why do these reads exit with >0 but still succeed?
+            read MODE OBTYPE OBID REST < <(printf "%s" "$LINE") || true
+            IFS=$'\t' read -rd '' REST ENTRY < <(printf "%s" "$LINE") || true
+            case "$OBTYPE" in
+                blob)
+                    FN_NAME=go_blob
+                    PREFIX_ARG="$PREFIX$ENTRY"
+                    ;;
+                tree)
+                    FN_NAME=go_tree
+                    PREFIX_ARG="$PREFIX$ENTRY/"
+                    ;;
+                commit)
+                    # is this for submodules? I guess?
+                    continue
+                    ;;
+                *)
+                    printf >&2 "INVALID OBJECT TYPE IN $TREE_ID %q\n" "$OBTYPE"
+                    printf >&2 "%q" "$LINE"
+                    exit 2
+                    ;;
+            esac
+            local OUT=$(mktemp /dev/shm/tmp.XXXXXXXX)
+            "$FN_NAME" "$OBID" "$PREFIX_ARG" $((CACHE_PENALTY - 1)) >| $OUT ||
+                {
+                    echo >&2 "What happened at $TREE_ID $FN_NAME $OBID $PREFIX_ARG?"
+                    return 2
+                }
+            while IFS= read -r LINELINE; do
+                MATCH_COUNT_TREE=$((MATCH_COUNT_TREE + 1))
+                echo "$LINELINE"
+            done < $OUT
+            rm $OUT
+
+        done < <(git ls-tree --full-tree -z $TREE_ID)
+        CACHE_MATCH_COUNT[$TREE_ID]=$MATCH_COUNT_TREE
+    fi
+    CACHE_LAST_ACCESS[$TREE_ID]=$((RUNTIME + CACHE_PENALTY))
+}
+
+go_blob(){
+    local BLOB_ID="$1"
+    local PREFIX="$2"
+    local CACHE_PENALTY="$3"
+
+    local CACHED_MATCH_COUNT="${CACHE_MATCH_COUNT[$BLOB_ID]:-}"
+    if [[ -n "$CACHED_MATCH_COUNT" ]]; then
+        if [[ "$CACHED_MATCH_COUNT" -gt 0 ]]; then
+            echo "$PREFIX"
+        fi
+    else
+        MATCH_COUNT_BLOB=$(git cat-file blob $BLOB_ID | { grep -c -P "$GREP_PATTERN" || true; })
+        if [[ $MATCH_COUNT_BLOB -gt 0 ]]; then
+            echo "$PREFIX"
+        fi
+        CACHE_MATCH_COUNT[$BLOB_ID]=$MATCH_COUNT_BLOB
+    fi
+    CACHE_LAST_ACCESS[$BLOB_ID]=$((RUNTIME + CACHE_PENALTY))
+
+    # if not present, call grep
+}
+
+# File line format each line:
+# $LAST_ACCESS $OBJECT_ID $MATCH_COUNT
+
+# reads into the CACHE_MATCH_COUNT and CACHE_LAST_ACCESS variables
+read_cache(){
+    if [[ -f "$CACHE_FILE" ]]; then
+        while read LAST_ACCESS OBID MATCH_COUNT; do
+            CACHE_MATCH_COUNT[$OBID]=$MATCH_COUNT
+            CACHE_LAST_ACCESS[$OBID]=$LAST_ACCESS
+        done < "$CACHE_FILE"
+    fi
+}
+
+# writes from the CACHE_MATCH_COUNT and CACHE_LAST_ACCESS variables
+write_cache(){
+    STAGE="$(mktemp /dev/shm/tmp.XXXXXX)"
+    for OBID in "${!CACHE_MATCH_COUNT[@]}"; do
+        echo "${CACHE_LAST_ACCESS[$OBID]} $OBID ${CACHE_MATCH_COUNT[$OBID]}"
+    done | sort -n | tail -n $CACHE_SIZE >| $STAGE
+    mv $STAGE "$CACHE_FILE"
+}
+
+read_cache
+go_tree $ROOT_TREE_ID "" 0
+write_cache

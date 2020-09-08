@@ -8,3 +8,4 @@ gitignored
 /.cpcache
 .noweesu
 /-
+.git-cached-grep-staged-*
