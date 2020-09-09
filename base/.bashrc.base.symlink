@@ -93,9 +93,8 @@ d(){
     echo '`d` is not a thing'
     return 1
   fi
-  CDTO=`devdir $1`
+  CDTO="$(devdir "$1")"
   if [[ -z "$CDTO" ]]; then
-    echo "Can't find anything for: $1"
     return 1
   fi
   cd "$CDTO";
