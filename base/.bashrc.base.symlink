@@ -299,7 +299,16 @@ __prompt_command() {
     else
         PROMPT_LINES+=("$MAIN_LINE")
     fi
-    PROMPT_LINES+=("${Theme}\$${RCol} ") #$INPUT_COLOR")
+
+    # I believe bash is designed to let you have a separate
+    # font for the input text, but emacs' term-mode has
+    # some disturbing bug when doing this, so I don't by
+    # default :/
+    if [[ -n "${COLORIZED_BASH_INPUT:-}" ]]; then
+      PROMPT_LINES+=("${Theme}\$${RCol} $INPUT_COLOR")
+    else
+      PROMPT_LINES+=("${Theme}\$${RCol} ")
+    fi
 
     local WALCOM=""
     if [[ "$HAS_DONE_WALCOM" == "0" ]]; then
@@ -322,8 +331,10 @@ __prompt_command() {
 
     WITH_NEWLINES="$(printf $'\n'"$PREFIX"'%s' "${PROMPT_LINES[@]}")"
     PS1+="$WALCOM$WITH_NEWLINES"
-    # PS0="$RCol"
-    # PS2="${Theme}> $INPUT_COLOR"
+    if [[ -n "${COLORIZED_BASH_INPUT:-}" ]]; then
+      PS0="$RCol"
+      PS2="${Theme}> $INPUT_COLOR"
+    fi
 
     # So we can tell how long since the last command finished
     SECONDS=0
