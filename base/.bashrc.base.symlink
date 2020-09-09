@@ -30,6 +30,7 @@ alias wcl="wc -l"
 alias rgrep="grep -r"
 alias today="date +%Y-%m-%d"
 alias jqu="jq --unbuffered"
+alias jqr="jq -r"
 alias pyc="ping -c 1 yahoo.com"
 alias emc="emacsclient"
 _find_root_of_git_dir(){
