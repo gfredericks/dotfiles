@@ -192,7 +192,7 @@ __prompt_command() {
 
     declare -A PROMPT_COMPONENTS
 
-    if [[ -n "$PROMPT_LABEL" ]]; then
+    if [[ -n "${PROMPT_LABEL:-}" ]]; then
         PROMPT_COMPONENTS["0-0label"]=$'\u001b[34;1m'"$PROMPT_LABEL"$'\u001b[0m'
     fi
 
