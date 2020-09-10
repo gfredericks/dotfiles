@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -Eou pipefail
+set -Eeou pipefail
 
 GREP_PATTERN="(?i)\bno[-_ ]?commit\b"
 
@@ -19,3 +19,14 @@ done < <(git-cached-grep-staged "$GREP_PATTERN")
 if [[ $TOTAL_MATCHES -gt 0 ]]; then
     echo -e >&2 "\u001b[31;1mTHAT COMMIT HAS \"NO ""COMMIT\" IN IT,\nWHAT KIND OF MONSTER ARE YOU!!??1!\u001b[0m"
 fi
+
+HOOKSDIR="$(dirname "$0")"
+
+for file in "$HOOKSDIR"/pre-commit.*; do
+    if [[ -x "$file" ]]; then
+        "$file"
+    else
+        echo >&2 "Can't run $file because it is not executable"
+        exit 9
+    fi
+done
