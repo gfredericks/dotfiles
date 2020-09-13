@@ -7,4 +7,5 @@ gitignored
 .projectile
 /.cpcache
 .noweesu
-/-
+/_
+.git-cached-grep-staged-*

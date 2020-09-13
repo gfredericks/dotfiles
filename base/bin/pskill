@@ -11,9 +11,21 @@ RE="$1"
 
 LINES=()
 
+F=$(mktemp)
+ps -efww > $F
+ME=$BASHPID
+
 while IFS= read -r LINE; do
-    LINES+=("$LINE")
-done < <(ps -efww | { sleep 0.1; grep -P "$RE"; } | cut -c 1-$((COLUMNS - 4)))
+    if [[ "$ME" != "$(echo "$LINE" | cut -d ' ' -f 2)" ]]; then
+       LINES+=("$LINE")
+    fi
+done < <(cat $F | { sleep 0.1; grep -P "$RE"; } | cut -c 1-$((COLUMNS - 4)))
+rm $F
+
+if [[ 0 -eq "${#LINES}" ]]; then
+    echo >&2 No matches\!
+    exit 2
+fi
 
 select CHOICE in "${LINES[@]}"; do
     if [[ -n "$CHOICE" ]]; then

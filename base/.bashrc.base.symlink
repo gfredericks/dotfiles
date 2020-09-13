@@ -30,6 +30,7 @@ alias wcl="wc -l"
 alias rgrep="grep -r"
 alias today="date +%Y-%m-%d"
 alias jqu="jq --unbuffered"
+alias jqr="jq -r"
 alias pyc="ping -c 1 yahoo.com"
 alias emc="emacsclient"
 _find_root_of_git_dir(){
@@ -85,16 +86,15 @@ mkcd(){ mkdir -p $1; cd $1; }
 tmp(){ pushd `mktemp -d --tmpdir=/dev/shm`; }
 
 # devdir should be defined somewhere else, as a script that takes a
-# partial project name and prints a the full path to a project that
+# partial project name and prints the full path to a project that
 # is its best guess for that partial name
 d(){
   if [ $# -eq 0 ]; then
     echo '`d` is not a thing'
     return 1
   fi
-  CDTO=`devdir $1`
+  CDTO="$(devdir "$1")"
   if [[ -z "$CDTO" ]]; then
-    echo "Can't find anything for: $1"
     return 1
   fi
   cd "$CDTO";
@@ -188,10 +188,11 @@ __prompt_command() {
     local Pur='\[\e[0;35m\]'
     local Theme=$Yellow
     local CIRCLE="$Theme●$RCol"
+    local INPUT_COLOR=$'\[\e[0;36m\]'
 
     declare -A PROMPT_COMPONENTS
 
-    if [[ -n "$PROMPT_LABEL" ]]; then
+    if [[ -n "${PROMPT_LABEL:-}" ]]; then
         PROMPT_COMPONENTS["0-0label"]=$'\u001b[34;1m'"$PROMPT_LABEL"$'\u001b[0m'
     fi
 
@@ -298,7 +299,16 @@ __prompt_command() {
     else
         PROMPT_LINES+=("$MAIN_LINE")
     fi
-    PROMPT_LINES+=("${Theme}\$${RCol} ")
+
+    # I believe bash is designed to let you have a separate
+    # font for the input text, but emacs' term-mode has
+    # some disturbing bug when doing this, so I don't by
+    # default :/
+    if [[ -n "${COLORIZED_BASH_INPUT:-}" ]]; then
+      PROMPT_LINES+=("${Theme}\$${RCol} $INPUT_COLOR")
+    else
+      PROMPT_LINES+=("${Theme}\$${RCol} ")
+    fi
 
     local WALCOM=""
     if [[ "$HAS_DONE_WALCOM" == "0" ]]; then
@@ -321,6 +331,10 @@ __prompt_command() {
 
     WITH_NEWLINES="$(printf $'\n'"$PREFIX"'%s' "${PROMPT_LINES[@]}")"
     PS1+="$WALCOM$WITH_NEWLINES"
+    if [[ -n "${COLORIZED_BASH_INPUT:-}" ]]; then
+      PS0="$RCol"
+      PS2="${Theme}> $INPUT_COLOR"
+    fi
 
     # So we can tell how long since the last command finished
     SECONDS=0

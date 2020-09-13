@@ -1,8 +1,32 @@
 #!/usr/bin/env bash
 
-# Breaking up the forbidden word here so that this hook doesn't catch
-# itself
-if git --no-pager grep "NO"COMMIT >&2; then
-    echo >&2 $'\n'"As you can see above, the repo has NO""COMMIT in it, which is not okay."
-    exit 1
+set -Eeou pipefail
+
+GREP_PATTERN="(?i)\bno[-_ ]?commit\b"
+
+TOTAL_MATCHES=0
+TREE_ID=$(git write-tree)
+while read FILE; do
+    git show $TREE_ID:"$FILE" \
+        | grep -P "$GREP_PATTERN" \
+        | while read LINE; do
+        echo -e "\u001b[34;1m$FILE\u001b[0m: $LINE";
+    done
+
+    TOTAL_MATCHES=$((TOTAL_MATCHES + 1))
+done < <(git-cached-grep-staged "$GREP_PATTERN")
+
+if [[ $TOTAL_MATCHES -gt 0 ]]; then
+    echo -e >&2 "\u001b[31;1mTHAT COMMIT HAS \"NO ""COMMIT\" IN IT,\nWHAT KIND OF MONSTER ARE YOU!!??1!\u001b[0m"
 fi
+
+HOOKSDIR="$(dirname "$0")"
+
+for file in "$HOOKSDIR"/pre-commit.*; do
+    if [[ -x "$file" ]]; then
+        "$file"
+    else
+        echo >&2 "Can't run $file because it is not executable"
+        exit 9
+    fi
+done
