@@ -312,6 +312,26 @@ do
   fi
 
   ###
+  ### bat
+  ###
+
+  if [ "$1" == "all" -o "$1" == "bat" ]
+  then
+    sudo apt-get install -y cargo
+    BUILDDIR=$BUILDDIRBASE/bat
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    REPODIR=$BUILDDIR/repo
+    INSTALLDIR=$BUILDDIR/install
+    mkdir $INSTALLDIR
+    git clone --depth=1 -b v0.15.4 --recursive git@github.com:sharkdp/bat.git $REPODIR
+    cd $REPODIR
+    [ "$(git rev-parse HEAD)" == "9e65ecd03e60336bd54dea12fbc4354c4fb8d8b0" ]
+    cargo install --root $INSTALLDIR --locked bat
+    rm -rf $REPODIR
+    ln -s $INSTALLDIR/bin/bat ~/bin/bat
+  fi
+
+  ###
   ### extra stuff!
   ###
 
