@@ -21,7 +21,10 @@ sudo apt-get install -y wget build-essential unzip
 
 # wtf; using bsdtar instead of tar in this script because
 # of https://github.com/coreos/bugs/issues/1095
-sudo apt-get install -y --no-install-recommends bsdtar
+# sudo apt-get install -y --no-install-recommends bsdtar
+bsdtar(){
+  tar "$@"
+}
 
 # sudo apt-get install -y wget build-essential asciidoc docbook2x libssl-dev \
 #      libcurl4-openssl-dev libexpat1-dev gettext &&

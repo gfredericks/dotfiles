@@ -8,7 +8,8 @@
  '(package-selected-packages
    '(smex adoc-mode yaml-mode clojure-mode real-auto-save workgroups window-numbering simple-httpd projectile paredit neotree multiple-cursors markdown-mode magit ivy idle-highlight-mode htmlize haskell-mode git-timemachine cider align-cljlet))
  '(safe-local-variable-values
-   '((gfredericks-autoexport-beamer . t)
+   '((lexical-variables . t)
+     (gfredericks-autoexport-beamer . t)
      (cider-comment-postfix . "")
      (cider-comment-continued-prefix . "")
      (cider-comment-prefix . "")
