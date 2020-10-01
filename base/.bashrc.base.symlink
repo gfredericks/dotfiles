@@ -32,6 +32,7 @@ alias today="date +%Y-%m-%d"
 alias jqu="jq --unbuffered"
 alias jqr="jq -r"
 alias pyc="ping -c 1 yahoo.com"
+alias p3="python3"
 alias emc="emacsclient"
 _find_root_of_git_dir(){
   (
