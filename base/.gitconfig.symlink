@@ -38,3 +38,5 @@
   path = .gitconfig.local
 [diff "clojure"]
   xfuncname = (^\\(.*|\\s*\\(defn.*)
+[pull]
+	rebase = false
