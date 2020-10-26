@@ -300,10 +300,10 @@
 
 (defun my-agenda-capture-templates
     (capture-file scratch-file)
-  `(("a" "Active" entry
+  `(("c" "capture file" entry
      (file+headline ,capture-file "Tasks")
      "* TODO %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")
-    ("x" "Scratch Active" entry
+    ("s" "scratch file" entry
      (file+headline ,scratch-file "Tasks")
      "* TODO %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")))
 
