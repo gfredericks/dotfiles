@@ -40,3 +40,5 @@
   xfuncname = (^\\(.*|\\s*\\(defn.*)
 [pull]
 	rebase = false
+[rebase]
+	autoStash = true
