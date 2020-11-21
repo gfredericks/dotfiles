@@ -10,14 +10,9 @@ GREP_PATTERN="(?i)\bno[-_ ]?commit\b(?<!--no-commit)"
 
 TOTAL_MATCHES=0
 TREE_ID=$(git write-tree)
-while read FILE; do
-    git show $TREE_ID:"$FILE" \
-        | grep -P "$GREP_PATTERN" \
-        | while read LINE; do
-        echo -e "\u001b[34;1m$FILE\u001b[0m: $LINE";
-    done
-
+while read LINE; do
     TOTAL_MATCHES=$((TOTAL_MATCHES + 1))
+    echo -e "\u001b[34;1m$LINE\u001b[0m";
 done < <(git-cached-grep-staged "$GREP_PATTERN")
 
 NO_COMMIT_DURATION=$(($(date +%s%3N) - $NO_COMMIT_START))
