@@ -35,7 +35,7 @@ def go_tree(tree_id, prefix, cache_penalty):
     cache_entry = cache.get(tree_id)
     if cache_entry is None or cache_entry.match_count > 0:
         match_count_tree = 0
-        lines = subprocess.run(['git','ls-tree','--full-tree','-z',tree_id], capture_output=True).stdout.split(b'\0')
+        lines = subprocess.run(['git','ls-tree','--full-tree','-z',tree_id], stdout=subprocess.PIPE).stdout.split(b'\0')
         for line in lines:
             if len(line) == 0:
                 continue
@@ -68,14 +68,14 @@ def go_blob(blob_id, prefix, cache_penalty):
         cache[blob_id] = CacheEntry(0, runtime + cache_penalty)
     else:
         script = """
-        git cat-file blob {} | {{ grep -P "$GREP_PATTERN" || true; }}
+        git cat-file blob {} | {{ grep -n -P "$GREP_PATTERN" || true; }}
         """.format(blob_id)
-        cp = subprocess.run(["/usr/bin/env","bash","-c",script], capture_output=True)
+        cp = subprocess.run(["/usr/bin/env","bash","-c",script], stdout=subprocess.PIPE)
         match_count = 0
         for line in cp.stdout.decode('utf-8').split('\n'):
             if len(line) == 0:
                 continue
-            print("{}: {}".format(prefix, line))
+            print("{}:{}".format(prefix, line))
             match_count += 1
         cache[blob_id] = CacheEntry(match_count, runtime + cache_penalty)
 
