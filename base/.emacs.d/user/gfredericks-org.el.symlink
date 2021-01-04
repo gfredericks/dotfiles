@@ -522,3 +522,6 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 		      ((equal p h) 'bold))))
 	   (if special-face (list special-face 'org-priority) 'org-priority)))
 	(overlay-put ov 'org-type 'org-priority)))))
+
+;; where does this even come from? I have no idea
+(org-babel-do-load-languages 'org-babel-load-languages '((shell . t)))
