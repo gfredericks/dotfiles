@@ -5,15 +5,14 @@ EXTRAS_FILE=~/.i3statusextras
 i3status | while :
 do
     read line
-    if [ -f $EXTRAS_FILE ]
-    then
-        EXTRAS=$($EXTRAS_FILE)
-        # TODO: allow multiple lines, that get joined with pipes
-        if [[ -n "$EXTRAS" ]]; then
-            echo "$EXTRAS | $line" || exit 1
-        else
-            echo "$line" || exit 1
-        fi
+    if [[ -f $EXTRAS_FILE ]]; then
+        EXTRAS=""
+        # I tried doing this with printf but it didn't work;
+        # I don't know why
+        while read line2; do
+            EXTRAS="$EXTRAS$line2 | "
+        done < <($EXTRAS_FILE || echo $EXTRAS_FILE failed)
+        echo "$EXTRAS$line"
     else
         echo "$line" || exit 1
     fi

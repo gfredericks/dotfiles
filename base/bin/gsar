@@ -17,10 +17,10 @@ def hidden? filename
 end
 
 Dir.chdir dir do
-  filenames = `find . -type f`.split
+  filenames = `find . -type f -print0`.split("\0")
   filenames.each do |filename|
     next if hidden? filename
-    if(`grep -P #{matcher.inspect} #{filename}`.length > 0)
+    if(`grep -P #{matcher.inspect} #{filename.inspect}`.length > 0)
       s = File.read filename
       puts filename
       open(filename,'w'){|f|f.write(s.gsub(matcher, replacement))}

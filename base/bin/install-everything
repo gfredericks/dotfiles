@@ -233,9 +233,9 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/gradle
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    VERSION=5.4
+    VERSION=6.5.1
     wget https://services.gradle.org/distributions/gradle-$VERSION-bin.zip
-    echo "c8c17574245ecee9ed7fe4f6b593b696d1692d1adbfef425bef9b333e3a0e8de  gradle-$VERSION-bin.zip" | \
+    echo "50a7d30529fa939721fe9268a0205142f3f2302bcac5fb45b27a3902e58db54a  gradle-$VERSION-bin.zip" | \
         sha256sum -c
     unzip gradle-$VERSION-bin.zip
     rm -f ~/bin/gradle

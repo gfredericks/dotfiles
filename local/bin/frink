@@ -16,7 +16,8 @@ memetext="$(echo -n "$@" | fold -s -w 25 | base64 | sed "s/\//_/g" | tr -d '\n')
 
 URL="https://frinkiac.com/meme/$key/$timestamp.jpg?b64lines=$memetext"
 
-MARKDOWN="![]($URL =300x)"
+# MARKDOWN="![]($URL =300x)"
+MARKDOWN="$URL"  # when/where did the above actually work?
 
 echo -n "$MARKDOWN" | copy
 echo "$MARKDOWN"
