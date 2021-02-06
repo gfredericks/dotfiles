@@ -63,9 +63,10 @@ do
     BUILDDIR=$BUILDDIRBASE/emacs
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
     # shallow because the emacs repo is super big/old
-    git clone --shallow-since=2019-04-01 git://git.sv.gnu.org/emacs.git $BUILDDIR/git-repo
+    git clone --shallow-since=2021-01-01 git://git.sv.gnu.org/emacs.git $BUILDDIR/git-repo
     cd $BUILDDIR/git-repo
-    git checkout bc0adf112d82a9b89f858f80e04f1ee2f401fa05
+    # tag emacs-27.1.91
+    git checkout 74a71c41e03f28a6380a0537babfdd6c1edb929a
     ./autogen.sh
     ./configure \
         --without-x \
