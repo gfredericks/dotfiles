@@ -16,6 +16,12 @@ import sys
 from socket import timeout,SHUT_RDWR
 from subprocess import call,Popen,PIPE
 
+def _shell_escape(s):
+    s2 = ""
+    for i in range(len(s)):
+        s2 += "\\\\" + s[i]
+    return s2
+
 class MyTCPHandler(SocketServer.BaseRequestHandler):
     browser_command=sys.argv[2]
     i3_workspace=sys.argv[3]
@@ -55,7 +61,7 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
                 call(["notify-send","remote open"])
                 s = s[5:-1] + sock.recv(4096)
                 if("\n" in s):
-                    url = s.split("\n")[0]
+                    url = _shell_escape(s.split("\n")[0])
                     call(["i3-msg","workspace",self.i3_workspace])
                     call(["i3-msg","exec",self.browser_command,url])
                 else:
