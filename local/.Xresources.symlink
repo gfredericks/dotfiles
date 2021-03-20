@@ -20,7 +20,14 @@ XTerm.fullscreen: never
 
 
 *customization:     -color
-XTerm*termName: xterm-256color
+! I am commenting this out, which I think effectively disables
+! all the extra colors defined below, since the dynamic-colors+solarized
+! thing that I use to switch between light and dark mode only
+! involves 8/16/whatever colors, and the rest of these colors
+! mess it up; if this doesn't work well then I'll probably
+! need to find a pair of 256-color themes as an alternative
+! to solarized
+! XTerm*termName: xterm-256color
 
 xterm*VT100.Translations: #override \
                        Shift <Key>Up:   scroll-back(1) \n\
