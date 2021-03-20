@@ -86,7 +86,8 @@ XTerm*color10: #bbf7a8
 ! CYN
 XTerm*color6: #2aa198
 ! XTerm*color14: #9e9e9e
-XTerm*color14: #eca9f2
+! XTerm*color14: #eca9f2
+XTerm*color14: #2aa198
 
 ! BLU
 XTerm*color4: #268bd2
@@ -95,7 +96,8 @@ XTerm*color12: #82b1ff
 
 ! MAG
 XTerm*color5: #d33682
-XTerm*color13: #6c71c4
+! XTerm*color13: #6c71c4
+XTerm*color13: #d33682
 
 XTerm*color16: t_bg_floor
 XTerm*color17: t_bg_dip
