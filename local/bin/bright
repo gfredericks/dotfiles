@@ -12,7 +12,7 @@ case "$1" in
         ;;
     "night")
         for output in $(list_outputs); do
-            xrandr --output $output --brightness 0.55 --gamma 1.1:0.8:0.7
+            xrandr --output $output --brightness 0.4 --gamma 1.1:0.8:0.7
         done
         ;;
 esac
