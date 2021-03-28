@@ -8,7 +8,20 @@ SELF=$(readlink -f $BASH_SOURCE)
 MYBIN=`dirname $SELF`/bin
 for FILE in `find ~/bin -maxdepth 1 -type l`; do
     if [[ -d "$FILE" ]]; then
-        PATH=$FILE:$PATH
+        for EX in $(find "$FILE"/ -maxdepth 1 -type f -executable); do
+            NAME="$(basename "$EX")"
+            EXPECTED="$(realpath "$EX")"
+            if [[ -e "$EX" ]]; then
+                ACTUAL="$(realpath "$HOME/bin/$NAME")"
+                if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+                    echo >&2 "Uh oh bad bin symlink at: $EX"
+                    echo >&2 "Actual: $ACTUAL; Expected: $EXPECTED"
+                fi
+            else
+                echo ln -s "$EXPECTED" "$HOME/bin/$NAME"
+                ln -s "$EXPECTED" "$HOME/bin/$NAME"
+            fi
+        done
     fi
 done
 export PATH=~/bin:$MYBIN:$PATH
