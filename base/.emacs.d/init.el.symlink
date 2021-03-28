@@ -21,3 +21,7 @@
     (if (string-match "^init\\..*\\.el$" file)
         (load (concat user-init-dir file))
       (require (intern (substring file 0 -3))))))
+
+;; I found this lying around on one of my computers;
+;; is it useful??
+(put 'scroll-left 'disabled nil)
