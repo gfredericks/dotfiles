@@ -2,7 +2,10 @@
 
 # Some boilerplate for making more reliable bash scripts
 
-function emit-stack-trace {
+################################################################################
+# begin preamble
+
+emit-stack-trace() {
     local -i x
     local -i stack_frames="${#FUNCNAME[@]}"
 
@@ -16,7 +19,7 @@ function emit-stack-trace {
     } >&2
 }
 
-function be-strict {
+be-strict() {
     # credit to Elliot Shank
     set -o errexit    # Die on non-0 exit codes other than inside conditions.
     set -o noclobber  # Do not overwrite files without being explicit about it.
@@ -29,7 +32,7 @@ function be-strict {
 
 FINALLIES=()
 
-function finally {
+finally() {
     for CODE in "${FINALLIES[@]}"; do
         eval "$CODE" || echo >&2 "Error running $CODE"
     done
@@ -37,3 +40,12 @@ function finally {
 
 be-strict
 trap finally EXIT
+
+################################################################################
+# end preamble
+
+main() {
+
+}
+
+main "$@"
