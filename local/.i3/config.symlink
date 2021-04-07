@@ -52,6 +52,9 @@ bindsym $mod+Shift+q kill
 # Using bash -i here so that my full PATH gets picked up
 bindsym $mod+Shift+d exec /usr/bin/env bash -i -c dmenu_run
 
+bindsym $mod+Shift+apostrophe exec /usr/bin/env bash -c "$HOME/bin/brightness down"
+bindsym $mod+Shift+comma exec /usr/bin/env bash -c "$HOME/bin/brightness up"
+
 # Wish I could do both of these with one binding :/
 bindsym $mod+period move workspace to output right
 bindsym $mod+comma  move workspace to output up
@@ -104,6 +107,8 @@ bindsym $mod+v split v
 
 # enter fullscreen mode for the focused container
 bindsym $mod+f fullscreen
+
+bindsym $mod+g exec flameshot gui
 
 # change container layout (stacked, tabbed, toggle split)
 bindsym $mod+s layout stacking
