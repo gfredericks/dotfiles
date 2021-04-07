@@ -217,7 +217,7 @@
   (my-org-agenda-update-priority -1))
 
 (defun my-agenda-backlog-prefix-age ()
-  (let ((created (org-entry-get (point) "CREATED_AT")))
+  (let ((created (org-entry-get (point) "TIMESTAMP_IA")))
     (if created
         (let* ((days-old
                (- (string-to-number
@@ -246,11 +246,19 @@
                 -1
               (if (> pa pb)
                   +1
-                0))
+                nil))
           -1)
       (if pb
           +1
-        0))))
+        nil))))
+
+(setq my-agenda-standard-sorting-strategy
+      '(user-defined-down
+        timestamp-up
+        todo-state-up
+        effort-up
+        category-up
+        alpha-up))
 
 (defun my-agenda-section-active-todos
     (header min-priority)
@@ -260,21 +268,23 @@
              "SCHEDULED<\"<now>\"+DEADLINE<>{.+}")
     ((org-agenda-skip-function 'skip-unless-nil-or-in-priority-bounds)
      (org-agenda-prefix-format ,my-agenda-active-prefix-format)
-     (org-agenda-sorting-strategy '(user-defined-down category-down effort-up alpha-down))
+     (org-agenda-sorting-strategy ',my-agenda-standard-sorting-strategy)
      (org-agenda-overriding-header ,header)
      (org-agenda-dim-blocked-tasks 'invisible)
      (gfredericks-org-priority-bounds ',(cons min-priority nil))
-     (org-agenda-cmp-user-defined 'my-agenda-compare-by-priority))))
+     (org-agenda-cmp-user-defined
+      'my-agenda-compare-by-priority))))
 
 (defun my-agenda-section-backlog
     (header max-priority)
   ;; should things scheduled for next week show up somehow? sounds hard
   `(todo "TODO"
          ((org-agenda-skip-function 'skip-unless-in-priority-bounds)
-          (org-agenda-sorting-strategy '(user-defined-down category-down effort-up alpha-down))
+          (org-agenda-sorting-strategy ',my-agenda-standard-sorting-strategy)
           (org-agenda-prefix-format ,my-agenda-backlog-prefix-format)
           (org-agenda-overriding-header ,header)
-          (gfredericks-org-priority-bounds ',(cons nil max-priority)))))
+          (gfredericks-org-priority-bounds ',(cons nil max-priority))
+          (org-agenda-cmp-user-defined 'my-agenda-compare-by-priority))))
 
 (defun my-agenda-section-wholeweek
     (header)
@@ -302,10 +312,10 @@
     (capture-file scratch-file)
   `(("c" "capture file" entry
      (file+headline ,capture-file "Tasks")
-     "* TODO %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")
+     "* TODO %?\n  Created at %U\n  %i")
     ("s" "scratch file" entry
      (file+headline ,scratch-file "Tasks")
-     "* TODO %?\n  :PROPERTIES:\n  :CREATED_AT: %U\n  :END:\n  %i")))
+     "* TODO %?\n  Created at %U\n  %i")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Monkeypatching org-mode so the agenda export only exports
@@ -481,9 +491,9 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
     (if (not (= 10 (preceding-char)))
         (insert "\n"))
     (insert "** TODO (uc) " s)
-    (insert "\n   :PROPERTIES:\n   :CREATED_AT: ")
+    (insert "\n   Created at ")
     (insert-inactive-time-stamp)
-    (insert "\n   :END:\n")
+    (insert "\n")
     (save-buffer)))
 
 ;; Monkeypatch so that multi-digit priorities are matched; only
