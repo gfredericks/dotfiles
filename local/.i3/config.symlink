@@ -51,6 +51,7 @@ bindsym $mod+Shift+q kill
 #
 # Using bash -i here so that my full PATH gets picked up
 bindsym $mod+Shift+d exec /usr/bin/env bash -i -c dmenu_run
+bindsym $mod+Shift+g exec /usr/bin/env bash -i -c dmenu-go
 
 bindsym $mod+Shift+apostrophe exec /usr/bin/env bash -c "$HOME/bin/brightness down"
 bindsym $mod+Shift+comma exec /usr/bin/env bash -c "$HOME/bin/brightness up"
