@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
 if [[ -n "$1" ]]; then
-    PREFIX="$1-"
+    git checkout -b tmp-$1-$(date +"%Y-%m-%d")
 else
-    PREFIX=""
+    git checkout -b tmp-$(date +"%Y-%m-%dT%H%M")
 fi
-
-git checkout -b tmp-$PREFIX$(date +"%Y-%m-%dT%H%M")
