@@ -30,6 +30,7 @@
   dc = diff --cached
   cane = commit --amend --no-edit
   caane = commit -a --amend --no-edit
+  fomm = fetch origin master:master
 [annex]
 	backends = SHA256
 [push]
