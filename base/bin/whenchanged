@@ -4,12 +4,26 @@
 
 set -e
 
-THE_PATH=$1
-shift
+PATHS=()
+# THE_PATH=$1
+# shift
+
+if [[ "$1" == "--paths" ]]; then
+    shift
+    while [[ "$1" != "--" ]]; do
+        PATHS+=("$1")
+        shift
+    done
+    shift # the "--"
+else
+    PATHS=("$1")
+    shift
+fi
 
 exec 3<&0
 
 (echo run it first; inotifywait \
+                        $INOTIFYARGS \
                         -q \
                         -e modify \
                         -e attrib \
@@ -19,7 +33,7 @@ exec 3<&0
                         -e move_self \
                         -e delete_self \
                         -rm \
-                        "$THE_PATH") |
+                        "${PATHS[@]}") |
     while true; do
         read EV
         # read all other available lines
