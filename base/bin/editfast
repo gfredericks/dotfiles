@@ -13,5 +13,6 @@ then
     nano $@
   fi
 else
-  emacsclient -a nano $@
+    # why on earth doesn't *this* work at least?
+  emacsclient -a nano "$@" # || echo "suppressing exit error because maybe false"
 fi
