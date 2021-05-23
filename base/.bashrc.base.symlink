@@ -50,6 +50,12 @@ alias jqr="jq -r"
 alias pyc="ping -c 1 yahoo.com"
 alias p3="python3"
 alias emc="emacsclient"
+bc(){
+  local F=/dev/shm/.bc.63171c42-7694-4cc2-948b-9b00fc15c54f
+  echo "scale=10" > $F
+  echo "(I'm setting scale to 10; use scale=\$N to change it)"
+  "$(which bc)" -i $F
+}
 _find_root_of_git_dir(){
   (
     while [[ (! -e .git) && "$PWD" != / ]]; do
@@ -174,6 +180,13 @@ delete_ansi_codes() {
 }
 
 HAS_DONE_WALCOM=0
+
+# I believe this is an effective test for when we're creating a
+# bash session from org-babel
+if [[ -n "${INSIDE_EMACS:-}" ]] && [[ "$TERM" == dumb ]]; then
+  HAS_DONE_WALCOM=1
+  NO_FANCY_PROMPT=1
+fi
 
 if [ "$NO_FANCY_PROMPT" == "1" ]; then
   PS1="$ "

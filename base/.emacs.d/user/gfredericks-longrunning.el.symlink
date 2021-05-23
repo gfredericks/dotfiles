@@ -102,6 +102,8 @@
 ;; remote xclip integration (see also the executables: `copy`, `paste`, and `remote-emacs`)
 ;;
 
+(setenv "GFR_REMOTE_CLIPBOARD" "1")
+
 (defun remote-paste ()
   (interactive)
   (insert (shell-command-to-string "paste")))

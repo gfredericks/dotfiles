@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+SIGNAL_FILE="$(mktemp)"
+
+(
+    WD="$(mktemp -d)"
+    cd $WD
+    ( "$@"; echo "Exited at $(inst) with status $?" > exit)> stdout 2>stderr &
+    PID=$!
+    NEW_WD=/tmp/$PID
+    if [[ -d "$NEW_WD" ]]; then
+        X=1
+        while [[ -d "$NEW_WD-$X" ]]; do
+            X=$((X + 1))
+        done
+        NEW_WD="$NEW_WD-$X"
+    fi
+    mv "$WD" "$NEW_WD"
+    echo "Running at $NEW_WD" > "$SIGNAL_FILE"
+    fg
+) &
+
+disown
+
+TIMES=10
+while [[ 0 == $(wc -c "$SIGNAL_FILE") ]]; do
+    if [[ "$TIMES" -eq 0 ]]; then
+        echo >&2 "Error: background process failed to signal"
+    fi
+    sleep 0.1
+    TIMES=$((TIMES - 1))
+done
+
+cat $SIGNAL_FILE
+
+rm $SIGNAL_FILE

@@ -19,8 +19,8 @@ URL="https://frinkiac.com/meme/$key/$timestamp.jpg?b64lines=$memetext"
 # MARKDOWN="![]($URL =300x)"
 MARKDOWN="$URL"  # when/where did the above actually work?
 
-echo -n "$MARKDOWN" | copy
-echo "$MARKDOWN"
+echo -n "$URL" | copy
+echo "$URL"
 
 F=$(mktemp)
 
