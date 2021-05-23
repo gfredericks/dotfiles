@@ -181,6 +181,13 @@ delete_ansi_codes() {
 
 HAS_DONE_WALCOM=0
 
+# I believe this is an effective test for when we're creating a
+# bash session from org-babel
+if [[ -n "${INSIDE_EMACS:-}" ]] && [[ "$TERM" == dumb ]]; then
+  HAS_DONE_WALCOM=1
+  NO_FANCY_PROMPT=1
+fi
+
 if [ "$NO_FANCY_PROMPT" == "1" ]; then
   PS1="$ "
   PROMPT_COMMAND=
