@@ -50,6 +50,12 @@ alias jqr="jq -r"
 alias pyc="ping -c 1 yahoo.com"
 alias p3="python3"
 alias emc="emacsclient"
+bc(){
+  local F=/dev/shm/.bc.63171c42-7694-4cc2-948b-9b00fc15c54f
+  echo "scale=10" > $F
+  echo "(I'm setting scale to 10; use scale=\$N to change it)"
+  "$(which bc)" -i $F
+}
 _find_root_of_git_dir(){
   (
     while [[ (! -e .git) && "$PWD" != / ]]; do
