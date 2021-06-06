@@ -1,0 +1,33 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; customized ob-python
+
+(require 'ob-python)
+
+;; TODO: currently don't have anything checked into this repo by this
+;; name; I guess something generic that supports venv would be useful?
+(defvar my-org-babel-python-command "ob-python")
+
+(defun my-ob-python-advice
+    (orig-fn &rest args)
+  (let ((params (car (cdr args))))
+    (let ((orig-command org-babel-python-command)
+          (process-environment (append (list (format "GFR_OB_PYTHON_FILE=%s"
+                                                     (buffer-file-name)))
+                                       (mapcar
+                                        (lambda (x)
+                                          (format "GFR_OB_PYTHON_PARAM_%s=%s"
+                                                  (replace-regexp-in-string
+                                                   "-" "_"
+                                                   (upcase (substring (symbol-name (car x))
+                                                                      1))
+                                                   nil 'literal)
+                                                  (cdr x)))
+                                        params)
+
+                                       process-environment)))
+      (setq org-babel-python-command my-org-babel-python-command)
+      (unwind-protect
+          (apply orig-fn args)
+        (setq org-babel-python-command orig-command)))))
+
+(advice-add 'org-babel-execute:python :around #'my-ob-python-advice)
