@@ -215,20 +215,27 @@ exec --no-startup-id dbus-send --session --dest=org.gnome.SessionManager /org/gn
 exec_always --no-startup-id /bin/bash -i -c my-xautolock
 
 # ###############################
-# # Mouse stuff based on https://www.reddit.com/r/i3wm/comments/3btki2/use_the_mouse_cursor_from_the_keyboard/
+# Mouse stuff based on https://www.reddit.com/r/i3wm/comments/3btki2/use_the_mouse_cursor_from_the_keyboard/
 
-# mode "mouse" {
-#      bindsym o exec xdotool mousemove_relative -- -10 0
-#      bindsym period exec xdotool mousemove_relative -- 0 -10
-#      bindsym u exec xdotool mousemove_relative -- 10 0
-#      bindsym e exec xdotool mousemove_relative -- 0 10
-#      bindsym Shift+o exec xdotool mousemove_relative -- -50 0
-#      bindsym Shift+period exec xdotool mousemove_relative -- 0 -50
-#      bindsym Shift+u exec xdotool mousemove_relative -- 50 0
-#      bindsym Shift+e exec xdotool mousemove_relative -- 0 50
-#      bindsym space exec xdotool click 1
-#      bindsym $mod+m mode "default"
-#      bindsym Escape mode "default"
-# }
+mode "mouse" {
+     bindsym h exec xdotool mousemove_relative -- -10 0
+     bindsym c exec xdotool mousemove_relative -- 0 -10
+     bindsym n exec xdotool mousemove_relative -- 10 0
+     bindsym t exec xdotool mousemove_relative -- 0 10
+     bindsym Control+h exec xdotool mousemove_relative -- -50 0
+     bindsym Control+c exec xdotool mousemove_relative -- 0 -50
+     bindsym Control+n exec xdotool mousemove_relative -- 50 0
+     bindsym Control+t exec xdotool mousemove_relative -- 0 50
+     bindsym Shift+h exec xdotool mousemove_relative -- -1 0
+     bindsym Shift+c exec xdotool mousemove_relative -- 0 -1
+     bindsym Shift+n exec xdotool mousemove_relative -- 1 0
+     bindsym Shift+t exec xdotool mousemove_relative -- 0 1
+     bindsym space exec xdotool click 1
+     bindsym u exec xdotool click 1
+     bindsym e exec xdotool click 2
+     bindsym o exec xdotool click 3
+     bindsym $mod+m mode "default"
+     bindsym Escape mode "default"
+}
 
-# bindsym $mod+m mode "mouse"
+bindsym $mod+m mode "mouse"
