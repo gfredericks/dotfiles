@@ -105,7 +105,7 @@ export LESS="-R"
 alias hed='head -n $(( $(tput lines) - 3 ))'
 alias tal='tail -n $(( $(tput lines) - 3 ))'
 
-mkcd(){ mkdir -p $1; cd $1; }
+mkcd(){ mkdir -p "$1"; cd "$1"; }
 tmp(){ pushd `mktemp -d --tmpdir=/dev/shm`; }
 
 # devdir should be defined somewhere else, as a script that takes a
