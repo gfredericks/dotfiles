@@ -5,9 +5,9 @@
 
 DECAY=0.9
 if ARGV.length == 1
-  target = ARGV[0].to_i
+  $target = ARGV[0].to_i
 else
-  target = nil
+  $target = nil
 end
 
 def update_rate(old_rate, new_rate)
@@ -28,15 +28,20 @@ def duration_s secs
   end
 end
 
-last_num = STDIN.gets.to_i
+def read_num
+  x = STDIN.gets.to_i
+  if $target != nil
+    x = $target - x
+  end
+  return x
+end
+
+last_num = read_num
 last_t = Time.new.to_i
 rate = nil
 
 while last_num > 0
-  next_num = STDIN.gets.to_i
-  if target != nil
-    next_num = target - next_num
-  end
+  next_num = read_num
   next_t = Time.new.to_i
   delta = next_num - last_num
   delta_t = last_t - next_t
