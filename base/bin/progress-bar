@@ -4,6 +4,11 @@
 # about when it will reach zero. Exits on zero.
 
 DECAY=0.9
+if ARGV.length == 1
+  target = ARGV[0].to_i
+else
+  target = nil
+end
 
 def update_rate(old_rate, new_rate)
   if old_rate == nil
@@ -23,12 +28,15 @@ def duration_s secs
   end
 end
 
-last_num = gets.to_i
+last_num = STDIN.gets.to_i
 last_t = Time.new.to_i
 rate = nil
 
 while last_num > 0
-  next_num = gets.to_i
+  next_num = STDIN.gets.to_i
+  if target != nil
+    next_num = target - next_num
+  end
   next_t = Time.new.to_i
   delta = next_num - last_num
   delta_t = last_t - next_t
