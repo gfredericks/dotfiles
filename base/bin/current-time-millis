@@ -1,1 +1,1 @@
-date +%s%3N # is this correct?
+date +%s%3N
