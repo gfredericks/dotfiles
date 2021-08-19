@@ -264,7 +264,9 @@
     (header min-priority)
   `(tags-todo
     ,(concat "SCHEDULED<>{.+}+DEADLINE<>{.+}|"
-             "SCHEDULED<>{.+}+DEADLINE>\"<+7d>\"|"
+             ;; comment this out since deadlines should be
+             ;; in the upcoming deadlines section now
+             ;; "SCHEDULED<>{.+}+DEADLINE>\"<+7d>\"|"
              "SCHEDULED<\"<now>\"+DEADLINE<>{.+}")
     ((org-agenda-skip-function 'skip-unless-nil-or-in-priority-bounds)
      (org-agenda-prefix-format ,my-agenda-active-prefix-format)
@@ -272,6 +274,19 @@
      (org-agenda-overriding-header ,header)
      (org-agenda-dim-blocked-tasks 'invisible)
      (gfredericks-org-priority-bounds ',(cons min-priority nil))
+     (org-agenda-cmp-user-defined
+      'my-agenda-compare-by-priority))))
+
+(defun my-agenda-section-upcoming-deadlines
+    (header)
+  `(tags-todo
+    "DEADLINE={.+}"
+    ((org-agenda-skip-function 'skip-unless-nil-or-in-priority-bounds)
+     (org-agenda-prefix-format ,my-agenda-active-prefix-format)
+     (org-agenda-sorting-strategy ',my-agenda-standard-sorting-strategy)
+     (org-agenda-overriding-header ,header)
+     (org-agenda-dim-blocked-tasks 'invisible)
+     ;; TODO: order by deadline?
      (org-agenda-cmp-user-defined
       'my-agenda-compare-by-priority))))
 
