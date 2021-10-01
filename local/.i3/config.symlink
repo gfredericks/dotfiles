@@ -239,3 +239,9 @@ mode "mouse" {
 }
 
 bindsym $mod+m mode "mouse"
+
+
+# I'm using this on a lenovo laptop; what does it do? I can't remember
+# exec --no-startup-id /usr/lib/gnome-settings-daemon/gsd-xsettings
+# exec_always --no-startup-id gnome-power-manager
+# exec --no-startup-id gnome-flashback
