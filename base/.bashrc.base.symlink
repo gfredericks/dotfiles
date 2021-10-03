@@ -6,26 +6,6 @@ fi
 
 SELF=$(readlink -f $BASH_SOURCE)
 MYBIN=`dirname $SELF`/bin
-for FILE in `find ~/bin -maxdepth 1 -type l`; do
-    if [[ -d "$FILE" ]]; then
-        for EX in $(find "$FILE"/ -maxdepth 1 -type f -executable) \
-                  $(find "$FILE"/ -maxdepth 1 -type l -executable); do
-            NAME="$(basename "$EX")"
-            EXPECTED="$(realpath "$EX")"
-            LINKLOC="$HOME/bin/$NAME"
-            if [[ -e "$LINKLOC" ]]; then
-                ACTUAL="$(realpath "$LINKLOC")"
-                if [[ "$ACTUAL" != "$EXPECTED" ]]; then
-                    echo >&2 "Uh oh bad bin symlink at: $LINKLOC"
-                    echo >&2 "Actual: $ACTUAL; Expected: $EXPECTED"
-                fi
-            else
-                echo ln -s "$EXPECTED" "$LINKLOC"
-                ln -s "$EXPECTED" "$LINKLOC"
-            fi
-        done
-    fi
-done
 export PATH=~/bin:$MYBIN:$PATH
 export EDITOR=edit
 export BAT_THEME=ansi-dark
@@ -374,5 +354,8 @@ __prompt_command() {
 
 # Make sure the crontab is correct
 if [ -e ~/.crontab ]; then
-  diff ~/.crontab <(crontab -l) || echo "crontab doesn't match ~/.crontab !"
+  diff ~/.crontab <(crontab -l) || echo 'crontab doesn'"'"'t match ~/.crontab!'
+  grep -q run-checks ~/.crontab || echo 'run-checks is missing from crontab!'
+else
+  echo 'No ~/.crontab file!'
 fi

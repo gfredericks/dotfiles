@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+set -e
+
+EXIT_CODE=0
+
+while IFS= read -r profile; do
+  cd $profile
+
+  find . -name '*.symlink' -print0 | while read -d $'\0' dotslashfile
+  do
+    file="$(echo "${dotslashfile:2}")"
+    file_no_symlink="$(echo "${file::-8}")"
+    linkfile=$HOME/$file_no_symlink
+    linkto=$profile/$file
+    if [ -f $linkfile ] || [ -d $linkfile ] || [ -L $linkfile ]
+    then
+      existing="$(readlink $linkfile)"
+      if [ "$linkto" != "$existing" ]
+      then
+        echo "Warning! Existing dotfile is not the correct symlink: $linkfile"
+        echo "(Due to $linkto != $existing)"
+        EXIT_CODE=1
+      fi
+    else
+      echo "Linking $linkfile to $linkto"
+      parent="$(dirname $linkfile)"
+      if [[ -z "${DRYRUN:-}" ]]; then
+          mkdir -p $parent &>/dev/null
+          ln -s $linkto $linkfile
+      fi
+    fi
+  done
+done < <(cat ~/.dotfiles-profiles)
+
+
+for FILE in `find ~/bin -maxdepth 1 -type l`; do
+    if [[ -d "$FILE" ]]; then
+        for EX in $(find "$FILE"/ -maxdepth 1 -type f -executable) \
+                  $(find "$FILE"/ -maxdepth 1 -type l -executable); do
+            NAME="$(basename "$EX")"
+            EXPECTED="$(realpath "$EX")"
+            LINKLOC="$HOME/bin/$NAME"
+            if [[ -e "$LINKLOC" ]]; then
+                ACTUAL="$(realpath "$LINKLOC")"
+                if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+                    echo >&2 "Bad bin symlink at: $LINKLOC -- actual[$ACTUAL] expected[$EXPECTED]"
+                fi
+            else
+                echo ln -s "$EXPECTED" "$LINKLOC"
+                if [[ -z "${DRYRUN:-}" ]]; then
+                    ln -s "$EXPECTED" "$LINKLOC"
+                fi
+            fi
+        done
+    fi
+done
+
+exit $EXIT_CODE
