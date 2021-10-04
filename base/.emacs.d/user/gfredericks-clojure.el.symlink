@@ -116,35 +116,60 @@
    (def --devnull-- (java.io.PrintWriter. (clojure.java.io/writer \"/dev/null\")))
 
    (let [res
-         (binding [*out* --devnull-- *err* --devnull--]
-           %s
-           )]
-     (clojure.pprint/pprint res))")
+         ;; TODO: maybe replace these with streams that re-print
+         ;; with a particular prefix? ugh I don't know how to do it
+         ;; though without making a rather tedious impl of Writer,
+         ;; which is maybe worth it
+         (binding [] #_[*out* --devnull-- *err* --devnull--]
+           (let [forms '(
+                         %s
+                         )
+                 last-val (->> forms (map eval) last)]
+             (with-open [sw (java.io.StringWriter.)]
+               (clojure.pprint/pprint last-val sw)
+               (.toString sw))))]
+     (print res)
+     (flush))")
+
+(defun parse-deps-from-body
+    (body)
+  (if (string= "{:deps" (substring body 0 6))
+      (letrec ((lines (split-string body "\n"))
+               (not-blank? (lambda (s) (not (string= s ""))))
+               (deps-lines (seq-take-while not-blank? lines))
+               (body-lines (seq-drop-while not-blank? lines)))
+        (cons (apply #'concat deps-lines)
+              (apply #'concat body-lines)))
+    (cons nil body)))
 
 (defun org-babel-execute:clojure (body params)
   "Execute a block of Clojure code with Babel."
-  (letrec ((result-type (alist-get :result-type params))
-           (input (if (eq result-type 'output)
-                      body
-                    (if (eq result-type 'value)
-                        (format clojure-print-value-template body)
-                      (error "bad result-type for eval-clojure"))))
-           (in-file (make-temp-file "org-babel-clojure-"))
-           (out-file (make-temp-file "org-babel-clojure-")))
-    (with-current-buffer (find-file in-file)
-      (insert input)
-      (let ((inhibit-message t))
-        (save-buffer))
-      (kill-buffer (current-buffer)))
-    (call-process "clojure"
-                  nil
-                  `(:file ,out-file)
-                  nil
-                  "-Srepro"
-                  in-file)
-    (delete-file in-file)
-    (let ((ret (with-temp-buffer
-                 (insert-file-contents out-file)
-                 (buffer-string))))
-      (delete-file out-file)
-      ret)))
+  (letrec ((deps+body (parse-deps-from-body body)))
+    (letrec ((deps (car deps+body))
+             (body (cdr deps+body))
+             (result-type (alist-get :result-type params))
+             (input (if (eq result-type 'output)
+                        body
+                      (if (eq result-type 'value)
+                          (format clojure-print-value-template body)
+                        (error "bad result-type for eval-clojure"))))
+             (in-file (make-temp-file "org-babel-clojure-"))
+             (out-file (make-temp-file "org-babel-clojure-")))
+      (with-current-buffer (find-file in-file)
+        (insert input)
+        (let ((inhibit-message t))
+          (save-buffer))
+        (kill-buffer (current-buffer)))
+      (call-process "clojure"
+                    nil
+                    `(:file ,out-file)
+                    nil
+                    "-Srepro"
+                    "-Sdeps" (or deps "")
+                    in-file)
+      (delete-file in-file)
+      (let ((ret (with-temp-buffer
+                   (insert-file-contents out-file)
+                   (buffer-string))))
+        (delete-file out-file)
+        ret))))

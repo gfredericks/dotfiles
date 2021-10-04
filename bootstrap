@@ -1,38 +1,21 @@
 #!/usr/bin/env bash
 
-SKIP_FILE=~/.skip-dotfiles-bootstrap
-
-# skip if we've done this in the last 12 hours
-if find "$SKIP_FILE" -mtime -12 2>/dev/null | grep -q -P '.*'; then
-  exit 0
+PROFILES_CACHE_FILE=~/.dotfiles-profiles
+X=("$@")
+EXPECTED="$(IFS=$'\n'; echo "${X[*]}"; )"
+if [[ -f "$PROFILES_CACHE_FILE" ]]; then
+    ACTUAL="$(cat "$PROFILES_CACHE_FILE")"
+    if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+       echo >&2 "Profiles cache file mismatch -- expected[$EXPECTED] actual[$ACTUAL]"
+       echo >&2 "Maybe rm $PROFILES_CACHE_FILE"
+       exit 1
+    fi
+else
+    echo "$EXPECTED" > "$PROFILES_CACHE_FILE"
 fi
 
-touch "$SKIP_FILE"
-
-for profile
-do
-  cd $profile
-
-  find . -name '*.symlink' -print0 | while read -d $'\0' dotslashfile
-  do
-    file="$(echo "${dotslashfile:2}")"
-    file_no_symlink="$(echo "${file::-8}")"
-    linkfile=$HOME/$file_no_symlink
-    linkto=$profile/$file
-    if [ -f $linkfile ] || [ -d $linkfile ] || [ -L $linkfile ]
-    then
-      existing="$(readlink $linkfile)"
-      if [ "$linkto" != "$existing" ]
-      then
-        echo "Warning! Existing dotfile is not the correct symlink: $linkfile"
-        echo "(Due to $linkto != $existing)"
-        rm -f $SKIP_FILE
-      fi
-    else
-      echo "Linking $linkfile to $linkto"
-      parent="$(dirname $linkfile)"
-      mkdir -p $parent &>/dev/null
-      ln -s $linkto $linkfile
-    fi
-  done
-done
+mkdir -p ~/bin
+SKIP_FILE=~/bin/.dotfiles-created
+if [[ ! -f $SKIP_FILE ]]; then
+    $(dirname "$0")/base/bin/create-dotfiles-symlinks.symlink && touch $SKIP_FILE
+fi

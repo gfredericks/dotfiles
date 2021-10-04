@@ -6,21 +6,10 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(smex adoc-mode yaml-mode clojure-mode real-auto-save workgroups window-numbering simple-httpd projectile paredit neotree multiple-cursors markdown-mode magit ivy idle-highlight-mode htmlize haskell-mode git-timemachine cider align-cljlet))
- '(safe-local-variable-values
-   '((lexical-variables . t)
-     (gfredericks-autoexport-beamer . t)
-     (cider-comment-postfix . "")
-     (cider-comment-continued-prefix . "")
-     (cider-comment-prefix . "")
-     (cider-comment-postfix "")
-     (cider-comment-continued-prefix "")
-     (cider-comment-prefix "")
-     (real-auto-save-interval . 1))))
+   '(dash-functional lsp-mode haskell-mode align-cljlet cider clojure-mode yaml-mode workgroups window-numbering smex real-auto-save projectile neotree multiple-cursors markdown-mode magit idle-highlight-mode htmlize git-timemachine)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(line-number ((t (:inherit (shadow default) :background "brightblack" :foreground "blue"))))
- '(org-agenda-dimmed-todo-face ((t (:foreground "brightmagenta")))))
+ )
