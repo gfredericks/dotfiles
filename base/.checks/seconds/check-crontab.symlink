@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+if [ -e ~/.crontab ]; then
+  diff ~/.crontab <(crontab -l) || echo 'crontab doesn'"'"'t match ~/.crontab!'
+  grep -q run-checks ~/.crontab || echo 'run-checks is missing from crontab!'
+else
+  echo 'No ~/.crontab file!'
+fi
