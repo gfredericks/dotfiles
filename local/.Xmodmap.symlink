@@ -42,4 +42,9 @@ add Control = Control_L
 ! keycode  18 = 9 parenleft
 ! keycode  19 = 0 parenright
 
-keycode 62 = Multi_key
+! sets right-shift to compose key
+! keycode 62 = Multi_key
+! sets right-alt to compose key; this shows up differently on
+! different keyboards/computers so I just set both of them
+keycode 105 = Multi_key
+keycode 108 = Multi_key
