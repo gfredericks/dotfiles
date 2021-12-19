@@ -240,6 +240,7 @@ mode "mouse" {
 
 bindsym $mod+m mode "mouse"
 
+bindsym $mod+Shift+f exec /bin/bash -c '$HOME/bin/fix-xrandr'
 
 # I'm using this on a lenovo laptop; what does it do? I can't remember
 # exec --no-startup-id /usr/lib/gnome-settings-daemon/gsd-xsettings
