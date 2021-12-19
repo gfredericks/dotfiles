@@ -126,7 +126,7 @@
 (global-set-key "\C-cb" 'bury-buffer)
 (global-set-key "\C-cg" 'magit-status)
 (global-set-key (kbd "C-c u u") 'insert-random-uuid)
-
+(global-set-key (kbd "C-c i") 'imenu)
 
 ;; JavaScript
 (setq js-indent-level 2)
