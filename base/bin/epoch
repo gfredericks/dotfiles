@@ -8,13 +8,16 @@ fi
 NUM="$1"
 if [[ "$NUM" -lt 1000000000000 ]]; then
     # seconds
+    echo "(interpreting as seconds)"
     date --date=@"$NUM" -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
     date --date=@"$NUM" +"%Y-%m-%dT%H:%M:%S.%3N[CHI]"
 elif [[ "$NUM" -lt 1000000000000000 ]]; then
     SECS=$($(which bc) -i <(echo scale=3) <<<"$NUM / 1000" | tail -n 1)
+    echo "(interpreting as milliseconds)"
     date --date=@"$SECS" -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
     date --date=@"$SECS" +"%Y-%m-%dT%H:%M:%S.%3N[CHI]"
 else
+    echo "(interpreting as nanoseconds)"
     SECS=$($(which bc) -i <(echo scale=3) <<<"$NUM / 1000000000" | tail -n 1)
     date --date=@"$SECS" -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
     date --date=@"$SECS" +"%Y-%m-%dT%H:%M:%S.%3N[CHI]"
