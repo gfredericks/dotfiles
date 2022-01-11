@@ -229,11 +229,24 @@
             "    "))
       "??? ")))
 
+(defun my-agenda-active-is-recent ()
+  (let ((scheduled (or (org-entry-get (point) "SCHEDULED")
+                     (org-entry-get (point) "TIMESTAMP_IA"))))
+    (if scheduled
+        (let* ((days-old
+               (- (string-to-number
+                   (format "%s" (org-time-stamp-to-now
+                                 scheduled))))))
+          (if (< 7 days-old)
+              "  "
+            "* "))
+      "  ")))
+
 (defvar my-agenda-backlog-prefix-format
   "%7e %-14:c %(my-agenda-backlog-prefix-age)")
 
 (defvar my-agenda-active-prefix-format
-  "%7e %-14:c")
+  "%7e %-14:c %(my-agenda-active-is-recent)")
 
 (defun my-agenda-compare-by-priority
     (entry-a entry-b)
