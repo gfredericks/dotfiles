@@ -185,3 +185,12 @@
 (defun flash-mode-line ()
   (invert-face 'mode-line)
   (run-with-timer 0.1 nil #'invert-face 'mode-line))
+
+
+;; set the window divider to a pipe
+(defun my-change-window-divider ()
+  (let ((display-table (or buffer-display-table standard-display-table)))
+    (set-display-table-slot display-table 5 ?┃)
+    (set-window-display-table (selected-window) display-table)))
+
+(add-hook 'window-configuration-change-hook 'my-change-window-divider)
