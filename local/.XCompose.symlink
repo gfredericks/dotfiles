@@ -1,3 +1,7 @@
+# Historically I've had a difficult time getting this to work.
+# Just now (2021-10-03), on ubuntu 18.04, I had no trouble after
+# just running gnome-tweaks and enabling the compose key.
+
 include "%L"   # import the default Compose file for your locale
 
 ##
