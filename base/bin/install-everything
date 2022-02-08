@@ -337,6 +337,27 @@ do
   fi
 
   ###
+  ### i3lock-color
+  ###
+
+  if [ "$1" == "all" -o "$1" == "i3lock-color" ]
+  then
+    sudo apt install autoconf gcc make pkg-config libpam0g-dev libcairo2-dev \
+         libfontconfig1-dev libxcb-composite0-dev libev-dev libx11-xcb-dev \
+         libxcb-xkb-dev libxcb-xinerama0-dev libxcb-randr0-dev libxcb-image0-dev \
+         libxcb-util-dev libxcb-xrm-dev libxkbcommon-dev libxkbcommon-x11-dev \
+         libjpeg-dev
+    BUILDDIR=$BUILDDIRBASE/i3lock-color
+    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+    REPODIR=$BUILDDIR/repo
+    git clone git@github.com:Raymo111/i3lock-color.git "$REPODIR"
+    cd "$REPODIR"
+    git checkout 380a10a90f0dee57f40105a0ac097ba52e8278da
+    ./build.sh
+    ln -s $REPODIR/build/i3lock ~/bin/i3lock-color
+  fi
+
+  ###
   ### extra stuff!
   ###
 
