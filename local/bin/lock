@@ -1,13 +1,46 @@
 #!/usr/bin/env bash
 
+# for slide shows i3lock-color should be installed as per
+# the install-everything script
+
+exec 2>/tmp/lock.err
+
 # I had x-suspender here as well but I don't think I saw evidence that
 # it ever worked; need to debug it
 
-xset dpms force off
+IMGS_FILE="$(mktemp)"
+
+trap "rm $IMGS_FILE" EXIT
+
+if $(which which i3lock-slideshow-images &> /dev/null); then
+    TOT="$(i3lock-slideshow-images | shuf -n 25 | tee "$IMGS_FILE" | wc -l)"
+else
+    TOT=0
+fi
+
 revert() {
   xset dpms 0 0 0
 }
-trap revert HUP INT TERM
-xset +dpms dpms 5 5 5
-i3lock -c 4d1404 -n
-revert
+
+if [[ "$TOT" -gt 0 ]]; then
+    echo >&2 "$(inst) starting convert"
+    mkdir -p /dev/shm/i3lock-imgs
+    rm -f /dev/shm/i3lock-imgs/*
+    MONITOR_HEIGHT="$(xdpyinfo | grep dimensions | grep -oP '(?<=x)\d+(?= pixels)')"
+    cat "$IMGS_FILE" | \
+        while read file; do
+            outfile="$(basename "$file").png"
+            convert "$file" -resize "x$MONITOR_HEIGHT" "/dev/shm/i3lock-imgs/$outfile"
+        done
+    echo >&2 "$(inst) finished convert"
+    i3lock-color \
+        -i /dev/shm/i3lock-imgs \
+        --slideshow-interval 60 \
+        -n
+else
+    xset dpms force off
+    trap revert HUP INT TERM
+    xset +dpms dpms 5 5 5
+    i3lock -c 4d1404 -n
+    revert
+fi
