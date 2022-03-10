@@ -127,3 +127,8 @@ include "%L"   # import the default Compose file for your locale
 <Multi_key> <g> <X> : "Χ"
 <Multi_key> <g> <Y> : "Ψ"
 <Multi_key> <g> <W> : "Ω"
+
+##
+## Misc
+##
+<Multi_key> <l> <l> : "л"
