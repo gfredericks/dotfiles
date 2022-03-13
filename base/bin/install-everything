@@ -206,6 +206,10 @@ do
                          12 \
                          ~/.install-everything/jdk-tarballs/jdk-12.0.1_linux-x64_bin.tar.gz \
                          9fd6dcdaf2cfca7da59e39b009a0f5bcd53bec2fb16105f7ca8d689cdab68d75)"
+      JAVA_17_BIN="$(install_java \
+                         17 \
+                         ~/.install-everything/jdk-tarballs/openjdk-17.0.2_linux-x64_bin.tar.gz \
+                         0022753d0cceecacdd3a795dd4cea2bd7ffdf9dc06e22ffd1be98411742fbb44)"
 
       rm -f ~/bin/jdk.bin
       ln -s $JAVA_11_BIN ~/bin/jdk.bin
