@@ -11,6 +11,14 @@
         (substring string 0 idx)
       string)))
 
+(defun gfredericks-remove-soe-indicator
+    (string)
+  (let ((idx (string-match "82c96d78-0893-4e3f-962d-91ae3a2fc3a5"
+                           string)))
+    (if idx
+        (substring string (+ idx 41))
+      string)))
+
 (defmacro gfredericks-org-babel-comint-with-output (meta &rest body)
   "Evaluate BODY in BUFFER and return process output.
 Will wait until EOE-INDICATOR appears in the output, then return
@@ -92,7 +100,9 @@ of the statements in BODY, if RESULT-TYPE equals `value' then
 return the value of the last statement in BODY."
   (let* ((shebang (cdr (assq :shebang params)))
 	       (results-params (cdr (assq :result-params params)))
-         (body (concat gfredericks-set-unique-prompts "\n"  body))
+         ;; adding the unique echo here lets us work around an issue with the first
+         ;; eval of a session where we'd otherwise get an initial "$ "
+         (body (concat gfredericks-set-unique-prompts "\necho 82c96d78-0893-4e3f-962d-91ae3a2fc3a5\n"  body))
 	       (value-is-exit-status
 	        (or (and
 	             (equal '("replace") results-params)
@@ -152,6 +162,7 @@ return the value of the last statement in BODY."
 	              (set-file-modes script-file #o755)
 	              (org-babel-eval script-file "")))
 	           (t (org-babel-eval shell-file-name (org-trim body))))))
+    (setq results (gfredericks-remove-soe-indicator results))
     (when value-is-exit-status
       (setq results (car (reverse (split-string results "\n" t)))))
     (when results
