@@ -16,7 +16,7 @@
   (let ((idx (string-match "82c96d78-0893-4e3f-962d-91ae3a2fc3a5"
                            string)))
     (if idx
-        (substring string (+ idx 41))
+        (substring string (+ idx 37))
       string)))
 
 (defmacro gfredericks-org-babel-comint-with-output (meta &rest body)
