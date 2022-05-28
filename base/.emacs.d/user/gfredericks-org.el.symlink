@@ -534,19 +534,26 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (insert "[")
   (forward-char 21))
 
+(defvar ubercapture-buffer "capture.org")
+(defvar ubercapture-level 2)
+
 (defun ubercapture
     (s props)
-  (with-current-buffer "capture.org"
-    (goto-char (point-max))
-    (if (not (= 10 (preceding-char)))
-        (insert "\n"))
-    (insert "** TODO (uc) " s)
-    (insert "\n   Created at ")
-    (insert-inactive-time-stamp)
-    (insert "\n")
-    (dolist (pair props)
-      (org-set-property (car pair) (cdr pair)))
-    (save-buffer)))
+  (with-current-buffer ubercapture-buffer
+    (save-excursion
+      (goto-char (point-max))
+      (if (not (= 10 (preceding-char)))
+          (insert "\n"))
+      (dotimes (_ ubercapture-level) (insert "*"))
+      (insert " TODO " s)
+      (insert "\n")
+      (dotimes (_ ubercapture-level) (insert " "))
+      (insert " Created at ")
+      (insert-inactive-time-stamp)
+      (insert "\n")
+      (dolist (pair props)
+        (org-set-property (car pair) (cdr pair)))
+      (save-buffer))))
 
 ;; Monkeypatch so that multi-digit priorities are matched; only
 ;; the regex is changed at the moment
