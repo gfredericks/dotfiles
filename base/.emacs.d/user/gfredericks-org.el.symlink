@@ -594,3 +594,57 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 
 ;; where does this even come from? I have no idea
 (org-babel-do-load-languages 'org-babel-load-languages '((shell . t)))
+
+(defun gfredericks-agenda-mode-refresh
+    ()
+  (interactive)
+  (if gfredericks-agenda-mode-refresh-file
+      (shell-command (format "touch %s" gfredericks-agenda-mode-refresh-file))
+      (message "gfredericks-agenda-mode-refresh-file is not set")))
+
+(defvar gfredericks-agenda-mode-refresh-file nil)
+
+(defun gfredericks-agenda-mode-follow-link
+    ()
+  (interactive)
+  (save-excursion
+    (end-of-line)
+    (backward-char)
+    (org-open-at-point)))
+
+(defun gfredericks-agenda-mode-org-todo
+    ()
+  (interactive)
+  (let ((w (selected-window))
+        (p (point))
+        (b nil))
+    (end-of-line)
+    (backward-char)
+    (org-open-at-point)
+    (org-todo)
+    (save-buffer)
+    (select-window w)
+    ;; why does doing (goto-char p) right here not work???
+    ;; (goto-char p)
+    (org-save-all-org-buffers)
+    (run-with-timer 1 nil (lambda (w p) (goto-char p)) w p)))
+
+(define-minor-mode gfredericks-agenda-mode
+  "okay"
+  nil
+  " gfragenda"
+  nil
+  ;; doing this is fucking up auto-revert-mode because it thinks the buffer
+  ;; has been modified
+  ;; (ansi-color-apply-on-region (point-min) (point-max))
+  (auto-revert-mode 1)
+  (read-only-mode 1))
+
+(define-key gfredericks-agenda-mode-map
+  (kbd "g") 'gfredericks-agenda-mode-refresh)
+(define-key gfredericks-agenda-mode-map
+  (kbd "TAB") 'gfredericks-agenda-mode-follow-link)
+(define-key gfredericks-agenda-mode-map
+  (kbd "C-c C-t") 'gfredericks-agenda-mode-org-todo)
+(define-key gfredericks-agenda-mode-map
+  (kbd "C-x C-s") 'org-save-all-org-buffers)
