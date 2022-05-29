@@ -633,18 +633,18 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   "okay"
   nil
   " gfragenda"
-  nil
+  (let ((km (make-sparse-keymap)))
+    (define-key km
+      (kbd "g") 'gfredericks-agenda-mode-refresh)
+    (define-key km
+      (kbd "TAB") 'gfredericks-agenda-mode-follow-link)
+    (define-key km
+      (kbd "C-c C-t") 'gfredericks-agenda-mode-org-todo)
+    (define-key km
+      (kbd "C-x C-s") 'org-save-all-org-buffers)
+    km)
   ;; doing this is fucking up auto-revert-mode because it thinks the buffer
   ;; has been modified
   ;; (ansi-color-apply-on-region (point-min) (point-max))
   (auto-revert-mode 1)
   (read-only-mode 1))
-
-(define-key gfredericks-agenda-mode-map
-  (kbd "g") 'gfredericks-agenda-mode-refresh)
-(define-key gfredericks-agenda-mode-map
-  (kbd "TAB") 'gfredericks-agenda-mode-follow-link)
-(define-key gfredericks-agenda-mode-map
-  (kbd "C-c C-t") 'gfredericks-agenda-mode-org-todo)
-(define-key gfredericks-agenda-mode-map
-  (kbd "C-x C-s") 'org-save-all-org-buffers)
