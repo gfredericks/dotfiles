@@ -12,7 +12,7 @@ IMGS_FILE="$(mktemp)"
 
 trap "rm $IMGS_FILE" EXIT
 
-if $(which which i3lock-slideshow-images &> /dev/null); then
+if which i3lock-slideshow-images &> /dev/null; then
     TOT="$(i3lock-slideshow-images | shuf -n 25 | tee "$IMGS_FILE" | wc -l)"
 else
     TOT=0
