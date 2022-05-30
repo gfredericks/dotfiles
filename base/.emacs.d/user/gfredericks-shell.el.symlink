@@ -1,0 +1,176 @@
+(provide 'gfredericks-shell)
+
+(setq gfredericks-shell-prompt-pattern
+      "ob-prompt-8160948f-PS[12] ")
+
+(defun gfredericks-remove-eoe-indicator
+    (string eoe-indicator)
+  (let ((idx (string-match (regexp-quote eoe-indicator)
+                           string)))
+    (if idx
+        (substring string 0 idx)
+      string)))
+
+(defun gfredericks-remove-soe-indicator
+    (string)
+  (let ((idx (string-match "82c96d78-0893-4e3f-962d-91ae3a2fc3a5"
+                           string)))
+    (if idx
+        (substring string (+ idx 37))
+      string)))
+
+(defmacro gfredericks-org-babel-comint-with-output (meta &rest body)
+  "Evaluate BODY in BUFFER and return process output.
+Will wait until EOE-INDICATOR appears in the output, then return
+all process output.  If REMOVE-ECHO and FULL-BODY are present and
+non-nil, then strip echo'd body from the returned output.  META
+should be a list containing the following where the last two
+elements are optional.
+
+ (BUFFER EOE-INDICATOR REMOVE-ECHO FULL-BODY)
+
+This macro ensures that the filter is removed in case of an error
+or user `keyboard-quit' during execution of body."
+  (declare (indent 1))
+  (let ((buffer (nth 0 meta))
+	      (eoe-indicator (nth 1 meta))
+	      (remove-echo (nth 2 meta))
+	      (full-body (nth 3 meta)))
+    `(org-babel-comint-in-buffer ,buffer
+       (let* ((string-buffer "")
+	            (comint-output-filter-functions
+	             (cons (lambda (text) (setq string-buffer (concat string-buffer text)))
+		                 comint-output-filter-functions))
+	            dangling-text)
+	       ;; got located, and save dangling text
+	       (goto-char (process-mark (get-buffer-process (current-buffer))))
+	       (let ((start (point))
+	             (end (point-max)))
+	         (setq dangling-text (buffer-substring start end))
+	         (delete-region start end))
+	       ;; pass FULL-BODY to process
+	       ,@body
+	       ;; wait for end-of-evaluation indicator
+	       (while (progn
+		              (goto-char comint-last-input-end)
+		              (not (save-excursion
+			                   (and (re-search-forward
+			                         (regexp-quote ,eoe-indicator) nil t)
+			                        (re-search-forward
+			                         comint-prompt-regexp nil t)))))
+	         (accept-process-output (get-buffer-process (current-buffer)))
+	         ;; thought the following this would allow async
+	         ;; background running, but I was wrong...
+	         ;; (run-with-timer .5 .5 'accept-process-output
+	         ;; 		 (get-buffer-process (current-buffer)))
+	         )
+	       ;; replace cut dangling text
+	       (goto-char (process-mark (get-buffer-process (current-buffer))))
+	       (insert dangling-text)
+
+	       ;; remove echo'd FULL-BODY from input
+	       (when (and ,remove-echo ,full-body
+		                (string-match
+		                 (replace-regexp-in-string
+		                  "\n" "[\r\n]+" (regexp-quote (or ,full-body "")))
+		                 string-buffer))
+	         (setq string-buffer (substring string-buffer (match-end 0))))
+	       (let ((ret (gfredericks-remove-eoe-indicator
+                     (replace-regexp-in-string gfredericks-shell-prompt-pattern "" string-buffer)
+                     ,eoe-indicator)))
+           (list ret "" ""))))))
+
+(defconst gfredericks-set-unique-prompts
+  (concat "PS1_BACKUP=\"$PS1\";"
+          "PS2_BACKUP=\"$PS2\";"
+          "PS1=\"ob-prompt\"\"-8160948f-PS1 \";"
+          "PS2=\"ob-prompt\"\"-8160948f-PS2 \";"))
+
+(defconst gfredericks-unset-unique-prompts
+  (concat "PS1=\"$PS1_BACKUP\";"
+          "PS2=\"$PS2_BACKUP\";"
+          "unset PS1_BACKUP;"
+          "unset PS2_BACKUP;"))
+
+
+(defun gfredericks-org-babel-sh-evaluate (session body &optional params stdin cmdline)
+  "Pass BODY to the Shell process in BUFFER.
+If RESULT-TYPE equals `output' then return a list of the outputs
+of the statements in BODY, if RESULT-TYPE equals `value' then
+return the value of the last statement in BODY."
+  (let* ((shebang (cdr (assq :shebang params)))
+	       (results-params (cdr (assq :result-params params)))
+         ;; adding the unique echo here lets us work around an issue with the first
+         ;; eval of a session where we'd otherwise get an initial "$ "
+         (body (concat gfredericks-set-unique-prompts "\necho 82c96d78-0893-4e3f-962d-91ae3a2fc3a5\n"  body))
+	       (value-is-exit-status
+	        (or (and
+	             (equal '("replace") results-params)
+	             (not org-babel-shell-results-defaults-to-output))
+	            (member "value" results-params)))
+	       (results
+	          (cond
+	           ((or stdin cmdline)       ; external shell script w/STDIN
+	            (let ((script-file (org-babel-temp-file "sh-script-"))
+		                (stdin-file (org-babel-temp-file "sh-stdin-"))
+		                (padline (not (string= "no" (cdr (assq :padline params))))))
+	              (with-temp-file script-file
+		              (when shebang (insert shebang "\n"))
+		              (when padline (insert "\n"))
+		              (insert body))
+	              (set-file-modes script-file #o755)
+	              (with-temp-file stdin-file (insert (or stdin "")))
+	              (with-temp-buffer
+		              (call-process-shell-command
+		               (concat (if shebang script-file
+			                       (format "%s %s" shell-file-name script-file))
+			                     (and cmdline (concat " " cmdline)))
+		               stdin-file
+		               (current-buffer))
+		              (buffer-string))))
+	           (session                   ; session evaluation
+	            (mapconcat
+	             #'org-babel-sh-strip-weird-long-prompt
+	             (mapcar
+	              #'org-trim
+	              (butlast
+	               (gfredericks-org-babel-comint-with-output
+		                 (session org-babel-sh-eoe-output t body)
+		               (dolist (line (append (split-string (org-trim body) "\n")
+				                                 (list (format "{ %s %s; %s; }"
+                                                       gfredericks-unset-unique-prompts
+                                                       org-babel-sh-eoe-indicator
+                                                       "echo 'ob-prompt-8160948f-PS1 '"))))
+		                 (insert line)
+		                 (comint-send-input nil t)
+		                 (while (save-excursion
+			                        (goto-char comint-last-input-end)
+			                        (not (re-search-forward gfredericks-shell-prompt-pattern nil t)))
+		                   (accept-process-output
+		                    (get-buffer-process (current-buffer))))))
+	               2))
+	             "\n"))
+	           ;; External shell script, with or without a predefined
+	           ;; shebang.
+	           ((org-string-nw-p shebang)
+	            (let ((script-file (org-babel-temp-file "sh-script-"))
+		                (padline (not (equal "no" (cdr (assq :padline params))))))
+	              (with-temp-file script-file
+		              (insert shebang "\n")
+		              (when padline (insert "\n"))
+		              (insert body))
+	              (set-file-modes script-file #o755)
+	              (org-babel-eval script-file "")))
+	           (t (org-babel-eval shell-file-name (org-trim body))))))
+    (setq results (gfredericks-remove-soe-indicator results))
+    (when value-is-exit-status
+      (setq results (car (reverse (split-string results "\n" t)))))
+    (when results
+      (let ((result-params (cdr (assq :result-params params))))
+        (org-babel-result-cond result-params
+          results
+          (let ((tmp-file (org-babel-temp-file "sh-")))
+            (with-temp-file tmp-file (insert results))
+            (org-babel-import-elisp-from-file tmp-file)))))))
+
+(advice-add 'org-babel-sh-evaluate :override #'gfredericks-org-babel-sh-evaluate)

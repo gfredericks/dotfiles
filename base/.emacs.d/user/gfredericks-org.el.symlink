@@ -245,8 +245,12 @@
 (defvar my-agenda-backlog-prefix-format
   "%7e %-14:c %(my-agenda-backlog-prefix-age)")
 
+;; not using the * marker for recent things anymore
+;; (defvar my-agenda-active-prefix-format
+;;   "%7e %-14:c %(my-agenda-active-is-recent)")
+
 (defvar my-agenda-active-prefix-format
-  "%7e %-14:c %(my-agenda-active-is-recent)")
+  "%7e %-14:c")
 
 (defun my-agenda-compare-by-priority
     (entry-a entry-b)
@@ -274,19 +278,14 @@
         alpha-up))
 
 (defun my-agenda-section-active-todos
-    (header min-priority)
+    (header &rest more-query)
   `(tags-todo
-    ,(concat "SCHEDULED<>{.+}+DEADLINE<>{.+}|"
-             ;; comment this out since deadlines should be
-             ;; in the upcoming deadlines section now
-             ;; "SCHEDULED<>{.+}+DEADLINE>\"<+7d>\"|"
-             "SCHEDULED<\"<now>\"+DEADLINE<>{.+}")
+    ,(concat "SCHEDULED<\"<now>\"+DEADLINE<>{.+}+PRIORITY=\"B\"" (car more-query))
     ((org-agenda-skip-function 'skip-unless-nil-or-in-priority-bounds)
      (org-agenda-prefix-format ,my-agenda-active-prefix-format)
      (org-agenda-sorting-strategy ',my-agenda-standard-sorting-strategy)
      (org-agenda-overriding-header ,header)
      (org-agenda-dim-blocked-tasks 'invisible)
-     (gfredericks-org-priority-bounds ',(cons min-priority nil))
      (org-agenda-cmp-user-defined
       'my-agenda-compare-by-priority))))
 
@@ -302,6 +301,29 @@
      ;; TODO: order by deadline?
      (org-agenda-cmp-user-defined
       'my-agenda-compare-by-priority))))
+
+(defun my-agenda-section-frontlog
+    (header min-priority)
+  `(tags-todo
+    "PRIORITY<>\"B\""
+    ((org-agenda-skip-function 'skip-unless-nil-or-in-priority-bounds)
+     (org-agenda-prefix-format ,my-agenda-active-prefix-format)
+     (org-agenda-sorting-strategy ',my-agenda-standard-sorting-strategy)
+     (org-agenda-overriding-header ,header)
+     (org-agenda-dim-blocked-tasks 'invisible)
+     (gfredericks-org-priority-bounds ',(cons min-priority nil))
+     (org-agenda-cmp-user-defined 'my-agenda-compare-by-priority))))
+
+(defun my-agenda-section-triage
+    (header)
+  `(tags-todo
+    ,(concat "SCHEDULED<>{.+}+DEADLINE<>{.+}+PRIORITY=\"B\"") ;; B is the default when no priority is set
+    ((org-agenda-skip-function 'skip-unless-nil-or-in-priority-bounds)
+     (org-agenda-prefix-format ,my-agenda-active-prefix-format)
+     (org-agenda-sorting-strategy ',my-agenda-standard-sorting-strategy)
+     (org-agenda-overriding-header ,header)
+     (org-agenda-dim-blocked-tasks 'invisible)
+     (org-agenda-cmp-user-defined 'my-agenda-compare-by-priority))))
 
 (defun my-agenda-section-backlog
     (header max-priority)
@@ -512,19 +534,26 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (insert "[")
   (forward-char 21))
 
+(defvar ubercapture-buffer "capture.org")
+(defvar ubercapture-level 2)
+
 (defun ubercapture
     (s props)
-  (with-current-buffer "capture.org"
-    (goto-char (point-max))
-    (if (not (= 10 (preceding-char)))
-        (insert "\n"))
-    (insert "** TODO (uc) " s)
-    (insert "\n   Created at ")
-    (insert-inactive-time-stamp)
-    (insert "\n")
-    (dolist (pair props)
-      (org-set-property (car pair) (cdr pair)))
-    (save-buffer)))
+  (with-current-buffer ubercapture-buffer
+    (save-excursion
+      (goto-char (point-max))
+      (if (not (= 10 (preceding-char)))
+          (insert "\n"))
+      (dotimes (_ ubercapture-level) (insert "*"))
+      (insert " TODO " s)
+      (insert "\n")
+      (dotimes (_ ubercapture-level) (insert " "))
+      (insert " Created at ")
+      (insert-inactive-time-stamp)
+      (insert "\n")
+      (dolist (pair props)
+        (org-set-property (car pair) (cdr pair)))
+      (save-buffer))))
 
 ;; Monkeypatch so that multi-digit priorities are matched; only
 ;; the regex is changed at the moment
@@ -565,3 +594,73 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 
 ;; where does this even come from? I have no idea
 (org-babel-do-load-languages 'org-babel-load-languages '((shell . t)))
+
+(defun gfredericks-agenda-mode-refresh
+    ()
+  (interactive)
+  (if gfredericks-agenda-mode-refresh-file
+      (shell-command (format "touch %s" gfredericks-agenda-mode-refresh-file))
+      (message "gfredericks-agenda-mode-refresh-file is not set")))
+
+(defvar gfredericks-agenda-mode-refresh-file nil)
+
+(defun gfredericks-agenda-mode-follow-link
+    ()
+  (interactive)
+  (save-excursion
+    (end-of-line)
+    (backward-char)
+    (org-open-at-point)))
+
+(defun gfredericks-agenda-mode-org-todo
+    ()
+  (interactive)
+  (let ((w (selected-window))
+        (p (point))
+        (b nil))
+    (end-of-line)
+    (backward-char)
+    (org-open-at-point)
+    (org-todo)
+    (save-buffer)
+    (select-window w)
+    ;; why does doing (goto-char p) right here not work???
+    ;; (goto-char p)
+    (org-save-all-org-buffers)
+    (run-with-timer 1 nil (lambda (w p) (goto-char p)) w p)))
+
+(defun gfredericks-agenda-mode-org-set-effort
+    ()
+  (interactive)
+  (save-excursion
+    (end-of-line)
+    (backward-char)
+    (org-open-at-point)
+    (org-set-effort)))
+
+(defun gfredericks-schedule-random-time
+    ()
+  (interactive)
+  (org-schedule (format "+%dd" (+ 7 (mod (random) 100)))))
+
+(define-minor-mode gfredericks-agenda-mode
+  "okay"
+  nil
+  " gfragenda"
+  (let ((km (make-sparse-keymap)))
+    (define-key km
+      (kbd "g") 'gfredericks-agenda-mode-refresh)
+    (define-key km
+      (kbd "TAB") 'gfredericks-agenda-mode-follow-link)
+    (define-key km
+      (kbd "C-c C-t") 'gfredericks-agenda-mode-org-todo)
+    (define-key km
+      (kbd "C-x C-s") 'org-save-all-org-buffers)
+    (define-key km
+      (kbd "C-c C-x e") 'gfredericks-agenda-mode-org-set-effort)
+    km)
+  ;; doing this is fucking up auto-revert-mode because it thinks the buffer
+  ;; has been modified
+  ;; (ansi-color-apply-on-region (point-min) (point-max))
+  (auto-revert-mode 1)
+  (read-only-mode 1))
