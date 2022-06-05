@@ -638,10 +638,28 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
     (org-open-at-point)
     (org-set-effort)))
 
+(defun gfredericks-agenda-switch-to
+    ()
+  (interactive)
+  (let ((b nil)
+        (p nil))
+    (if (save-excursion
+          (save-window-excursion
+            (end-of-line)
+            (backward-char)
+            (org-in-regexp org-link-bracket-re)
+            (org-link-open-from-string (match-string 0) t)
+            (setq b (current-buffer))
+            (setq p (point))))
+        (progn
+          (pop-to-buffer-same-window b)
+          (goto-char p))
+      (message "Nothing there"))))
+
 (defun gfredericks-schedule-random-time
     ()
   (interactive)
-  (org-schedule (format "+%dd" (+ 7 (mod (random) 100)))))
+  (org-schedule nil (format "+%dd" (+ 7 (mod (random) 100)))))
 
 (define-minor-mode gfredericks-agenda-mode
   "okay"
@@ -658,6 +676,8 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
       (kbd "C-x C-s") 'org-save-all-org-buffers)
     (define-key km
       (kbd "C-c C-x e") 'gfredericks-agenda-mode-org-set-effort)
+    (define-key km
+      (kbd "RET") 'gfredericks-agenda-switch-to)
     km)
   ;; doing this is fucking up auto-revert-mode because it thinks the buffer
   ;; has been modified
