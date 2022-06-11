@@ -403,7 +403,10 @@
                                                   t1)
                                                 (if (or (:todo item) (:done item))
                                                   (format-todo item)
-                                                  (:header item))))))))]
+                                                  (:header item))
+                                                ;; once we figure out enough elisp to stop using links this
+                                                ;; can just be implicit
+                                                (make-org-link item "(link)")))))))]
     (with-atomic-write-to cfg
       (when preamble
         (println preamble))
