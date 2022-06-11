@@ -327,6 +327,7 @@
   [events]
   (let [durations (for [event events
                         :when (not (all-day? event))
+                        :when (not (= "t" (get (:properties event) "NO_DURATION")))
                         :let [[t1 t2] (timetable-slot event)]]
                     (if t2
                       (Duration/ofSeconds (- (.toSecondOfDay (.toLocalTime t2))
@@ -392,7 +393,8 @@
                                       (let [past? (compare/< (.atZone (or t2 t1) CHICAGO) now)
                                             t1 (.toLocalTime t1)
                                             t2 (some-> t2 .toLocalTime)]
-                                        (printf "       %s%s: %s\n"
+                                        (printf "      %s%s%s: %s %s\n"
+                                                (if (= "t" (get (:properties item) "NO_DURATION")) "*" " ")
                                                 (if past? "# " "")
                                                 (if t2
                                                   (if (all-day? item)
