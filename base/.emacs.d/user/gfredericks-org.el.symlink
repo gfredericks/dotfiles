@@ -629,22 +629,58 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
     (org-save-all-org-buffers)
     (run-with-timer 1 nil (lambda (w p) (goto-char p)) w p)))
 
+(defun gfredericks-agenda-mode-org-set-effort
+    ()
+  (interactive)
+  (save-excursion
+    (end-of-line)
+    (backward-char)
+    (org-open-at-point)
+    (org-set-effort)))
+
+(defun gfredericks-agenda-switch-to
+    ()
+  (interactive)
+  (let ((b nil)
+        (p nil))
+    (if (save-excursion
+          (save-window-excursion
+            (end-of-line)
+            (backward-char)
+            (org-in-regexp org-link-bracket-re)
+            (org-link-open-from-string (match-string 0) t)
+            (setq b (current-buffer))
+            (setq p (point))))
+        (progn
+          (pop-to-buffer-same-window b)
+          (goto-char p))
+      (message "Nothing there"))))
+
+(defun gfredericks-schedule-random-time
+    ()
+  (interactive)
+  (org-schedule nil (format "+%dd" (+ 7 (mod (random) 100)))))
+
 (define-minor-mode gfredericks-agenda-mode
   "okay"
   nil
   " gfragenda"
-  nil
+  (let ((km (make-sparse-keymap)))
+    (define-key km
+      (kbd "g") 'gfredericks-agenda-mode-refresh)
+    (define-key km
+      (kbd "TAB") 'gfredericks-agenda-mode-follow-link)
+    (define-key km
+      (kbd "C-c C-t") 'gfredericks-agenda-mode-org-todo)
+    (define-key km
+      (kbd "C-x C-s") 'org-save-all-org-buffers)
+    (define-key km
+      (kbd "C-c C-x e") 'gfredericks-agenda-mode-org-set-effort)
+    (define-key km
+      (kbd "RET") 'gfredericks-agenda-switch-to)
+    km)
   ;; doing this is fucking up auto-revert-mode because it thinks the buffer
   ;; has been modified
   ;; (ansi-color-apply-on-region (point-min) (point-max))
   (auto-revert-mode 1)
   (read-only-mode 1))
-
-(define-key gfredericks-agenda-mode-map
-  (kbd "g") 'gfredericks-agenda-mode-refresh)
-(define-key gfredericks-agenda-mode-map
-  (kbd "TAB") 'gfredericks-agenda-mode-follow-link)
-(define-key gfredericks-agenda-mode-map
-  (kbd "C-c C-t") 'gfredericks-agenda-mode-org-todo)
-(define-key gfredericks-agenda-mode-map
-  (kbd "C-x C-s") 'org-save-all-org-buffers)

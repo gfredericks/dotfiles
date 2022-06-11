@@ -12,7 +12,7 @@ IMGS_FILE="$(mktemp)"
 
 trap "rm $IMGS_FILE" EXIT
 
-if $(which which i3lock-slideshow-images &> /dev/null); then
+if which i3lock-slideshow-images &> /dev/null; then
     TOT="$(i3lock-slideshow-images | shuf -n 25 | tee "$IMGS_FILE" | wc -l)"
 else
     TOT=0
@@ -36,6 +36,7 @@ if [[ "$TOT" -gt 0 ]]; then
     i3lock-color \
         -i /dev/shm/i3lock-imgs \
         --slideshow-interval 60 \
+        -c 000000 \
         -n
 else
     xset dpms force off
