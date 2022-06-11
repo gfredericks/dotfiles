@@ -267,7 +267,7 @@
                          (if (and deadline (compare/<= (to-local-date deadline) today))
                            {:deadlines #{item}}
                            (if-let [d (relevant-date item)]
-                             (if-not (compare/<= today+10 d)
+                             (if-not (compare/< today+10 d)
                                {(compare/max today d) #{item}})
                              {:triage #{item}}))))
                  (apply merge-with into))
