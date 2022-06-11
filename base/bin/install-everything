@@ -290,12 +290,11 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/clojure
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://download.clojure.org/install/clojure-tools-1.9.0.381.tar.gz
-    echo 'f1266ba95784e594bb9b643258b417ef03b0e24b995ddb3a7514ae6daa7458a1  clojure-tools-1.9.0.381.tar.gz' | \
+    wget https://download.clojure.org/install/linux-install-1.11.1.1119.sh
+    echo 'a395b63decedce98f0cb41d36c543dbef57b9f2638213e111f2e5a88335e695d  linux-install-1.11.1.1119.sh' | \
         sha256sum -c
-    tar xzf clojure-tools-1.9.0.381.tar.gz
-    cd clojure-tools
-    ./install.sh $BUILDDIR
+    chmod +x linux-install-1.11.1.1119.sh
+    ./linux-install-1.11.1.1119.sh -p $BUILDDIR
     cd -
     BIN=$BUILDDIR/bin
     rm -f ~/bin/clojure.bin
