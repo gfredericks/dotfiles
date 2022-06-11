@@ -2,8 +2,12 @@
   "Generic syncing logic."
   (:refer-clojure :exclude [merge])
   (:require
+   [clojure.java.io :as io]
+   [clojure.tools.logging :as log]
    [com.gfredericks.org-editor :as org])
-  (:import (java.time ZonedDateTime ZoneId)))
+  (:import
+   (java.io File)
+   (java.time ZonedDateTime ZoneId)))
 
 ;; Add this to top:
 
@@ -27,7 +31,7 @@
   [time-zone category sections]
   {::org/prelude
    (filterv identity
-            ["-*- eval: (auto-revert-mode 1); eval: (real-auto-save-mode 1); real-auto-save-interval: 1 -*-"
+            ["-*- eval: (auto-revert-mode 1); eval: (real-auto-save-mode 1); real-auto-save-interval: 15 -*-"
              (when category (str "#+CATEGORY: " category))
              ""
              "This file is generated automatically; edits may not be preserved."
@@ -145,3 +149,27 @@
                   (wrap-in-archive-file-prelude time-zone category
                                                 (concat (::org/sections deleted)
                                                         new-deleted-entries)))})))
+
+(defmacro ^:private with-atomic-write
+  [[binding filename] & body]
+  `(let [filename# ~filename
+         tmp# (File. (str filename# ".tmp"))]
+     (with-open [~binding (io/writer tmp#)]
+       ~@body)
+     (or (.renameTo tmp# (File. filename#))
+         (throw (ex-info "Failed to rename file in atomic write!" {:filename filename#})))))
+
+(defn do-update
+  [live-file archive-file deleted-file new-entries merge-opts]
+  (let [read-file #(with-open [r (io/reader %)] (org/parse-file r))
+        write-file (fn [f content]
+                     (log/info "Writing to %s" f)
+                     (with-atomic-write [w f]
+                       (org/write-file w content)))
+        {:keys [live archive deleted]} (merge {:live    (read-file live-file)
+                                               :archive (read-file archive-file)
+                                               :deleted (read-file deleted-file)}
+                                              new-entries merge-opts)]
+    (when live (write-file live-file live))
+    (when archive (write-file archive-file archive))
+    (when deleted (write-file deleted-file deleted))))
