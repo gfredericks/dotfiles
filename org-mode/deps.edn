@@ -1,0 +1,15 @@
+{:deps
+ {org.clojure/tools.logging               {:mvn/version "0.4.1"}
+  com.gfredericks/compare                 {:mvn/version "0.1.3"}
+  com.gfredericks/org-editor              {:mvn/version "0.1.4"}
+  juxt/dirwatch                           {:mvn/version "0.2.5"}
+  me.raynes/fs                            {:mvn/version "1.4.4"}
+  org.clojure/clojure                     {:mvn/version "1.11.1"}}
+ :paths ["src" "resources"]
+ :aliases {:lean {:jvm-opts ["-Xmx300m"]}
+           :gc-logging {:jvm-opts ["-Xlog:gc=info:file=log/gc.log:none:filecount=3,filesize=1024K"]}
+           :test {:extra-paths ["test"]
+                  :extra-deps {io.github.cognitect-labs/test-runner
+                               {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
+                  :main-opts ["-m" "cognitect.test-runner"]
+                  :exec-fn cognitect.test-runner.api/test}}}
