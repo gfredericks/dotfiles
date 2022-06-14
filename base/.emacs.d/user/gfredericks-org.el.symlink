@@ -661,7 +661,43 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 (defun gfredericks-schedule-random-time
     ()
   (interactive)
-  (org-schedule nil (format "+%dd" (+ 7 (mod (random) 100)))))
+  (org-schedule nil (format "+%dd" (+ 15 (mod (random) 30)))))
+
+(defun gfredericks-agenda-mode-find-today
+    ()
+  (interactive)
+  (beginning-of-buffer)
+  (re-search-forward "^== TODAY")
+  (setq current-prefix-arg 1)
+  (call-interactively 'recenter-top-bottom))
+
+(defun gfredericks-agenda-mode-find-future
+    ()
+  (interactive)
+  (beginning-of-buffer)
+  (re-search-forward "   future   ")
+  (setq current-prefix-arg 1)
+  (call-interactively 'recenter-top-bottom))
+
+(defun gfredericks-agenda-mode-find-past
+    ()
+  (interactive)
+  (beginning-of-buffer)
+  (re-search-forward "   past   ")
+  (setq current-prefix-arg 1)
+  (call-interactively 'recenter-top-bottom))
+
+(defun gfredericks-agenda-mode-previous-section
+    ()
+  (interactive)
+  (re-search-backward "^=="))
+
+(defun gfredericks-agenda-mode-next-section
+    ()
+  (interactive)
+  (re-search-forward "^==")
+  (setq current-prefix-arg 1)
+  (call-interactively 'recenter-top-bottom))
 
 (define-minor-mode gfredericks-agenda-mode
   "okay"
@@ -680,6 +716,17 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
       (kbd "C-c C-x e") 'gfredericks-agenda-mode-org-set-effort)
     (define-key km
       (kbd "RET") 'gfredericks-agenda-switch-to)
+    (define-key km
+      (kbd "t") 'gfredericks-agenda-mode-find-today)
+    (define-key km
+      (kbd "f") 'gfredericks-agenda-mode-find-future)
+    (define-key km
+      (kbd "p") 'gfredericks-agenda-mode-find-past)
+    (define-key km
+      (kbd "C-c C-p") 'gfredericks-agenda-mode-previous-section)
+    (define-key km
+      (kbd "C-c C-n") 'gfredericks-agenda-mode-next-section)
+
     km)
   ;; doing this is fucking up auto-revert-mode because it thinks the buffer
   ;; has been modified
