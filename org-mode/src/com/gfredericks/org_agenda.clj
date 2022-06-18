@@ -205,15 +205,22 @@
                                                                    (count all-dates)
                                                                    %)))))))
 
+                ;; TODO: this (rep) prefix breaks links
                 scheduled-repeater?
                 (->> (apply-repeater (:repeater scheduled) (:base scheduled) today max-repeater-date)
-                     (map #(assoc base
-                                  :scheduled %
-                                  :header (str "(rep) " (:header base)))))
+                     (map-indexed (fn [idx scheduled]
+                                    (-> base
+                                        (assoc :scheduled scheduled)
+                                        (cond-> (pos? idx)
+                                          (update :header #(str "(rep) " %)))))))
 
                 deadline-repeater?
                 (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
-                     (map #(assoc base :deadline %)))
+                     (map-indexed (fn [idx deadline]
+                                    (-> base
+                                        (assoc :deadline deadline)
+                                        (cond-> (pos? idx)
+                                          (update :header #(str "(rep) " %)))))))
 
                 :else [base])))
       (catch Exception e
