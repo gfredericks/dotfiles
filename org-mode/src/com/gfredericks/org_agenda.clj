@@ -413,7 +413,7 @@
       (when (seq deadlines)
         (println "== DEADLINES ==")
         (println "(TODO: show upcoming deadlines based on the -0d cookie)")
-        (doseq [item (sort-by (juxt :created-at :file :line) deadlines)]
+        (doseq [item (sort-by (juxt :created-at :file :line-number) deadlines)]
           (print-todo-line item {}))
         (println))
       (when (seq triage)
