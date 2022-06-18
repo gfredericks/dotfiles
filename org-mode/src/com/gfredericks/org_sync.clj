@@ -63,11 +63,15 @@
     new-file))
 
 (defn merge
-  "First arg is a map of :live, :archive, :deleted, each being
-  a parsed org file.
+  "First arg is a map of :live, :archive, and optionally :deleted,
+  each being a parsed org file.
 
   Returns an updated version of the first arg, but where the values
   can be nil if the contents haven't changed.
+
+  If the :deleted key is present, then entries in :live that are
+  missing from new-entries will be moved to deleted, otherwise they
+  are maintained in :live.
 
   new-entries is a list of org entries, and opts is a map
   containing:
@@ -121,7 +125,9 @@
                                                         (filter #(< 1 (val %)))
                                                         (first))})))
     (let [[retained-entries new-deleted-entries]
-          ((juxt filter remove) (comp new-entries-by-id id-fn) all-entries)
+          (if deleted
+            ((juxt filter remove) (comp new-entries-by-id id-fn) all-entries)
+            [all-entries []])
 
           retained-entries-by-id (->> retained-entries
                                       (map (juxt id-fn identity))
@@ -143,12 +149,15 @@
                                          (filter archive?)
                                          (sort-by sort-key)
                                          (wrap-in-archive-file-prelude time-zone category))]
-      {:live    (nil-if-equivalent new-live-file-contents live)
-       :archive (nil-if-equivalent new-archive-file-contents archive)
-       :deleted (when (seq new-deleted-entries)
-                  (wrap-in-archive-file-prelude time-zone category
-                                                (concat (::org/sections deleted)
-                                                        new-deleted-entries)))})))
+      (cond->
+          {:live    (nil-if-equivalent new-live-file-contents live)
+           :archive (nil-if-equivalent new-archive-file-contents archive)}
+        deleted
+        (assoc :deleted
+                 (when (seq new-deleted-entries)
+                   (wrap-in-archive-file-prelude time-zone category
+                                                 (concat (::org/sections deleted)
+                                                         new-deleted-entries))))))))
 
 (defmacro ^:private with-atomic-write
   [[binding filename] & body]
@@ -166,9 +175,10 @@
                      (log/info "Writing to %s" f)
                      (with-atomic-write [w f]
                        (org/write-file w content)))
-        {:keys [live archive deleted]} (merge {:live    (read-file live-file)
-                                               :archive (read-file archive-file)
-                                               :deleted (read-file deleted-file)}
+        {:keys [live archive deleted]} (merge (cond-> {:live    (read-file live-file)
+                                                       :archive (read-file archive-file)}
+                                                deleted-file
+                                                (assoc :deleted (read-file deleted-file)))
                                               new-entries merge-opts)]
     (when live (write-file live-file live))
     (when archive (write-file archive-file archive))
