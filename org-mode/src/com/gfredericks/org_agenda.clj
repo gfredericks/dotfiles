@@ -350,22 +350,26 @@
 (defmacro with-atomic-write-to
   [cfg & body]
   `(let [cfg# ~cfg
+         tmp-file# (File/createTempFile "org-agenda-" ".tmp")
          out-file# (:agenda-file cfg#)]
-     (with-open [w# (io/writer "/tmp/w")
-                 pw# (java.io.PrintWriter. w#)]
-       (binding [*out* pw#]
-         (println (format "Written at %s" (java.time.Instant/now)))
-         (println)
-         ~@body
-         (print "\n\n")
-         (println (apply str (repeat 80 \;)))
-         (println ";; Postamble\n")
-         (println ";; Local Variables:")
-         (println ";; eval: (gfredericks-agenda-mode 1)")
-         (if-let [rf# (:refresh-file cfg#)]
-           (printf ";; gfredericks-agenda-mode-refresh-file: \"%s\"\n" rf#))
-         (println ";; End:"))
-       (clojure.java.shell/sh "mv" "/tmp/w" (str out-file#)))))
+     (try
+       (with-open [w# (io/writer tmp-file#)
+                   pw# (java.io.PrintWriter. w#)]
+         (binding [*out* pw#]
+           (println (format "Written at %s" (java.time.Instant/now)))
+           (println)
+           ~@body
+           (print "\n\n")
+           (println (apply str (repeat 80 \;)))
+           (println ";; Postamble\n")
+           (println ";; Local Variables:")
+           (println ";; eval: (gfredericks-agenda-mode 1)")
+           (if-let [rf# (:refresh-file cfg#)]
+             (printf ";; gfredericks-agenda-mode-refresh-file: \"%s\"\n" rf#))
+           (println ";; End:"))
+         (clojure.java.shell/sh "mv" (str tmp-file#) (str out-file#)))
+       (finally
+         (.delete tmp-file#)))))
 
 (defn write-to-agenda-file
   [deets-by-file {:keys [preamble] :as cfg}]
