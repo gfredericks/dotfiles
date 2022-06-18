@@ -9,7 +9,9 @@
 
 (require 'clojure-mode)
 (require 'cider)
-(require 'align-cljlet)
+;; This causes an error on startup; maybe time to replace it
+;; with something else?
+;; (require 'align-cljlet)
 (require 'paredit)
 
 
