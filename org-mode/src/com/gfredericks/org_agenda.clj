@@ -155,6 +155,15 @@
                                                              %)))))))
           [base])))))
 
+(defn priority
+  "Returns a long, where a higher number corresponds to higher priority."
+  [item]
+  (case (:priority-cookie item)
+    nil 5
+    "[#A]" 10
+    "[#B]" 4
+    "[#C]" 1))
+
 (defn to-local-date
   [x]
   (cond-> x (not (instance? LocalDate x)) .toLocalDate))
@@ -413,12 +422,12 @@
       (when (seq deadlines)
         (println "== DEADLINES ==")
         (println "(TODO: show upcoming deadlines based on the -0d cookie)")
-        (doseq [item (sort-by (juxt :created-at :file :line-number) deadlines)]
+        (doseq [item (sort-by (juxt (comp - priority) :created-at :file :line-number) deadlines)]
           (print-todo-line item {}))
         (println))
       (when (seq triage)
         (println "== TRIAGE ==")
-        (doseq [item (sort-by (juxt :created-at :file :line) triage)]
+        (doseq [item (sort-by (juxt (comp - priority) :created-at :file :line) triage)]
           (print-todo-line item {}))
         (println))
       (let [stats-by-date
@@ -457,7 +466,7 @@
           ;; TODO: we shouldn't be putting things in the calendar if they're
           ;; scheduled in the past...
           (->> todos
-               (sort-by (juxt relevant-date :file :line))
+               (sort-by (juxt (comp - priority) relevant-date :file :line))
                (run! (fn [item] (print-todo-line item {}))))
           (when (= date today)
             (println "\n\n--------------------------------------------------------------------------------")
