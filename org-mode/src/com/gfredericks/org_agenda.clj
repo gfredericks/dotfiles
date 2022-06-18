@@ -378,7 +378,9 @@
         {:keys [triage deadlines by-day past-log]} (synthesize-agenda deets-by-file)
         format-todo (fn [{:keys [done todo priority-cookie header] :as item}]
                       (format "%s%s %s"
-                              (or done todo)
+                              (cond-> (or done todo)
+                                (= "[#C]" priority-cookie)
+                                (->> .toLowerCase (format "(%s)")))
                               (if priority-cookie
                                 (str " " priority-cookie)
                                 "")
@@ -387,7 +389,7 @@
                                 (make-org-link item header))))
         print-todo-line (fn [{:keys [effort properties] :as item}
                              {:keys [omit-effort?]}]
-                          (println (format "-%s %s"
+                          (println (format "-%s %s%s"
                                            (if omit-effort?
                                              ""
                                              (str " "
@@ -396,6 +398,9 @@
                                                     (if (= "t" (get properties "EFFORT_EXEMPT"))
                                                       "    "
                                                       "?:??"))))
+                                           (if (= 1 (priority item))
+                                             "  "
+                                             "")
                                            (format-todo item))))
         print-calendar (fn [items]
                          (->> items
