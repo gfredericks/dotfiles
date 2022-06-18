@@ -2,6 +2,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.pprint :refer [print-table]]
+   [clojure.stacktrace :refer [print-stack-trace]]
    [clojure.string :as string]
    [clojure.tools.logging :as log]
    [com.gfredericks.compare :as compare]
@@ -17,7 +18,7 @@
 (def CHICAGO (ZoneId/of "America/Chicago"))
 
 (def org-timestamp-regex
-  #"[<\[]([-\d]{10})(?: \w{3})?(?: (\d\d:\d\d)(?:-(\d\d:\d\d))?)?( [^>\]]*?)?[>\]]")
+  #"[<\[]([-\d]{10})(?: \w{3})?(?: (\d\d:\d\d)(?:-(\d\d:\d\d))?)?(?: (\+|\+\+|\.\+)(\d+)([ymwdh]))?( [^>\]]*?)?[>\]]")
 
 (def TODO-states #{"TODO" "BLOCKED" "DONE"})
 (def DONE-states #{"DONE"})
@@ -36,6 +37,10 @@
   [s]
   (let [[_ d t] (re-matches org-timestamp-regex s)]
     (LocalDateTime/of (LocalDate/parse d) (LocalTime/parse t))))
+
+(defn to-local-date
+  [x]
+  (cond-> x (not (instance? LocalDate x)) .toLocalDate))
 
 (defn format-effort
   [^Duration duration]
@@ -68,92 +73,165 @@
              (filter ::org/header)
              (map #(assoc % ::org/line-number (::org/line-number (meta %))))))))
 
+(defn timestamp-finder
+  [context-regex-format-string]
+  (let [pattern (re-pattern (format context-regex-format-string org-timestamp-regex))]
+    (fn [line]
+      (let [[_ date time time-end r-type r-num r-unit] (re-matches pattern line)
+            base (if time
+                   (let [t1 (LocalDateTime/parse (str date "T" time))]
+                     (if time-end
+                       (let [t2 (LocalDateTime/parse (str date "T" time-end))]
+                         [t1 t2])
+                       t1))
+                   (if date
+                     (LocalDate/parse date)))]
+        (if r-type
+          {:repeater [r-type (Long/parseLong r-num) r-unit]
+           :base base}
+          base)))))
+
+(defn apply-repeater
+  [[r-type r-num r-unit] base today max-date]
+  (when (vector? base)
+    ;; do I actually use this?
+    (throw (ex-info "TODO implement combo of time ranges and repeaters" {})))
+  (let [bump (case r-unit
+               ;; would take a bit of effort to eliminate the
+               ;; reflection here
+               "d" #(.plusDays % r-num)
+               "w" #(.plusWeeks % r-num)
+               "m" #(.plusMonths % r-num)
+               "y" #(.plusYears % r-num))
+        next (case r-type
+               "+" (bump base)
+               "++" (->> (iterate bump base)
+                         (drop-while #(compare/<= (to-local-date %) today))
+                         (first))
+               ".+" (bump (if (instance? LocalDateTime base)
+                            (LocalDateTime/of today (.toLocalTime base))
+                            today)))]
+    (cons base
+          (->> (iterate bump next)
+               (take-while #(compare/<= (to-local-date %) max-date))))))
+
 (defn remove-tags
   [header]
   (second (re-matches header-with-tags-regex header)))
 
-(let [scheduled-pattern
-      (re-pattern (str "\\s*SCHEDULED: " org-timestamp-regex))
-      deadline-pattern
-      (re-pattern (str "\\s*DEADLINE: " org-timestamp-regex))
-      closed-pattern
-      (re-pattern (str "\\s*CLOSED: " org-timestamp-regex ".*"))
-      created-at-pattern
-      (re-pattern (str "\\s*Created at " org-timestamp-regex))
-      agenda-timestamp-pattern
-      (re-pattern (str ".*(?=<)" org-timestamp-regex "(?<=>).*"))
+(let [scheduled-finder         (timestamp-finder "\\s*SCHEDULED: %s")
+      deadline-finder          (timestamp-finder "\\s*DEADLINE: %s")
+      closed-finder            (timestamp-finder "\\s*CLOSED: %s.*")
+      created-at-finder        (timestamp-finder "\\s*Created at %s")
+      agenda-timestamp-finder  (timestamp-finder ".*(?<!(?:SCHEDULED|DEADLINE): )(?=<)%s(?<=>).*")
+
       agenda-date-range-pattern
       #"<(\d{4}-\d\d-\d\d)(?: \w\w\w)?>--<(\d{4}-\d\d-\d\d)(?: \w\w\w)?>"
+
       header-pattern
       (re-pattern (format (str #"(\*+) (?:(%s) )?(?:(\[#[A-Z0-9]+\]) )?(.*)")
                           TODO-state-pattern))]
   (defn parse-section-for-agenda
     [{::org/keys           [header prelude sections line-number]
       ::keys [tags-with-ancestors props-with-ancestors ancestor-headers]
-      :as                  section}]
-    (when (not-any? #(re-matches #"(?i)archive" %) (apply concat tags-with-ancestors))
-      (let [get-timestamp (fn [p]
-                            (some->> prelude
-                                     (keep (fn [line]
-                                             (let [[_ date time time-end]
-                                                   (re-matches p line)]
-                                               (if time
-                                                 (let [t1 (LocalDateTime/parse (str date "T" time))]
-                                                   (if time-end
-                                                     (let [t2 (LocalDateTime/parse (str date "T" time-end))]
-                                                       [t1 t2])
-                                                     t1))
-                                                 (if date
-                                                   (LocalDate/parse date))))))
-                                     (first)))
-            [_ stars todo priority-cookie rest] (re-matches header-pattern header)
-            raw-header header
-            header (remove-tags rest)
-            effort (when-let [s (-> props-with-ancestors first (get "Effort"))]
-                     (when-let [[_ hours minutes] (re-matches #"(\d+):(\d+)" s)]
-                       (Duration/ofMinutes (+ (Long/parseLong minutes)
-                                              (* 60 (Long/parseLong hours))))))
-            base (with-meta
-                   {:todo               (if (contains? DONE-states todo) nil todo)
-                    :done               (if (contains? DONE-states todo) todo)
-                    :raw-header         raw-header
-                    :header             header
-                    :ancestor-headers   ancestor-headers
-                    :scheduled          (get-timestamp scheduled-pattern)
-                    :created-at         (get-timestamp created-at-pattern)
-                    :deadline           (get-timestamp deadline-pattern)
-                    :agenda-timestamp   (get-timestamp agenda-timestamp-pattern)
-                    :closed-at          (get-timestamp closed-pattern)
+      :as                  section}
+     file-str
+     today]
+    (try
+      (when (not-any? #(re-matches #"(?i)archive" %) (apply concat tags-with-ancestors))
+        (let [get-timestamp (fn [finder allow-repeater?]
+                              (let [ret (some->> prelude
+                                                 (keep finder)
+                                                 (first))]
+                                (if (and (:repeater ret)
+                                         (not allow-repeater?))
+                                  (throw (ex-info "Sorry man can't have a repeater there" {}))
+                                  ret)))
+              max-repeater-date (.plusDays today 60)
+              [_ stars todo priority-cookie rest] (re-matches header-pattern header)
+              raw-header header
+              header (remove-tags rest)
+              effort (when-let [s (-> props-with-ancestors first (get "Effort"))]
+                       (when-let [[_ hours minutes] (re-matches #"(\d+):(\d+)" s)]
+                         (Duration/ofMinutes (+ (Long/parseLong minutes)
+                                                (* 60 (Long/parseLong hours))))))
+              scheduled (get-timestamp scheduled-finder true)
+              deadline  (get-timestamp deadline-finder true)
+              base (with-meta
+                     {:todo               (if (contains? DONE-states todo) nil todo)
+                      :done               (if (contains? DONE-states todo) todo)
+                      :raw-header         raw-header
+                      :header             header
+                      :ancestor-headers   ancestor-headers
+                      :scheduled          scheduled
+                      :created-at         (get-timestamp created-at-finder false)
+                      :deadline           deadline
+                      :agenda-timestamp   (get-timestamp agenda-timestamp-finder false)
+                      :closed-at          (get-timestamp closed-finder false)
 
-                    :last-repeat        (some-> props-with-ancestors
-                                                first
-                                                (get "LAST_REPEAT")
-                                                parse-org-datetime)
-                    :line-number        line-number
-                    :priority-cookie    priority-cookie
-                    :parent-is-ordered? (-> props-with-ancestors second (get "ORDERED") (= "t"))
-                    :properties         (first props-with-ancestors)
-                    :tags               (reduce into #{} tags-with-ancestors)
-                    :effort             effort}
-                   {:raw-section section})]
-        (if-let [range (->> prelude
-                            (keep (fn [line]
-                                    (re-find agenda-date-range-pattern line)))
-                            (first))]
-          (let [[_ d1 d2] range
-                d1 (LocalDate/parse d1)
-                d2 (LocalDate/parse d2)
-                all-dates (->> (iterate #(.plusDays % 1) d1)
-                               (take-while #(compare/<= % d2)))]
-            (->> all-dates
-                 (map-indexed (fn [idx date]
-                                (-> base
-                                    (assoc :agenda-timestamp date)
-                                    (update :header #(format "DAY %d/%d: %s"
-                                                             (inc idx)
-                                                             (count all-dates)
-                                                             %)))))))
-          [base])))))
+                      :last-repeat        (some-> props-with-ancestors
+                                                  first
+                                                  (get "LAST_REPEAT")
+                                                  parse-org-datetime)
+                      :file               file-str
+                      :line-number        line-number
+                      :priority-cookie    priority-cookie
+                      :parent-is-ordered? (-> props-with-ancestors second (get "ORDERED") (= "t"))
+                      :properties         (first props-with-ancestors)
+                      :tags               (reduce into #{} tags-with-ancestors)
+                      :effort             effort}
+                     {:raw-section section})
+              date-range (->> prelude
+                              (keep (fn [line]
+                                      (re-find agenda-date-range-pattern line)))
+                              (first))
+              scheduled-repeater? (:repeater scheduled)
+              deadline-repeater? (:repeater deadline)]
+          (when (< 1 (count (filter identity [date-range scheduled-repeater? deadline-repeater?])))
+            (throw (ex-info "Can't have more than one of [date-range scheduled-repeater? deadline-repeater?]"
+                            {})))
+          (cond date-range
+                (let [[_ d1 d2] date-range
+                      d1 (LocalDate/parse d1)
+                      d2 (LocalDate/parse d2)
+                      all-dates (->> (iterate #(.plusDays % 1) d1)
+                                     (take-while #(compare/<= % d2)))]
+                  (->> all-dates
+                       (map-indexed (fn [idx date]
+                                      (-> base
+                                          (assoc :agenda-timestamp date)
+                                          (update :header #(format "DAY %d/%d: %s"
+                                                                   (inc idx)
+                                                                   (count all-dates)
+                                                                   %)))))))
+
+                scheduled-repeater?
+                (->> (apply-repeater (:repeater scheduled) (:base scheduled) today max-repeater-date)
+                     (map #(assoc base
+                                  :scheduled %
+                                  :header (str "(rep) " (:header base)))))
+
+                deadline-repeater?
+                (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
+                     (map #(assoc base :deadline %)))
+
+                :else [base])))
+      (catch Exception e
+        (let [header (str "AGENDA ERROR: " (.getMessage e))
+              f (format "/tmp/agenda-err-%02d.org" (mod (hash section) 100))]
+          (with-open [w (io/writer f)
+                      pw (java.io.PrintWriter. w)]
+            (.write w (format "* TODO [#A] %s\n" header))
+            (.write w (format "  FILE: %s\n" file-str))
+            (.write w (format "  LINE: %d\n" line-number))
+            (binding [*out* pw] (print-stack-trace e)))
+          [{:todo "TODO"
+            :raw-header (str "* TODO [#A] " header)
+            :header header
+            :ancestor-headers []
+            :priority-cookie "[#A]"
+            :file f
+            :line-number 1}])))))
 
 (defn priority
   "Returns a long, where a higher number corresponds to higher priority."
@@ -163,10 +241,6 @@
     "[#A]" 10
     "[#B]" 4
     "[#C]" 1))
-
-(defn to-local-date
-  [x]
-  (cond-> x (not (instance? LocalDate x)) .toLocalDate))
 
 (defn relevant-date
   [item]
@@ -220,10 +294,9 @@
   [file]
   (try
     (let [file-str (str file)
-          all-items (->> (all-sections file)
-                         (mapcat parse-section-for-agenda)
-                         (map #(assoc % :file file-str)))
           today (LocalDate/now)
+          all-items (->> (all-sections file)
+                         (mapcat #(parse-section-for-agenda % file-str today)))
           calendar-events (->> all-items
                                (filter calendar-event?))]
       {:todos (->> all-items
