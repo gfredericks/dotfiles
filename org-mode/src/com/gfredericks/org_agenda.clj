@@ -205,15 +205,13 @@
                                                                    (count all-dates)
                                                                    %)))))))
 
-                ;; TODO: this (rep) prefix breaks links
                 scheduled-repeater?
                 (->> (apply-repeater (:repeater scheduled) (:base scheduled) today max-repeater-date)
                      (map-indexed (fn [idx scheduled]
                                     (-> base
                                         (assoc :scheduled scheduled)
                                         (cond-> (pos? idx)
-                                          (-> (update :header #(str "(rep) " % " "))
-                                              (assoc :last-repeat nil)))))))
+                                          (assoc :repeat? true :last-repeat nil))))))
 
                 deadline-repeater?
                 (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
@@ -221,8 +219,7 @@
                                     (-> base
                                         (assoc :deadline deadline)
                                         (cond-> (pos? idx)
-                                          (-> (update :header #(str "(rep) " %))
-                                              (assoc :last-repeat nil)))))))
+                                          (assoc :repeat? true :last-repeat nil))))))
 
                 :else [base])))
       (catch Exception e
@@ -456,12 +453,15 @@
   (let [now (ZonedDateTime/now CHICAGO)
         {:keys [triage deadlines by-day past-log]} (synthesize-agenda deets-by-file today)
         format-todo (fn [{:keys [done todo priority-cookie header] :as item}]
-                      (format "%s%s %s"
+                      (format "%s%s %s%s"
                               (cond-> (or done todo)
                                 (= "[#C]" priority-cookie)
                                 (->> .toLowerCase (format "(%s)")))
                               (if priority-cookie
                                 (str " " priority-cookie)
+                                "")
+                              (if (:repeat? item)
+                                "[rep] "
                                 "")
                               (if (= "t" (get (:properties item) "AGENDA_NO_LINK"))
                                 header
@@ -515,7 +515,7 @@
         (println))
       (when (seq triage)
         (println "== TRIAGE ==")
-        (doseq [item (sort-by (juxt (comp - priority) :created-at :file :line) triage)]
+        (doseq [item (sort-by (juxt (comp - priority) :created-at :file :line-number) triage)]
           (print-todo-line item {}))
         (println))
       (let [stats-by-date
@@ -554,7 +554,13 @@
           ;; TODO: we shouldn't be putting things in the calendar if they're
           ;; scheduled in the past...
           (->> todos
-               (sort-by (juxt (comp - priority) relevant-date :file :line))
+               (sort-by (juxt (comp - priority)
+                              ;; move rep entries to the bottom for the future blocks, so that
+                              ;; nonrepeating items stick out
+                              (if (= date today) (constantly nil) :repeat?)
+                              relevant-date
+                              :file
+                              :line-number))
                (run! (fn [item] (print-todo-line item {}))))
           (when (= date today)
             (println "\n\n--------------------------------------------------------------------------------")
@@ -587,11 +593,13 @@
   [{:keys [directory reset-all-file] :as cfg}]
   (let [q (LinkedBlockingQueue.)]
     (run! #(.add q %) (all-org-files directory))
-    (let [do-refresh-all (fn [] (run! #(.add q %) (all-org-files directory)))
+    (let [do-refresh-all (fn []
+                           (log/info "Refreshing all agenda input files")
+                           (run! #(.add q %) (all-org-files directory)))
           watcher (watch-dir (bound-fn [{:keys [file] :as event}]
-                               (when (re-matches #".*\.org" (str file))
-                                 (if (= reset-all-file (str file))
-                                   (do-refresh-all)
+                               (if (= reset-all-file (str file))
+                                 (do-refresh-all)
+                                 (when (re-matches #".*\.org" (str file))
                                    (.add q file))))
                              (io/file directory)
                              (fs/parent (io/file reset-all-file)))]
