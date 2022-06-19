@@ -212,7 +212,8 @@
                                     (-> base
                                         (assoc :scheduled scheduled)
                                         (cond-> (pos? idx)
-                                          (update :header #(str "(rep) " %)))))))
+                                          (-> (update :header #(str "(rep) " % " "))
+                                              (assoc :last-repeat nil)))))))
 
                 deadline-repeater?
                 (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
@@ -220,7 +221,8 @@
                                     (-> base
                                         (assoc :deadline deadline)
                                         (cond-> (pos? idx)
-                                          (update :header #(str "(rep) " %)))))))
+                                          (-> (update :header #(str "(rep) " %))
+                                              (assoc :last-repeat nil)))))))
 
                 :else [base])))
       (catch Exception e
@@ -298,10 +300,9 @@
        (not (or (:todo item) (:done item)))))
 
 (defn agenda-data-for-file
-  [file]
+  [file today]
   (try
     (let [file-str (str file)
-          today (LocalDate/now)
           all-items (->> (all-sections file)
                          (mapcat #(parse-section-for-agenda % file-str today)))
           calendar-events (->> all-items
@@ -339,9 +340,8 @@
 
 
 (defn synthesize-agenda
-  [deets-by-file]
-  (let [today (LocalDate/now)
-        today+10 (.plusDays today 10)
+  [deets-by-file today]
+  (let [today+10 (.plusDays today 10)
         today-7 (.plusDays today -7)]
     (let [m (->> deets-by-file
                  vals
@@ -452,10 +452,9 @@
          (.delete tmp-file#)))))
 
 (defn write-to-agenda-file
-  [deets-by-file {:keys [preamble] :as cfg}]
-  (let [today (LocalDate/now)
-        now (ZonedDateTime/now CHICAGO)
-        {:keys [triage deadlines by-day past-log]} (synthesize-agenda deets-by-file)
+  [deets-by-file {:keys [preamble] :as cfg} today]
+  (let [now (ZonedDateTime/now CHICAGO)
+        {:keys [triage deadlines by-day past-log]} (synthesize-agenda deets-by-file today)
         format-todo (fn [{:keys [done todo priority-cookie header] :as item}]
                       (format "%s%s %s"
                               (cond-> (or done todo)
@@ -588,18 +587,21 @@
   [{:keys [directory reset-all-file] :as cfg}]
   (let [q (LinkedBlockingQueue.)]
     (run! #(.add q %) (all-org-files directory))
-    (let [watcher (watch-dir (bound-fn [{:keys [file] :as event}]
+    (let [do-refresh-all (fn [] (run! #(.add q %) (all-org-files directory)))
+          watcher (watch-dir (bound-fn [{:keys [file] :as event}]
                                (when (re-matches #".*\.org" (str file))
                                  (if (= reset-all-file (str file))
-                                   (run! #(.add q %) (all-org-files directory))
+                                   (do-refresh-all)
                                    (.add q file))))
                              (io/file directory)
                              (fs/parent (io/file reset-all-file)))]
-      ;; add watch to #'write-to-agenda-file??
-      ;; for interactive dev; just have to remove it at the end
       (try
-        (loop [by-file {}]
-          (let [x (.poll q 1 TimeUnit/MINUTES)]
+        (loop [by-file {}
+               today (LocalDate/now CHICAGO)]
+          (let [x (.poll q 1 TimeUnit/MINUTES)
+                old-today today
+                today (LocalDate/now CHICAGO)]
+            (when (not= today old-today) (do-refresh-all))
             (if x
               (let [start (System/currentTimeMillis)
                     all (->> (repeatedly #(.poll q 50 TimeUnit/MILLISECONDS))
@@ -609,18 +611,14 @@
                              (doall))
                     by-file (into by-file
                                   (for [file all]
-                                    [file (agenda-data-for-file file)]))]
-                ;; TODO: catch exceptions and write them to the file
-                ;; though...we can end up with stale views of things that
-                ;; way; it'd be hard to handle that without getting into a
-                ;; thrashing loop
-                (write-to-agenda-file by-file cfg)
+                                    [file (agenda-data-for-file file today)]))]
+                (write-to-agenda-file by-file cfg today)
                 (log/infof "Updated at %s with %d changed files in %dms"
                            (pr-str (java.util.Date.))
                            (count all)
                            (- (System/currentTimeMillis) start))
-                (recur by-file))
-              (recur by-file))))
+                (recur by-file today))
+              (recur by-file today))))
         (catch Exception e
           (with-atomic-write-to cfg
             (println e))
