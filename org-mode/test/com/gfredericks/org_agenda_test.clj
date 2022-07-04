@@ -36,3 +36,10 @@
 
     ["++" 1 "w"] (LD "2022-06-19") (LD "2022-06-19") (LD "2022-07-01")
     [(LD "2022-06-19") (LD "2022-06-26")]))
+
+(deftest make-org-link-test
+  (is (= "[[file:/fake-file.org::*TODO this has an extra TODO][TODO TODO this has an extra TODO]]"
+         (oa/make-org-link
+          {:header "TODO this has an extra TODO"
+           :file "/fake-file.org"}
+          "TODO TODO this has an extra TODO"))))

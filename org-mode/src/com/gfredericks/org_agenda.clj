@@ -401,8 +401,7 @@
         (format "[[file:%s::#%s][%s]]"
                 file id link-text)
         (let [header-without-tags (remove-tags header)
-              [_ post-todo] (re-matches p header-without-tags)
-              header-for-link (string/replace (str "*" post-todo)
+              header-for-link (string/replace (str "*" header-without-tags)
                                               #"[\[\]\\]"
                                               (fn [c] (str "\\" c)))]
           (format "[[file:%s::%s][%s]]"
