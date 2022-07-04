@@ -479,7 +479,9 @@
                                            (if (= 1 (priority item))
                                              "  "
                                              "")
-                                           (format-todo item))))
+                                           (format-todo item)))
+                          (when (= "t" (get properties "DEBUG"))
+                            (clojure.pprint/pprint item)))
         print-calendar (fn [items]
                          (->> items
                               (map (juxt timetable-slot identity))
