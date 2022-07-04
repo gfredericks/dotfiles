@@ -612,7 +612,8 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (save-excursion
     (end-of-line)
     (backward-char)
-    (org-open-at-point)))
+    (org-open-at-point)
+    (org-reveal)))
 
 (defun gfredericks-agenda-mode-org-todo
     ()
