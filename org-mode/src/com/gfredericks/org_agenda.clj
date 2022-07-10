@@ -447,6 +447,17 @@
        (finally
          (.delete tmp-file#)))))
 
+(defn later-today-time
+  "If the item is scheduled for today, but still in the future, then returns
+  the LocalTime that it's scheduled at. Else nil."
+  [item now]
+  (if-let [s (:scheduled item)]
+    (if (instance? LocalDateTime s)
+      (if (= (.toLocalDate s) (.toLocalDate now))
+        (let [lt (.toLocalTime s)]
+          (if (compare/< (.toLocalTime now) lt)
+            lt))))))
+
 (defn write-to-agenda-file
   [deets-by-file {:keys [preamble] :as cfg} today]
   (let [now (ZonedDateTime/now CHICAGO)
@@ -467,7 +478,7 @@
                                 (make-org-link item header))))
         print-todo-line (fn [{:keys [effort properties] :as item}
                              {:keys [omit-effort?]}]
-                          (println (format "-%s %s%s"
+                          (println (format "-%s %s%s%s"
                                            (if omit-effort?
                                              ""
                                              (str " "
@@ -478,6 +489,9 @@
                                                       "?:??"))))
                                            (if (= 1 (priority item))
                                              "  "
+                                             "")
+                                           (if-let [lt (later-today-time item now)]
+                                             (format "(not until %s) " lt)
                                              "")
                                            (format-todo item)))
                           (when (= "t" (get properties "DEBUG"))
@@ -555,7 +569,8 @@
           ;; TODO: we shouldn't be putting things in the calendar if they're
           ;; scheduled in the past...
           (->> todos
-               (sort-by (juxt (comp - priority)
+               (sort-by (juxt #(later-today-time % now) ;; put future things at the bottom
+                              (comp - priority)
                               ;; move rep entries to the bottom for the future blocks, so that
                               ;; nonrepeating items stick out
                               (if (= date today) (constantly nil) :repeat?)
