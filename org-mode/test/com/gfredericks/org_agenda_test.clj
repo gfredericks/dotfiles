@@ -3,7 +3,7 @@
    [clojure.java.io :as io]
    [clojure.test :refer [are deftest is]]
    [com.gfredericks.org-agenda :as oa])
-  (:import (java.time LocalDate LocalDateTime)))
+  (:import (java.time LocalDate LocalDateTime ZonedDateTime)))
 
 (defn LDT [s] (LocalDateTime/parse s))
 (defn LD [s] (LocalDate/parse s))
@@ -35,7 +35,10 @@
     [(LD "2022-06-18") (LD "2022-10-04") (LD "2022-10-18") (LD "2022-11-01")]
 
     ["++" 1 "w"] (LD "2022-06-19") (LD "2022-06-19") (LD "2022-07-01")
-    [(LD "2022-06-19") (LD "2022-06-26")]))
+    [(LD "2022-06-19") (LD "2022-06-26")]
+
+    [".+" 1 "d"] (LD "2022-07-11") (LD "2022-07-10") (LD "2022-07-13")
+    [(LD "2022-07-11") (LD "2022-07-12") (LD "2022-07-13")]))
 
 (deftest make-org-link-test
   (is (= "[[file:/fake-file.org::*TODO this has an extra TODO][TODO TODO this has an extra TODO]]"
@@ -43,3 +46,25 @@
           {:header "TODO this has an extra TODO"
            :file "/fake-file.org"}
           "TODO TODO this has an extra TODO"))))
+
+(let [empty-file-attrs (make-array java.nio.file.attribute.FileAttribute 0)]
+  (defn do-integration
+    [filenames->contents now agenda-validator]
+    (let [dir (java.nio.file.Files/createTempDirectory "org-agenda-tests-" empty-file-attrs)
+          agenda (str (java.nio.file.Files/createTempFile "org-agenda-tests-" ".org" empty-file-attrs))]
+      (doseq [[filename contents] filenames->contents]
+        (spit (str dir "/" filename) contents))
+      (oa/do-once {:directory (str dir)
+                   :agenda-file agenda}
+                  now)
+      (agenda-validator (slurp agenda)))))
+
+(deftest repeat-repeater-regression
+  (let [now (ZonedDateTime/of 2022 7 10 16 22 15 0 oa/CHICAGO)]
+    (do-integration
+     {"only-file.org"
+      (str "* TODO this should just appear once a day\n"
+           "  SCHEDULED: <2022-07-11 Mon .+1d>\n")}
+     now
+     (fn [agenda]
+       (is (= 20 (count (re-seq #"just appear once" agenda))))))))

@@ -108,9 +108,11 @@
                "++" (->> (iterate bump base)
                          (drop-while #(compare/<= (to-local-date %) today))
                          (first))
-               ".+" (bump (if (instance? LocalDateTime base)
-                            (LocalDateTime/of today (.toLocalTime base))
-                            today)))]
+               ".+" (bump
+                     (let [completion-day (compare/max today (to-local-date base))]
+                       (if (instance? LocalDateTime base)
+                         (LocalDateTime/of completion-day (.toLocalTime base))
+                         completion-day))))]
     (cons base
           (->> (iterate bump next)
                (take-while #(compare/<= (to-local-date %) max-date))))))
@@ -459,8 +461,8 @@
             lt))))))
 
 (defn write-to-agenda-file
-  [deets-by-file {:keys [preamble] :as cfg} today]
-  (let [now (ZonedDateTime/now CHICAGO)
+  [deets-by-file {:keys [preamble] :as cfg} now]
+  (let [today (.toLocalDate now)
         {:keys [triage deadlines by-day past-log]} (synthesize-agenda deets-by-file today)
         format-todo (fn [{:keys [done todo priority-cookie header] :as item}]
                       (format "%s%s %s%s"
@@ -605,6 +607,12 @@
         (doseq [item past-log]
           (print-todo-line item {:omit-effort? true}))))))
 
+(defn do-once
+  [{:keys [directory] :as cfg} now]
+  (let [by-file (into {} (for [file (all-org-files directory)]
+                           [file (agenda-data-for-file file (.toLocalDate now))]))]
+    (write-to-agenda-file by-file cfg now)))
+
 (defn watch
   [{:keys [directory reset-all-file] :as cfg}]
   (let [q (LinkedBlockingQueue.)]
@@ -628,6 +636,7 @@
             (when (not= today old-today) (do-refresh-all))
             (if x
               (let [start (System/currentTimeMillis)
+                    now (ZonedDateTime/now CHICAGO)
                     all (->> (repeatedly #(.poll q 50 TimeUnit/MILLISECONDS))
                              (take-while identity)
                              (cons x)
@@ -636,7 +645,7 @@
                     by-file (into by-file
                                   (for [file all]
                                     [file (agenda-data-for-file file today)]))]
-                (write-to-agenda-file by-file cfg today)
+                (write-to-agenda-file by-file cfg now)
                 (log/infof "Updated at %s with %d changed files in %dms"
                            (pr-str (java.util.Date.))
                            (count all)
