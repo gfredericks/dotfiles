@@ -31,6 +31,8 @@ alias k91="kill -9 %1"
 alias pyc="ping -c 1 yahoo.com"
 alias p3="python3"
 alias emc="emacsclient"
+alias pd="pushd"
+alias dp="popd"
 bc(){
   local F=/dev/shm/.bc.63171c42-7694-4cc2-948b-9b00fc15c54f
   echo "scale=10" > $F
@@ -250,7 +252,13 @@ __prompt_command() {
         v="${PROMPT_WD_SUBSTITUTIONS["$k"]}"
         THEWD="${THEWD/$k/$v}"
     done
-    PROMPT_COMPONENTS["1-pwd"]="$THEWD"
+    DIRSLEN=${#DIRSTACK[@]}
+    if [[ $DIRSLEN -gt 1 ]]; then
+        DIRS_PREFIX=$'\u001b[1;32m'"[$DIRSLEN] "$'\u001b[0m'
+    else
+        DIRS_PREFIX=""
+    fi
+    PROMPT_COMPONENTS["1-pwd"]="$DIRS_PREFIX$THEWD"
 
     for k in "${!EXTRA_PROMPT_COMPONENTS[@]}"; do
         v="${EXTRA_PROMPT_COMPONENTS[$k]}"
