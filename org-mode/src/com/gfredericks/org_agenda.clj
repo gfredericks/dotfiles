@@ -464,13 +464,17 @@
   [deets-by-file {:keys [preamble] :as cfg} now]
   (let [today (.toLocalDate now)
         {:keys [triage deadlines by-day past-log]} (synthesize-agenda deets-by-file today)
+        custom-prefix (:custom-prefix cfg (constantly nil))
         format-todo (fn [{:keys [done todo priority-cookie header] :as item}]
-                      (format "%s%s %s%s"
+                      (format "%s%s %s%s%s"
                               (cond-> (or done todo)
                                 (= "[#C]" priority-cookie)
                                 (->> .toLowerCase (format "(%s)")))
                               (if priority-cookie
                                 (str " " priority-cookie)
+                                "")
+                              (if-let [prefix (custom-prefix today item)]
+                                (str prefix " ")
                                 "")
                               (if (:repeat? item)
                                 "[rep] "
@@ -607,10 +611,14 @@
         (doseq [item past-log]
           (print-todo-line item {:omit-effort? true}))))))
 
+(defn all-agenda-data
+  [directory now]
+  (into {} (for [file (all-org-files directory)]
+             [file (agenda-data-for-file file (.toLocalDate now))])))
+
 (defn do-once
   [{:keys [directory] :as cfg} now]
-  (let [by-file (into {} (for [file (all-org-files directory)]
-                           [file (agenda-data-for-file file (.toLocalDate now))]))]
+  (let [by-file (all-agenda-data directory now)]
     (write-to-agenda-file by-file cfg now)))
 
 (defn watch
