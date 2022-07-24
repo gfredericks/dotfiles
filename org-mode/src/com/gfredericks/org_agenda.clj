@@ -398,16 +398,23 @@
                             (str TODO-state-pattern)))]
   (defn make-org-link
     [item link-text]
-    (let [{:keys [properties file header]} item]
+    (let [{:keys [properties file header]} item
+          escaped-link-text (-> link-text
+                                ;; don't think we can do any better
+                                ;; than this, org-mode seems to not
+                                ;; have a way to put square brackets
+                                ;; in link text
+                                (string/replace "[" "&#x5b;")
+                                (string/replace "]" "&#x5d;"))]
       (if-let [id (get (:properties item) "CUSTOM_ID")]
         (format "[[file:%s::#%s][%s]]"
-                file id link-text)
+                file id escaped-link-text)
         (let [header-without-tags (remove-tags header)
               header-for-link (string/replace (str "*" header-without-tags)
                                               #"[\[\]\\]"
                                               (fn [c] (str "\\" c)))]
           (format "[[file:%s::%s][%s]]"
-                  file header-for-link link-text))))))
+                  file header-for-link escaped-link-text))))))
 
 (defn summarize-calendar-events
   "Returns [total-duration count-without-duration]"

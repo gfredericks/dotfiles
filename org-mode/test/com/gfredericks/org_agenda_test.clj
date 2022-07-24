@@ -45,7 +45,12 @@
          (oa/make-org-link
           {:header "TODO this has an extra TODO"
            :file "/fake-file.org"}
-          "TODO TODO this has an extra TODO"))))
+          "TODO TODO this has an extra TODO")))
+  (is (= "[[file:/fake-file.org::*TODO this headline has \\[brackets\\]][TODO this headline has &#x5b;brackets&#x5d;]]"
+         (oa/make-org-link
+          {:header "TODO this headline has [brackets]"
+           :file "/fake-file.org"}
+          "TODO this headline has [brackets]"))))
 
 (let [empty-file-attrs (make-array java.nio.file.attribute.FileAttribute 0)]
   (defn do-integration
