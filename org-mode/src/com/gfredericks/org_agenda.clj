@@ -106,6 +106,7 @@
         next (case r-type
                "+" (bump base)
                "++" (->> (iterate bump base)
+                         (next)
                          (drop-while #(compare/<= (to-local-date %) today))
                          (first))
                ".+" (bump

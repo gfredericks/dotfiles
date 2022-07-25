@@ -66,10 +66,12 @@
 
 (deftest repeat-repeater-regression
   (let [now (ZonedDateTime/of 2022 7 10 16 22 15 0 oa/CHICAGO)]
-    (do-integration
-     {"only-file.org"
-      (str "* TODO this should just appear once a day\n"
-           "  SCHEDULED: <2022-07-11 Mon .+1d>\n")}
-     now
-     (fn [agenda]
-       (is (= 20 (count (re-seq #"just appear once" agenda))))))))
+    (doseq [rep [".+1d" "++1d"]]
+      (do-integration
+       {"only-file.org"
+        (str "* TODO this should just appear once a day\n"
+             (format "  SCHEDULED: <2022-07-11 Mon %s>\n"
+                     rep))}
+       now
+       (fn [agenda]
+         (is (= 20 (count (re-seq #"just appear once" agenda)))))))))
