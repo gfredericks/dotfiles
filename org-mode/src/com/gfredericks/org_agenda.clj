@@ -469,11 +469,8 @@
             lt))))))
 
 (defn write-to-agenda-file
-  [deets-by-file {:keys [preamble] :as cfg} now]
-  (let [today (.toLocalDate now)
-        {:keys [triage deadlines by-day past-log]} (synthesize-agenda deets-by-file today)
-        custom-prefix (:custom-prefix cfg (constantly nil))
-        format-todo (fn [{:keys [done todo priority-cookie header] :as item}]
+  [agenda cfg]
+  (let [format-todo (fn [{:keys [done todo priority-cookie header] :as item}]
                       (format "%s%s %s%s%s"
                               (cond-> (or done todo)
                                 (= "[#C]" priority-cookie)
@@ -481,7 +478,7 @@
                               (if priority-cookie
                                 (str " " priority-cookie)
                                 "")
-                              (if-let [prefix (custom-prefix today item)]
+                              (if-let [prefix (:custom-prefix item)]
                                 (str prefix " ")
                                 "")
                               (if (:repeat? item)
@@ -504,7 +501,7 @@
                                            (if (= 1 (priority item))
                                              "  "
                                              "")
-                                           (if-let [lt (later-today-time item now)]
+                                           (if-let [lt (:later-today-time item)]
                                              (format "(not until %s) " lt)
                                              "")
                                            (format-todo item)))
@@ -516,7 +513,7 @@
                               (filter first)
                               (sort-by first)
                               (run! (fn [[[t1 t2] item]]
-                                      (let [past? (compare/< (.atZone (or t2 t1) CHICAGO) now)
+                                      (let [past? (:past? item)
                                             t1 (.toLocalTime t1)
                                             t2 (some-> t2 .toLocalTime)]
                                         (printf "      %s%s%s: %s %s\n"
@@ -532,92 +529,123 @@
                                                   (:header item))
                                                 ;; once we figure out enough elisp to stop using links this
                                                 ;; can just be implicit
-                                                (make-org-link item "(link)")))))))]
+                                                (make-org-link item "(link)")))))))
+        {:keys [deadlines triage today future past]} agenda]
     (with-atomic-write-to cfg
-      (when preamble
+      (when-let [preamble (:preamble cfg)]
         (println preamble))
       (when (seq deadlines)
         (println "== DEADLINES ==")
         (println "(TODO: show upcoming deadlines based on the -0d cookie)")
-        (doseq [item (sort-by (juxt (comp - priority) :created-at :file :line-number) deadlines)]
+        (doseq [item deadlines]
           (print-todo-line item {}))
         (println))
       (when (seq triage)
         (println "== TRIAGE ==")
-        (doseq [item (sort-by (juxt (comp - priority) :created-at :file :line-number) triage)]
+        (doseq [item triage]
           (print-todo-line item {}))
         (println))
-      (let [stats-by-date
-            (into {}
-                  (for [[date {:keys [todos calendar-events]}] (sort by-day)
-                        :let [[total-cal-time count-without-duration] (summarize-calendar-events calendar-events)]]
-                    [date
-                     {:unefforted-count (->> todos
-                                             (remove :effort)
-                                             ;; TODO: this is calculated in two places; either make a
-                                             ;; function or add a :needs-effort? attr to the map
-                                             (remove #(= "t" (get (:properties %) "EFFORT_EXEMPT")))
-                                             (count))
-                      :total-effort (->> todos
-                                         (keep :effort)
-                                         (reduce #(.plus %1 %2) Duration/ZERO))
-                      :total-cal-time total-cal-time
-                      :count-without-duration count-without-duration}]))]
-        (doseq [[date {:keys [todos calendar-events]}] (sort by-day)
-                :when (compare/<= today date)
-                :let [{:keys [unefforted-count total-effort total-cal-time count-without-duration]}
-                      (stats-by-date date)]]
-          (println (format "== %s =="
-                           (if (= date today)
-                             "TODAY"
-                             (format-org-local-date date))))
-          (when-not (.isZero total-effort)
-            (println (format "  Total effort: %s" (format-effort total-effort))))
-          (when-not (.isZero total-cal-time)
-            (println (format "  Total calendar time: %s" (format-effort total-cal-time))))
-          (when (pos? unefforted-count)
-            (println (format "# (%d items with no effort estimate)" unefforted-count)))
-          (when (pos? count-without-duration)
-            (println (format "# (%d calendar items with no duration)" count-without-duration)))
+      (let [print-stats
+            (fn [{:keys [total-effort total-cal-time unefforted-count count-without-duration]}]
+              (when-not (.isZero total-effort)
+                (println (format "  Total effort: %s" (format-effort total-effort))))
+              (when-not (.isZero total-cal-time)
+                (println (format "  Total calendar time: %s" (format-effort total-cal-time))))
+              (when (pos? unefforted-count)
+                (println (format "# (%d items with no effort estimate)" unefforted-count)))
+              (when (pos? count-without-duration)
+                (println (format "# (%d calendar items with no duration)" count-without-duration))))]
+        (println "== TODAY ==")
+        (let [{:keys [stats todos calendar-events]} today]
+          (when-not stats
+            (throw (ex-info "Dang 1" {})))
+          (print-stats stats)
           (print-calendar calendar-events)
-          ;; TODO: we shouldn't be putting things in the calendar if they're
-          ;; scheduled in the past...
-          (->> todos
-               (sort-by (juxt #(later-today-time % now) ;; put future things at the bottom
-                              (comp - priority)
-                              ;; move rep entries to the bottom for the future blocks, so that
-                              ;; nonrepeating items stick out
-                              (if (= date today) (constantly nil) :repeat?)
-                              relevant-date
-                              :file
-                              :line-number))
-               (run! (fn [item] (print-todo-line item {}))))
-          (when (= date today)
-            (println "\n\n--------------------------------------------------------------------------------")
-            (println "|                                  future                                      |")
-            (println "--------------------------------------------------------------------------------")
-            (print-table ["date" "tot" "-e" "-d" "tot-e" "tot-d"]
-                         (for [date (sort (keys by-day))
-                               :when (compare/< today date)
-                               :let [{:keys [unefforted-count total-effort total-cal-time count-without-duration]}
-                                     (stats-by-date date)]]
-                           {"date"  (format-org-local-date date)
-                            "tot"   (format-effort (.plus total-effort total-cal-time))
-                            "-e"    unefforted-count
-                            "-d"    count-without-duration
-                            "tot-e" (format-effort total-effort)
-                            "tot-d" (format-effort total-cal-time)})))
+          (run! #(print-todo-line % {}) todos))
+        (println "\n\n--------------------------------------------------------------------------------")
+        (println "|                                  future                                      |")
+        (println "--------------------------------------------------------------------------------")
+        (print-table ["date" "tot" "-e" "-d" "tot-e" "tot-d"]
+                     (for [[date {:keys [stats]}] future
+                           :let [{:keys [unefforted-count total-effort total-cal-time count-without-duration]} stats]]
+                       {"date"  (format-org-local-date date)
+                        "tot"   (format-effort (.plus total-effort total-cal-time))
+                        "-e"    unefforted-count
+                        "-d"    count-without-duration
+                        "tot-e" (format-effort total-effort)
+                        "tot-d" (format-effort total-cal-time)}))
+        (println)
+        (doseq [[date {:keys [todos calendar-events stats]}] future]
+          (println (format "== %s ==" (format-org-local-date date)))
+          (when-not stats
+            (throw (ex-info "Dang" {})))
+          (print-stats stats)
+          (print-calendar calendar-events)
+          (run! #(print-todo-line % {}) todos)
           (println)))
       (println "\n\n--------------------------------------------------------------------------------")
       (println "|                                   past                                       |")
       (println "--------------------------------------------------------------------------------")
-      (doseq [[date {:keys [calendar-events past-log]}] (reverse (sort by-day))
-              :when (compare/<= date today)]
+      (doseq [[date {:keys [calendar-events past-log]}] past]
         (println)
         (println (format "== LOG: %s ==" (format-org-local-date date)))
         (print-calendar calendar-events)
         (doseq [item past-log]
           (print-todo-line item {:omit-effort? true}))))))
+
+(defn calculate-agenda
+  [deets-by-file cfg now]
+  (let [today (.toLocalDate now)
+        {:keys [triage deadlines by-day past-log]} (synthesize-agenda deets-by-file today)
+        custom-prefix (:custom-prefix cfg (constantly nil))
+        stats-by-date (into {}
+                            (for [[date {:keys [todos calendar-events]}] (sort by-day)
+                                  :let [[total-cal-time count-without-duration] (summarize-calendar-events calendar-events)]]
+                              [date
+                               {:unefforted-count (->> todos
+                                                       (remove :effort)
+                                                       ;; TODO: this is calculated in two places; either make a
+                                                       ;; function or add a :needs-effort? attr to the map
+                                                       (remove #(= "t" (get (:properties %) "EFFORT_EXEMPT")))
+                                                       (count))
+                                :total-effort (->> todos
+                                                   (keep :effort)
+                                                   (reduce #(.plus %1 %2) Duration/ZERO))
+                                :total-cal-time total-cal-time
+                                :count-without-duration count-without-duration}]))
+        not-past (for [[date {:keys [todos calendar-events]}] (sort by-day)
+                       :when (compare/<= today date)]
+                   [date {:stats          (stats-by-date date)
+                          :todos          (->> todos
+                                               (map #(assoc %
+                                                            :later-today-time (later-today-time % now)
+                                                            :custom-prefix (custom-prefix today %)))
+                                               (sort-by (juxt :later-today-time ;; put future things at the bottom
+                                                              (comp - priority)
+                                                              ;; move rep entries to the bottom for the future blocks, so that
+                                                              ;; nonrepeating items stick out
+                                                              (if (= date today) (constantly nil) :repeat?)
+                                                              relevant-date
+                                                              :file
+                                                              :line-number)))
+                          :calendar-events (->> calendar-events
+                                                (map (juxt timetable-slot identity))
+                                                (filter first)
+                                                (sort-by first)
+                                                (map (fn [[[t1 t2] item]]
+                                                       (let [past? (compare/< (.atZone (or t2 t1) CHICAGO) now)
+                                                             t1 (.toLocalTime t1)
+                                                             t2 (some-> t2 .toLocalTime)]
+                                                         (assoc item
+                                                                :timetable-slot [t1 t2]
+                                                                :past? past?)))))}])]
+    {:deadlines (sort-by (juxt (comp - priority) :created-at :file :line-number) deadlines)
+     :triage    (sort-by (juxt (comp - priority) :created-at :file :line-number) triage)
+     :today     (second (first not-past))
+     :future    (rest not-past)
+     :past      (for [[date :as date+item] (reverse (sort by-day))
+                      :when (compare/<= date today)]
+                  date+item)}))
 
 (defn all-agenda-data
   [directory now]
@@ -627,10 +655,20 @@
 (defn do-once
   [{:keys [directory] :as cfg} now]
   (let [by-file (all-agenda-data directory now)]
-    (write-to-agenda-file by-file cfg now)))
+    (write-to-agenda-file (calculate-agenda by-file cfg now) cfg)))
 
 (defn watch
-  [{:keys [directory reset-all-file] :as cfg}]
+  "cfg:
+
+  :directory        the directory containing org files
+  :agenda-file      the file the agenda will be written to
+  :reset-all-file   a file which, when touched, causes *all* org files
+                    to be reloaded
+  :refresh-file     a file which, when touched, triggers a regeneration
+                    of the agenda
+  :callback         (optional) function of the agenda data that is called
+                    each time the agenda changes"
+  [{:keys [directory reset-all-file callback] :as cfg}]
   (let [q (LinkedBlockingQueue.)]
     (run! #(.add q %) (all-org-files directory))
     (let [do-refresh-all (fn []
@@ -661,7 +699,10 @@
                     by-file (into by-file
                                   (for [file all]
                                     [file (agenda-data-for-file file today)]))]
-                (write-to-agenda-file by-file cfg now)
+                (let [agenda (calculate-agenda by-file cfg now)]
+                  (write-to-agenda-file agenda cfg)
+                  (when callback
+                    (callback agenda)))
                 (log/infof "Updated at %s with %d changed files in %dms"
                            (pr-str (java.util.Date.))
                            (count all)
