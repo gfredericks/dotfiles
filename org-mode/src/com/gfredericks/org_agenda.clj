@@ -533,7 +533,15 @@
         {:keys [deadlines triage today future past]} agenda]
     (with-atomic-write-to cfg
       (when-let [preamble (:preamble cfg)]
-        (println preamble))
+        (println (cond (string? preamble)
+                       preamble
+
+                       (fn? preamble)
+                       (preamble)
+
+                       :else
+                       (throw (ex-info "Bad preamble"
+                                       {:preamble preamble})))))
       (when (seq deadlines)
         (println "== DEADLINES ==")
         (println "(TODO: show upcoming deadlines based on the -0d cookie)")
