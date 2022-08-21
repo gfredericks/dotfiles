@@ -160,6 +160,7 @@
                                                 (* 60 (Long/parseLong hours))))))
               scheduled (get-timestamp scheduled-finder true)
               deadline  (get-timestamp deadline-finder true)
+              tags (reduce into #{} tags-with-ancestors)
               base (with-meta
                      {:todo               (if (contains? DONE-states todo) nil todo)
                       :done               (if (contains? DONE-states todo) todo)
@@ -181,8 +182,9 @@
                       :priority-cookie    priority-cookie
                       :parent-is-ordered? (-> props-with-ancestors second (get "ORDERED") (= "t"))
                       :properties         (first props-with-ancestors)
-                      :tags               (reduce into #{} tags-with-ancestors)
-                      :effort             effort}
+                      :tags               tags
+                      :effort             effort
+                      :backlog?           (contains? tags "backlog")}
                      {:raw-section section})
               date-range (->> prelude
                               (keep (fn [line]
@@ -306,37 +308,38 @@
           all-items (->> (all-sections file)
                          (mapcat #(parse-section-for-agenda % file-str today)))
           calendar-events (->> all-items
-                               (filter calendar-event?))]
-      {:todos (->> all-items
-                   (filter :todo)
-                   (map (fn [todo]
-                          (let [search (conj (:ancestor-headers todo) (:raw-header todo))]
-                            (assoc todo
-                                   :descendent-TODOs?
-                                   (->> all-items
-                                        (filter :todo)
-                                        (some (fn [todo]
-                                                (= search (take (count search)
-                                                                (:ancestor-headers todo)))))
-                                        (boolean))
-                                   :shadowed-by-sibling?
-                                   ;; figure out if its parent has "ORDERED" set and
-                                   ;; a prior sibling has "TODO"
-                                   (boolean
-                                    (and (:parent-is-ordered? todo)
-                                         (->> all-items
-                                              (filter :todo)
-                                              (some (fn [todo2]
-                                                      (and (= (:ancestor-headers todo)
-                                                              (:ancestor-headers todo2))
-                                                           (< (:line-number todo2)
-                                                              (:line-number todo)))))))))))))
+                               (filter calendar-event?))
+          todos (->> all-items
+                     (filter :todo)
+                     (map (fn [todo]
+                            (let [search (conj (:ancestor-headers todo) (:raw-header todo))]
+                              (assoc todo
+                                     :descendent-TODOs?
+                                     (->> all-items
+                                          (filter :todo)
+                                          (some (fn [todo]
+                                                  (= search (take (count search)
+                                                                  (:ancestor-headers todo)))))
+                                          (boolean))
+                                     :shadowed-by-sibling?
+                                     ;; figure out if its parent has "ORDERED" set and
+                                     ;; a prior sibling has "TODO"
+                                     (boolean
+                                      (and (:parent-is-ordered? todo)
+                                           (->> all-items
+                                                (filter :todo)
+                                                (some (fn [todo2]
+                                                        (and (= (:ancestor-headers todo)
+                                                                (:ancestor-headers todo2))
+                                                             (< (:line-number todo2)
+                                                                (:line-number todo)))))))))))))]
+      {:todos   todos
        :todones (->> all-items
                      (filter :done))
        :calendar-events calendar-events})
     (catch FileNotFoundException e
       (log/warn "FileNotFoundException")
-      {:todos [] :todones []  :calendar-events []})))
+      {:todos [] :todones [] :calendar-events []})))
 
 
 (defn synthesize-agenda
@@ -352,13 +355,15 @@
                                    :priority-cookie
                                    (re-find #"\d")))
                  (remove #(contains? (:tags %) "slow"))
-                 (keep (fn [{:keys [todo header deadline] :as item}]
-                         (if (and deadline (compare/<= (to-local-date deadline) today))
-                           {:deadlines #{item}}
-                           (if-let [d (relevant-date item)]
-                             (if-not (compare/< today+10 d)
-                               {(compare/max today d) #{item}})
-                             {:triage #{item}}))))
+                 (keep (fn [{:keys [todo header deadline backlog?] :as item}]
+                         (if backlog?
+                           {:backlog #{item}}
+                           (if (and deadline (compare/<= (to-local-date deadline) today))
+                             {:deadlines #{item}}
+                             (if-let [d (relevant-date item)]
+                               (if-not (compare/< today+10 d)
+                                 {(compare/max today d) #{item}})
+                               {:triage #{item}})))))
                  (apply merge-with into))
           calendar-events (->> deets-by-file
                                vals
@@ -393,7 +398,8 @@
                            [day {:todos (get m day [])
                                  :calendar-events (get calendar-events day [])
                                  :past-log (get past-log day [])}]))
-                    (into {}))})))
+                    (into {}))
+       :backlog (:backlog m)})))
 
 (let [p (re-pattern (format (str #"(?:%s )?(.*)")
                             (str TODO-state-pattern)))]
@@ -530,7 +536,7 @@
                                                 ;; once we figure out enough elisp to stop using links this
                                                 ;; can just be implicit
                                                 (make-org-link item "(link)")))))))
-        {:keys [deadlines triage today future past]} agenda]
+        {:keys [deadlines triage today future past backlog]} agenda]
     (with-atomic-write-to cfg
       (when-let [preamble (:preamble cfg)]
         (println (cond (string? preamble)
@@ -599,12 +605,18 @@
         (println (format "== LOG: %s ==" (format-org-local-date date)))
         (print-calendar calendar-events)
         (doseq [item past-log]
-          (print-todo-line item {:omit-effort? true}))))))
+          (print-todo-line item {:omit-effort? true})))
+      (when (seq backlog)
+        (println "\n\n--------------------------------------------------------------------------------")
+        (println "|                                   backlog                                    |")
+        (println "--------------------------------------------------------------------------------")
+        (doseq [item backlog]
+          (print-todo-line item {}))))))
 
 (defn calculate-agenda
   [deets-by-file cfg now]
   (let [today (.toLocalDate now)
-        {:keys [triage deadlines by-day past-log]} (synthesize-agenda deets-by-file today)
+        {:keys [triage deadlines by-day past-log backlog]} (synthesize-agenda deets-by-file today)
         custom-prefix (:custom-prefix cfg (constantly nil))
         stats-by-date (into {}
                             (for [[date {:keys [todos calendar-events]}] (sort by-day)
@@ -646,9 +658,11 @@
                                                              t2 (some-> t2 .toLocalTime)]
                                                          (assoc item
                                                                 :timetable-slot [t1 t2]
-                                                                :past? past?)))))}])]
-    {:deadlines (sort-by (juxt (comp - priority) :created-at :file :line-number) deadlines)
-     :triage    (sort-by (juxt (comp - priority) :created-at :file :line-number) triage)
+                                                                :past? past?)))))}])
+        sort-key (juxt (comp - priority) :created-at :file :line-number)]
+    {:deadlines (sort-by sort-key deadlines)
+     :triage    (sort-by sort-key triage)
+     :backlog   (sort-by sort-key backlog)
      :today     (second (first not-past))
      :future    (rest not-past)
      :past      (for [[date :as date+item] (reverse (sort by-day))
