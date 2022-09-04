@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+
+import fileinput
+import re
+
+dents = set()
+
+lines = []
+
+for line in fileinput.input():
+  m = re.match('^( *)\S.*', line)
+  if m:
+    dents.add(len(m[1]))
+  lines.append(line)
+
+
+dent = min(dents)
+
+if len(dents):
+  for line in lines:
+    m = re.match('^( *)(\S.*)$', line)
+    if m:
+      prefix = m[1][dent:]
+      suffix = m[2]
+      print(f"{prefix}{suffix}")
+    else:
+      print(line, end="")
+else:
+  for line in lines:
+    print(line, end="")
