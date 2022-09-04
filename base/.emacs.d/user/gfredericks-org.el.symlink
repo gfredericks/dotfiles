@@ -740,3 +740,10 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (if (org-entry-get (point) "CUSTOM_ID")
       (error "Already has CUSTOM_ID")
     (org-set-property "CUSTOM_ID" (get-random-uuid))))
+
+;; I don't like the default blank lines added by org-insert-item
+(defun never-add-blank-lines-between-org-list-items
+    (old-fn &rest args)
+  0)
+(advice-add 'org-list-separating-blank-lines-number :around
+            'never-add-blank-lines-between-org-list-items)
