@@ -113,14 +113,17 @@
 (global-set-key (kbd "C-c m n") 'mc/mark-next-like-this)
 (global-set-key (kbd "C-c m p") 'mc/mark-previous-like-this)
 
+(defun get-random-uuid ()
+  (interactive)
+  (string-trim-right
+   (with-temp-buffer
+     (let ((buff (current-buffer)))
+       (shell-command "uuidgen" buff)
+       (buffer-string)))))
+
 (defun insert-random-uuid ()
   (interactive)
-  (insert
-   (string-trim-right
-    (with-temp-buffer
-      (let ((buff (current-buffer)))
-        (shell-command "uuidgen" buff)
-        (buffer-string))))))
+  (insert (get-random-uuid)))
 
 (global-set-key "\C-crr" 'rename-buffer)
 (global-set-key "\C-cb" 'bury-buffer)

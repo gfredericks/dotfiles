@@ -734,3 +734,9 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   ;; (ansi-color-apply-on-region (point-min) (point-max))
   (auto-revert-mode 1)
   (read-only-mode 1))
+
+(defun custom-id ()
+  (interactive)
+  (if (org-entry-get (point) "CUSTOM_ID")
+      (error "Already has CUSTOM_ID")
+    (org-set-property "CUSTOM_ID" (get-random-uuid))))
