@@ -548,6 +548,9 @@
                        :else
                        (throw (ex-info "Bad preamble"
                                        {:preamble preamble})))))
+
+      (println (format "Things to do right now: %d\n" (:todo-now-count agenda)))
+
       (when (seq deadlines)
         (println "== DEADLINES ==")
         (println "(TODO: show upcoming deadlines based on the -0d cookie)")
@@ -659,15 +662,19 @@
                                                          (assoc item
                                                                 :timetable-slot [t1 t2]
                                                                 :past? past?)))))}])
-        sort-key (juxt (comp - priority) :created-at :file :line-number)]
-    {:deadlines (sort-by sort-key deadlines)
-     :triage    (sort-by sort-key triage)
-     :backlog   (sort-by sort-key backlog)
-     :today     (second (first not-past))
-     :future    (rest not-past)
-     :past      (for [[date :as date+item] (reverse (sort by-day))
-                      :when (compare/<= date today)]
-                  date+item)}))
+        sort-key (juxt (comp - priority) :created-at :file :line-number)
+        today-stuff (second (first not-past))]
+    {:deadlines      (sort-by sort-key deadlines)
+     :triage         (sort-by sort-key triage)
+     :backlog        (sort-by sort-key backlog)
+     :today          today-stuff
+     :future         (rest not-past)
+     :past           (for [[date :as date+item] (reverse (sort by-day))
+                           :when (compare/<= date today)]
+                       date+item)
+     :todo-now-count (->> (concat (:todos today-stuff) triage deadlines)
+                          (remove #(= "[#C]" (:priority-cookie %)))
+                          (count))}))
 
 (defn all-agenda-data
   [directory now]
