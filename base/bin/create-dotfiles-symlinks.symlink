@@ -13,8 +13,7 @@ while IFS= read -r profile; do
     file_no_symlink="$(echo "${file::-8}")"
     linkfile=$HOME/$file_no_symlink
     linkto=$profile/$file
-    if [ -f $linkfile ] || [ -d $linkfile ] || [ -L $linkfile ]
-    then
+    if [ -d $linkfile ] || [ -L $linkfile ]; then
       existing="$(readlink $linkfile)"
       if [ "$linkto" != "$existing" ]
       then
@@ -22,6 +21,9 @@ while IFS= read -r profile; do
         echo "(Due to $linkto != $existing)"
         EXIT_CODE=1
       fi
+    elif [ -f $linkfile ] ; then
+      echo >&2 "Warning! $linkfile is supposed to be a symlink but is a regular file"\!
+      EXIT_CODE=1
     else
       echo "Linking $linkfile to $linkto"
       parent="$(dirname $linkfile)"
