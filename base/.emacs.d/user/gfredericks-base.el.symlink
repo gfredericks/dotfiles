@@ -6,7 +6,7 @@
   '(markdown-mode
     multiple-cursors
     projectile
-    idle-highlight-mode
+    ;; idle-highlight-mode  -- why can't I install this???
     neotree
     htmlize ;; used for org-mode exports
     magit
@@ -39,7 +39,7 @@
 
 ;; idle-highlight
 ;; it highlights usages of the symbol under point
-(add-hook 'prog-mode-hook 'idle-highlight-mode)
+;; (add-hook 'prog-mode-hook 'idle-highlight-mode)
 
 ;; projectile
 (require 'projectile)
