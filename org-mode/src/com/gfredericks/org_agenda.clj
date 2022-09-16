@@ -161,6 +161,7 @@
               scheduled (get-timestamp scheduled-finder true)
               deadline  (get-timestamp deadline-finder true)
               tags (reduce into #{} tags-with-ancestors)
+              properties (first props-with-ancestors)
               base (with-meta
                      {:todo               (if (contains? DONE-states todo) nil todo)
                       :done               (if (contains? DONE-states todo) todo)
@@ -181,7 +182,8 @@
                       :line-number        line-number
                       :priority-cookie    priority-cookie
                       :parent-is-ordered? (-> props-with-ancestors second (get "ORDERED") (= "t"))
-                      :properties         (first props-with-ancestors)
+                      :agenda-section     (get properties "AGENDA_SECTION")
+                      :properties         properties
                       :tags               tags
                       :effort             effort
                       :backlog?           (contains? tags "backlog")}
@@ -363,7 +365,9 @@
                              (if-let [d (relevant-date item)]
                                (if-not (compare/< today+10 d)
                                  {(compare/max today d) #{item}})
-                               {:triage #{item}})))))
+                               (if (:agenda-section item)
+                                 {today #{item}}
+                                 {:triage #{item}}))))))
                  (apply merge-with into))
           calendar-events (->> deets-by-file
                                vals
@@ -578,7 +582,13 @@
             (throw (ex-info "Dang 1" {})))
           (print-stats stats)
           (print-calendar calendar-events)
-          (run! #(print-todo-line % {}) todos))
+          (->> todos
+               (group-by :agenda-section)
+               (sort)
+               (run! (fn [[agenda-section todos]]
+                       (when agenda-section
+                         (printf "\n*%s*\n" (.toUpperCase agenda-section)))
+                       (run! #(print-todo-line % {}) todos)))))
         (println "\n\n--------------------------------------------------------------------------------")
         (println "|                                  future                                      |")
         (println "--------------------------------------------------------------------------------")
