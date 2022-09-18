@@ -741,6 +741,10 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
       (error "Already has CUSTOM_ID")
     (org-set-property "CUSTOM_ID" (get-random-uuid))))
 
+(defun agenda-section (section)
+  (interactive "sSection: ")
+  (org-set-property "AGENDA_SECTION" section))
+
 ;; I don't like the default blank lines added by org-insert-item
 (defun never-add-blank-lines-between-org-list-items
     (old-fn &rest args)
