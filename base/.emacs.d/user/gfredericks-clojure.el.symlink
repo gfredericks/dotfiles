@@ -168,6 +168,7 @@
                     nil
                     "-Srepro"
                     "-Sdeps" (or deps "")
+                    "-M"
                     in-file)
       (delete-file in-file)
       (let ((ret (with-temp-buffer
