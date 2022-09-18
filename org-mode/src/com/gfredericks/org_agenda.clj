@@ -347,63 +347,62 @@
 (defn synthesize-agenda
   [deets-by-file today]
   (let [today+10 (.plusDays today 10)
-        today-7 (.plusDays today -7)]
-    (let [m (->> deets-by-file
-                 vals
-                 (mapcat :todos)
-                 (remove :descendent-TODOs?)
-                 (remove :shadowed-by-sibling?)
-                 (remove #(some->> %
-                                   :priority-cookie
-                                   (re-find #"\d")))
-                 (remove #(contains? (:tags %) "slow"))
-                 (keep (fn [{:keys [todo header deadline backlog?] :as item}]
-                         (if backlog?
-                           {:backlog #{item}}
-                           (if (and deadline (compare/<= (to-local-date deadline) today))
-                             {:deadlines #{item}}
-                             (if-let [d (relevant-date item)]
-                               (if-not (compare/< today+10 d)
-                                 {(compare/max today d) #{item}})
-                               (if (:agenda-section item)
-                                 {today #{item}}
-                                 {:triage #{item}}))))))
-                 (apply merge-with into))
-          calendar-events (->> deets-by-file
-                               vals
-                               (mapcat :calendar-events)
-                               (map (juxt #(-> % timetable-slot first .toLocalDate) identity))
-                               (filter (fn [[d _]] (compare/<= today-7 d today+10)))
-                               (group-by first)
-                               (map (fn [[k v]] [k (map second v)]))
-                               (into {}))
-          past-log (merge-with concat
-                               (->> deets-by-file
-                                    vals
-                                    (mapcat :todones)
-                                    (filter :closed-at)
-                                    (remove #(compare/< (.toLocalDate (:closed-at %))
-                                                        today-7))
-                                    (group-by #(.toLocalDate (:closed-at %))))
-                               (->> deets-by-file
-                                    vals
-                                    (mapcat :todos)
-                                    (filter :last-repeat)
-                                    (remove #(compare/< (.toLocalDate (:last-repeat %))
-                                                        today-7))
-                                    (group-by #(.toLocalDate (:last-repeat %)))))]
-      ;; maybe we stop making deadlines a special section and just add
-      ;; them in each day?
-      {:triage (:triage m)
-       :deadlines (:deadlines m)
-       :by-day (->> (iterate #(.plusDays % 1) today-7)
-                    (take-while #(compare/<= % today+10))
-                    (map (fn [day]
-                           [day {:todos (get m day [])
-                                 :calendar-events (get calendar-events day [])
-                                 :past-log (get past-log day [])}]))
-                    (into {}))
-       :backlog (:backlog m)})))
+        today-7 (.plusDays today -7)
+        m (->> deets-by-file
+               vals
+               (mapcat :todos)
+               (remove :descendent-TODOs?)
+               (remove :shadowed-by-sibling?)
+               (remove #(some->> %
+                                 :priority-cookie
+                                 (re-find #"\d")))
+               (keep (fn [{:keys [todo header deadline backlog?] :as item}]
+                       (if backlog?
+                         {:backlog #{item}}
+                         (if (and deadline (compare/<= (to-local-date deadline) today))
+                           {:deadlines #{item}}
+                           (if-let [d (relevant-date item)]
+                             (if-not (compare/< today+10 d)
+                               {(compare/max today d) #{item}})
+                             (if (:agenda-section item)
+                               {today #{item}}
+                               {:triage #{item}}))))))
+               (apply merge-with into))
+        calendar-events (->> deets-by-file
+                             vals
+                             (mapcat :calendar-events)
+                             (map (juxt #(-> % timetable-slot first .toLocalDate) identity))
+                             (filter (fn [[d _]] (compare/<= today-7 d today+10)))
+                             (group-by first)
+                             (map (fn [[k v]] [k (map second v)]))
+                             (into {}))
+        past-log (merge-with concat
+                             (->> deets-by-file
+                                  vals
+                                  (mapcat :todones)
+                                  (filter :closed-at)
+                                  (remove #(compare/< (.toLocalDate (:closed-at %))
+                                                      today-7))
+                                  (group-by #(.toLocalDate (:closed-at %))))
+                             (->> deets-by-file
+                                  vals
+                                  (mapcat :todos)
+                                  (filter :last-repeat)
+                                  (remove #(compare/< (.toLocalDate (:last-repeat %))
+                                                      today-7))
+                                  (group-by #(.toLocalDate (:last-repeat %)))))]
+    ;; maybe we stop making deadlines a special section and just add
+    ;; them in each day?
+    {:triage (:triage m)
+     :deadlines (:deadlines m)
+     :by-day (->> (iterate #(.plusDays % 1) today-7)
+                  (take-while #(compare/<= % today+10))
+                  (map (fn [day]
+                         [day {:todos (get m day [])
+                               :calendar-events (get calendar-events day [])
+                               :past-log (get past-log day [])}]))
+                  (into {}))
+     :backlog (:backlog m)}))
 
 (let [p (re-pattern (format (str #"(?:%s )?(.*)")
                             (str TODO-state-pattern)))]
