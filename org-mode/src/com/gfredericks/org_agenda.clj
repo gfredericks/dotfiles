@@ -657,7 +657,7 @@
                                                               ;; move rep entries to the bottom for the future blocks, so that
                                                               ;; nonrepeating items stick out
                                                               (if (= date today) (constantly nil) :repeat?)
-                                                              relevant-date
+                                                              #(or (relevant-date %) today)
                                                               :file
                                                               :line-number)))
                           :calendar-events (->> calendar-events
