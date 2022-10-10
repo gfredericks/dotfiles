@@ -9,7 +9,7 @@ I3_WORKSPACE=${3:-1}
 
 listen_for_open_url_requests(){
 
-    python2 - $THE_PORT "$BROWSER_COMMAND" "$I3_WORKSPACE" > $LOG <<EOF
+    python2 - $THE_PORT "$BROWSER_COMMAND" "$I3_WORKSPACE" &> $LOG <<EOF
 import re
 import SocketServer
 import sys
