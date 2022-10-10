@@ -11,7 +11,7 @@ XTerm*faceSize3: 12
 XTerm*faceSize4: 16
 ! XTerm*faceSize5: 20
 XTerm*faceSize5: 24
-XTerm*faceSize6: 52
+XTerm*faceSize6: 36
 XTerm*utf8: 2
 XTerm*dynamicColors: true
 
