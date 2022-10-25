@@ -542,15 +542,21 @@
         {:keys [deadlines triage today future past backlog]} agenda]
     (with-atomic-write-to cfg
       (when-let [preamble (:preamble cfg)]
-        (println (cond (string? preamble)
-                       preamble
+        (let [preamble-string (cond (string? preamble)
+                                    preamble
 
-                       (fn? preamble)
-                       (preamble)
+                                    (fn? preamble)
+                                    (preamble)
 
-                       :else
-                       (throw (ex-info "Bad preamble"
-                                       {:preamble preamble})))))
+                                    :else
+                                    (throw (ex-info "Bad preamble"
+                                                    {:preamble preamble})))
+              ;; strip out any -*- variables;
+              ;; e.g. org-link-file-path-type: absolute may be useful
+              preamble-string (if-let [[_ s] (re-matches #"(?s)-\*-.*-\*-\n+(.*)" preamble-string)]
+                                s
+                                preamble-string)]
+          (println preamble-string)))
 
       (println (format "Things to do right now: %d\n" (:todo-now-count agenda)))
 
