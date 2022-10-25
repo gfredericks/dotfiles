@@ -2,6 +2,11 @@
 
 set -Eeou pipefail
 
+if [[ -n "${SKIP_NO_COMMIT_CHECK:-}" ]]; then
+    echo >&2 "Skipping NOCOMMIT check"
+    exit 0
+fi
+
 NO_COMMIT_START=$(date +%s%3N)
 
 # specifically excludes --no-commit since that is a flag to git-merge
