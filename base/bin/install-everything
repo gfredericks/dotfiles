@@ -212,7 +212,7 @@ do
                          0022753d0cceecacdd3a795dd4cea2bd7ffdf9dc06e22ffd1be98411742fbb44)"
 
       rm -f ~/bin/jdk.bin
-      ln -s $JAVA_11_BIN ~/bin/jdk.bin
+      ln -s $JAVA_17_BIN ~/bin/jdk.bin
   fi
 
   ###
