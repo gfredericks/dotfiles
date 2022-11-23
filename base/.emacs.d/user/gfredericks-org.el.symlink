@@ -11,6 +11,11 @@
 (global-set-key "\C-cc" 'org-capture)
 (setq org-clock-into-drawer t)
 
+;; like org-end-of-subtree, but interactive
+(defun gfredericks-org-end-of-subtree ()
+  (interactive)
+  (org-end-of-subtree))
+
 (defun org-custom ()
   "org-mode-hook"
   (org-defkey org-mode-map (kbd "RET") 'newline-and-indent)
@@ -24,7 +29,8 @@
   (org-defkey org-mode-map (kbd "C-c o o") 'my-org-open-subtree-in-web-browser)
   ;; custom implementations to support multi-digit priorities
   (org-defkey org-agenda-keymap (kbd "+") 'my-org-agenda-inc-priority)
-  (org-defkey org-agenda-keymap (kbd "-") 'my-org-agenda-dec-priority))
+  (org-defkey org-agenda-keymap (kbd "-") 'my-org-agenda-dec-priority)
+  (org-defkey org-mode-map (kbd "C-c C-M-n") 'gfredericks-org-end-of-subtree))
 (add-hook 'org-mode-hook 'org-custom)
 
 ;; so the org agenda doesn't give me this weird 3/4 window
