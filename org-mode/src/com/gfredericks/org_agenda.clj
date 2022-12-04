@@ -162,6 +162,17 @@
               deadline  (get-timestamp deadline-finder true)
               tags (reduce into #{} tags-with-ancestors)
               properties (first props-with-ancestors)
+              clock-logs (->> prelude
+                              ;; this isn't the exact logic used by
+                              ;; org-mode I'm sure, but it's a good
+                              ;; enough hack for now
+                              (drop-while #(not (re-matches #"\s*:LOGBOOK:\s*" %)))
+                              (clojure.core/rest)
+                              (take-while #(not (re-matches #"\s*:END:\s*" %)))
+                              (keep #(re-matches #"\s*CLOCK:\s+(\[.*?\])(?:--(\[.*?\]) =>\s+\d+:\d+)?" %))
+                              (map (fn [[_ start end]]
+                                     [(parse-org-datetime start)
+                                      (some-> end parse-org-datetime)])))
               base (with-meta
                      {:todo               (if (contains? DONE-states todo) nil todo)
                       :done               (if (contains? DONE-states todo) todo)
@@ -181,10 +192,15 @@
                       :file               file-str
                       :line-number        line-number
                       :priority-cookie    priority-cookie
+                      :clock-logs         clock-logs
+                      :clocked-in?        (->> clock-logs
+                                               (some #(nil? (second %)))
+                                               (boolean))
                       :parent-is-ordered? (-> props-with-ancestors second (get "ORDERED") (= "t"))
                       :agenda-section     (get properties "AGENDA_SECTION")
                       :properties         properties
                       :tags               tags
+                      :own-tags           (first tags-with-ancestors)
                       :effort             effort
                       :backlog?           (contains? tags "backlog")}
                      {:raw-section section})
@@ -338,7 +354,14 @@
       {:todos   todos
        :todones (->> all-items
                      (filter :done))
-       :calendar-events calendar-events})
+       :calendar-events calendar-events
+       :clocked-in (->> all-items
+                        (filter :clocked-in?))
+       :by-own-tag (->> all-items
+                        (mapcat (fn [{:keys [own-tags] :as item}]
+                                  (for [tag own-tags]
+                                    {tag #{item}})))
+                        (apply merge-with into))})
     (catch FileNotFoundException e
       (log/warn "FileNotFoundException")
       {:todos [] :todones [] :calendar-events []})))
@@ -443,28 +466,36 @@
      (count (filter #{:nope} durations))]))
 
 (defmacro with-atomic-write-to
-  [cfg & body]
-  `(let [cfg# ~cfg
-         tmp-file# (File/createTempFile "org-agenda-" ".tmp")
-         out-file# (:agenda-file cfg#)]
+  [filename & body]
+  `(let [tmp-file# (File/createTempFile "org-agenda-" ".tmp")
+         out-file# ~filename]
      (try
        (with-open [w# (io/writer tmp-file#)
                    pw# (java.io.PrintWriter. w#)]
          (binding [*out* pw#]
            (println (format "Written at %s" (java.time.Instant/now)))
            (println)
-           ~@body
-           (print "\n\n")
-           (println (apply str (repeat 80 \;)))
-           (println ";; Postamble\n")
-           (println ";; Local Variables:")
-           (println ";; eval: (gfredericks-agenda-mode 1)")
-           (if-let [rf# (:refresh-file cfg#)]
-             (printf ";; gfredericks-agenda-mode-refresh-file: \"%s\"\n" rf#))
-           (println ";; End:"))
+           ~@body)
          (clojure.java.shell/sh "mv" (str tmp-file#) (str out-file#)))
        (finally
          (.delete tmp-file#)))))
+
+(defmacro with-atomic-write-with-postamble-to
+  [cfg & body]
+  `(let [cfg# ~cfg]
+     (with-atomic-write-to
+       (:agenda-file cfg#)
+       (let [cfg# ~cfg
+             tmp-file# (File/createTempFile "org-agenda-" ".tmp")]
+         ~@body
+         (print "\n\n")
+         (println (apply str (repeat 80 \;)))
+         (println ";; Postamble\n")
+         (println ";; Local Variables:")
+         (println ";; eval: (gfredericks-agenda-mode 1)")
+         (if-let [rf# (:refresh-file cfg#)]
+           (printf ";; gfredericks-agenda-mode-refresh-file: \"%s\"\n" rf#))
+         (println ";; End:")))))
 
 (defn later-today-time
   "If the item is scheduled for today, but still in the future, then returns
@@ -540,7 +571,7 @@
                                                 ;; can just be implicit
                                                 (make-org-link item "(link)")))))))
         {:keys [deadlines triage today future past backlog]} agenda]
-    (with-atomic-write-to cfg
+    (with-atomic-write-with-postamble-to cfg
       (when-let [preamble (:preamble cfg)]
         (let [preamble-string (cond (string? preamble)
                                     preamble
@@ -701,18 +732,14 @@
   (let [by-file (all-agenda-data directory now)]
     (write-to-agenda-file (calculate-agenda by-file cfg now) cfg)))
 
-(defn watch
+(defn watch-abstract
   "cfg:
 
   :directory        the directory containing org files
-  :agenda-file      the file the agenda will be written to
-  :reset-all-file   a file which, when touched, causes *all* org files
-                    to be reloaded
-  :refresh-file     a file which, when touched, triggers a regeneration
-                    of the agenda
-  :callback         (optional) function of the agenda data that is called
-                    each time the agenda changes"
-  [{:keys [directory reset-all-file callback] :as cfg}]
+  :map-fn           fn of file, today
+  :synthesize-fn    fn of {filename, map-fn-output}, today
+  :output-fn        fn of synthesize-fn-output"
+  [{:keys [directory map-fn synthesize-fn output-fn reset-all-file]}]
   (let [q (LinkedBlockingQueue.)]
     (run! #(.add q %) (all-org-files directory))
     (let [do-refresh-all (fn []
@@ -742,20 +769,41 @@
                              (doall))
                     by-file (into by-file
                                   (for [file all]
-                                    [file (agenda-data-for-file file today)]))]
-                (let [agenda (calculate-agenda by-file cfg now)]
-                  (write-to-agenda-file agenda cfg)
-                  (when callback
-                    (callback agenda)))
+                                    [file (map-fn file today)]))]
+                (output-fn (synthesize-fn by-file today))
                 (log/infof "Updated at %s with %d changed files in %dms"
                            (pr-str (java.util.Date.))
                            (count all)
                            (- (System/currentTimeMillis) start))
                 (recur by-file today))
               (recur by-file today))))
-        (catch Exception e
-          (with-atomic-write-to cfg
-            (println e))
-          (throw e))
         (finally
           (close-watcher watcher))))))
+
+(defn watch
+  "cfg:
+
+  :directory        the directory containing org files
+  :agenda-file      the file the agenda will be written to
+  :reset-all-file   a file which, when touched, causes *all* org files
+                    to be reloaded
+  :refresh-file     a file which, when touched, triggers a regeneration
+                    of the agenda
+  :callback         (optional) function of the agenda data that is called
+                    each time the agenda changes"
+  [{:keys [directory reset-all-file callback] :as cfg}]
+  (try
+    (watch-abstract
+     {:directory directory
+      :map-fn agenda-data-for-file
+      :synthesize-fn (fn [by-file today]
+                       (calculate-agenda by-file cfg (ZonedDateTime/now CHICAGO)))
+      :reset-all-file reset-all-file
+      :output-fn (fn [agenda]
+                   (write-to-agenda-file agenda cfg)
+                   (when callback
+                     (callback agenda)))})
+    (catch Exception e
+      (with-atomic-write-with-postamble-to cfg
+        (println e))
+      (throw e))))
