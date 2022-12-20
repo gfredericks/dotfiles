@@ -44,7 +44,13 @@
   (when-not (empty? (::org/sections new-entry))
     (throw (ex-info "default-merge-fn does not support subsections in new entries"
                     {:new-entry new-entry})))
-  (let [new-entry (assoc new-entry ::org/sections (::org/sections existing-entry))]
+  (let [existing-tags (org/read-tags (::org/header existing-entry))
+        new-tags (org/read-tags (::org/header new-entry))
+        merged-tags (concat existing-tags
+                            (remove (set existing-tags) new-tags))
+        new-entry (-> new-entry
+                      (assoc ::org/sections (::org/sections existing-entry))
+                      (update ::org/header org/set-tags merged-tags))]
     (reduce (fn [entry [k v]]
               (org/prop-assoc entry k v))
             new-entry
