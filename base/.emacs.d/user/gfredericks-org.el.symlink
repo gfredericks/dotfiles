@@ -616,8 +616,8 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
     ()
   (interactive)
   (save-excursion
-    (end-of-line)
-    (backward-char)
+    (beginning-of-line)
+    (org-next-link)
     (org-open-at-point)
     (org-reveal)))
 
@@ -627,8 +627,8 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (let ((w (selected-window))
         (p (point))
         (b nil))
-    (end-of-line)
-    (backward-char)
+    (beginning-of-line)
+    (org-next-link)
     (org-open-at-point)
     (org-todo)
     (save-buffer)
@@ -642,8 +642,8 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
     ()
   (interactive)
   (save-excursion
-    (end-of-line)
-    (backward-char)
+    (beginning-of-line)
+    (org-next-link)
     (org-open-at-point)
     (org-set-effort)))
 
@@ -715,6 +715,8 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
       (kbd "g") 'gfredericks-agenda-mode-refresh)
     (define-key km
       (kbd "TAB") 'gfredericks-agenda-mode-follow-link)
+    (define-key km
+      (kbd "C-c C-o") 'gfredericks-agenda-mode-follow-link)
     (define-key km
       (kbd "C-c C-t") 'gfredericks-agenda-mode-org-todo)
     (define-key km
