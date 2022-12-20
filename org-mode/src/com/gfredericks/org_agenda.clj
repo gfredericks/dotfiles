@@ -54,24 +54,31 @@
 (defn all-sections
   [^File file]
   (with-open [r (io/reader file)]
-    (-> (org/parse-file r)
-        (->> (tree-seq #(contains? % ::org/sections)
-                       (fn [{::org/keys [header sections]
-                             ::keys [tags-with-ancestors props-with-ancestors
-                                     ancestor-headers]}]
-                         (map (fn [section]
-                                (assoc section
-                                       ::tags-with-ancestors
-                                       (cons (org/read-tags (::org/header section))
-                                             tags-with-ancestors)
-                                       ::props-with-ancestors
-                                       (cons (org/read-properties section)
-                                             props-with-ancestors)
-                                       ::ancestor-headers
-                                       ((fnil conj []) ancestor-headers header)))
-                              sections)))
-             (filter ::org/header)
-             (map #(assoc % ::org/line-number (::org/line-number (meta %))))))))
+    (let [{::org/keys [prelude] :as parsed} (org/parse-file r)
+          filewide-category (->> prelude
+                                 (keep #(re-matches #"#\+CATEGORY: (.*?)\s*" %))
+                                 (map second)
+                                 (first))]
+      (-> parsed
+          (->> (tree-seq #(contains? % ::org/sections)
+                         (fn [{::org/keys [header sections]
+                               ::keys [tags-with-ancestors props-with-ancestors
+                                       ancestor-headers]}]
+                           (map (fn [section]
+                                  (assoc section
+                                         ::tags-with-ancestors
+                                         (cons (org/read-tags (::org/header section))
+                                               tags-with-ancestors)
+                                         ::props-with-ancestors
+                                         (cons (org/read-properties section)
+                                               props-with-ancestors)
+                                         ::ancestor-headers
+                                         ((fnil conj []) ancestor-headers header)))
+                                sections)))
+               (filter ::org/header)
+               (map #(assoc %
+                            ::org/line-number (::org/line-number (meta %))
+                            ::filewide-category filewide-category)))))))
 
 (defn timestamp-finder
   [context-regex-format-string]
@@ -122,6 +129,15 @@
   [header]
   (second (re-matches header-with-tags-regex header)))
 
+(defn dedent
+  [lines]
+  (let [min-indention (->> lines
+                           (map #(count (re-find #"^\s+" %)))
+                           (apply min))]
+    (cond->> lines
+      (pos? min-indention)
+      (map #(subs % min-indention)))))
+
 (let [scheduled-finder         (timestamp-finder "\\s*SCHEDULED: %s")
       deadline-finder          (timestamp-finder "\\s*DEADLINE: %s")
       closed-finder            (timestamp-finder "\\s*CLOSED: %s.*")
@@ -136,7 +152,7 @@
                           TODO-state-pattern))]
   (defn parse-section-for-agenda
     [{::org/keys           [header prelude sections line-number]
-      ::keys [tags-with-ancestors props-with-ancestors ancestor-headers]
+      ::keys [tags-with-ancestors props-with-ancestors ancestor-headers filewide-category]
       :as                  section}
      file-str
      today]
@@ -162,6 +178,13 @@
               deadline  (get-timestamp deadline-finder true)
               tags (reduce into #{} tags-with-ancestors)
               properties (first props-with-ancestors)
+              agenda-notes (->> prelude
+                                (drop-while #(not (re-matches #"\s*:AGENDA_NOTES:\s*" %)))
+                                (next)
+                                (take-while #(not (re-matches #"\s*:END:\s*" %)))
+                                ((fn [lines]
+                                   (when (seq lines)
+                                     (dedent lines)))))
               clock-logs (->> prelude
                               ;; this isn't the exact logic used by
                               ;; org-mode I'm sure, but it's a good
@@ -189,6 +212,10 @@
                                                   first
                                                   (get "LAST_REPEAT")
                                                   parse-org-datetime)
+                      :category           (-> props-with-ancestors
+                                              first
+                                              (get "CATEGORY")
+                                              (or filewide-category))
                       :file               file-str
                       :line-number        line-number
                       :priority-cookie    priority-cookie
@@ -196,6 +223,7 @@
                       :clocked-in?        (->> clock-logs
                                                (some #(nil? (second %)))
                                                (boolean))
+                      :agenda-notes       agenda-notes
                       :parent-is-ordered? (-> props-with-ancestors second (get "ORDERED") (= "t"))
                       :agenda-section     (get properties "AGENDA_SECTION")
                       :properties         properties
@@ -357,6 +385,9 @@
        :calendar-events calendar-events
        :clocked-in (->> all-items
                         (filter :clocked-in?))
+       :by-category (->> all-items
+                         (filter :category)
+                         (group-by :category))
        :by-own-tag (->> all-items
                         (mapcat (fn [{:keys [own-tags] :as item}]
                                   (for [tag own-tags]
