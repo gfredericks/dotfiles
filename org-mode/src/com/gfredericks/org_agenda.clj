@@ -274,8 +274,8 @@
 
                 :else [base])))
       (catch Exception e
-        (let [header (str "AGENDA ERROR: " (.getMessage e))
-              f (format "/tmp/agenda-err-%02d.org" (mod (hash section) 100))]
+        (let [f (format "/tmp/agenda-err-%02d.org" (mod (hash section) 100))
+              header (format "AGENDA ERROR[%s]: %s" f (.getMessage e))]
           (with-open [w (io/writer f)
                       pw (java.io.PrintWriter. w)]
             (.write w (format "* TODO [#A] %s\n" header))
