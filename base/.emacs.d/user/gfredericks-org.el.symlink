@@ -542,6 +542,14 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (insert "[")
   (forward-char 21))
 
+(defun inactive-timestamp ()
+  ;; surely there's a more direct way to do this?
+  (with-temp-buffer
+    (insert-inactive-time-stamp)
+    (beginning-of-line)
+    (kill-line))
+  (current-kill 0 t))
+
 (defvar ubercapture-buffer "capture.org")
 (defvar ubercapture-level 2)
 
@@ -761,3 +769,6 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   0)
 (advice-add 'org-list-separating-blank-lines-number :around
             'never-add-blank-lines-between-org-list-items)
+
+(defun gfredericks-touch () (interactive)
+  (org-set-property "UPDATED_AT" (inactive-timestamp)))

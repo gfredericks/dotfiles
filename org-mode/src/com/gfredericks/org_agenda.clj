@@ -196,6 +196,7 @@
                               (map (fn [[_ start end]]
                                      [(parse-org-datetime start)
                                       (some-> end parse-org-datetime)])))
+              created-at (get-timestamp created-at-finder false)
               base (with-meta
                      {:todo               (if (contains? DONE-states todo) nil todo)
                       :done               (if (contains? DONE-states todo) todo)
@@ -203,7 +204,12 @@
                       :header             header
                       :ancestor-headers   ancestor-headers
                       :scheduled          scheduled
-                      :created-at         (get-timestamp created-at-finder false)
+                      :created-at         created-at
+                      :updated-at         (or (some-> (get properties "UPDATED_AT")
+                                                      parse-org-datetime)
+                                              (if scheduled
+                                                (or (:base scheduled) scheduled))
+                                              created-at)
                       :deadline           deadline
                       :agenda-timestamp   (get-timestamp agenda-timestamp-finder false)
                       :closed-at          (get-timestamp closed-finder false)
@@ -656,6 +662,8 @@
                        (when agenda-section
                          (printf "\n*%s*\n" (.toUpperCase agenda-section)))
                        (run! #(print-todo-line % {}) todos)))))
+        (println "\n== STALEST TODO ==")
+        (print-todo-line (:stalest-todo agenda) {})
         (println "\n\n--------------------------------------------------------------------------------")
         (println "|                                  future                                      |")
         (println "--------------------------------------------------------------------------------")
@@ -745,6 +753,15 @@
      :triage         (sort-by sort-key triage)
      :backlog        (sort-by sort-key backlog)
      :today          today-stuff
+     :stalest-todo (->> today-stuff
+                        (:todos)
+                        (apply min-key
+                               (fn [item]
+                                 (if-let [updated-at (:updated-at item)]
+                                   (-> updated-at
+                                       to-local-date
+                                       .toEpochDay)
+                                   0))))
      :future         (rest not-past)
      :past           (for [[date :as date+item] (reverse (sort by-day))
                            :when (compare/<= date today)]
