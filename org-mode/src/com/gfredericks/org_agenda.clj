@@ -662,8 +662,9 @@
                        (when agenda-section
                          (printf "\n*%s*\n" (.toUpperCase agenda-section)))
                        (run! #(print-todo-line % {}) todos)))))
-        (println "\n== STALEST TODO ==")
-        (print-todo-line (:stalest-todo agenda) {})
+        (when-let [todo (:stalest-todo agenda)]
+          (println "\n== STALEST TODO ==")
+          (print-todo-line todo {}))
         (println "\n\n--------------------------------------------------------------------------------")
         (println "|                                  future                                      |")
         (println "--------------------------------------------------------------------------------")
@@ -753,15 +754,15 @@
      :triage         (sort-by sort-key triage)
      :backlog        (sort-by sort-key backlog)
      :today          today-stuff
-     :stalest-todo (->> today-stuff
-                        (:todos)
-                        (apply min-key
-                               (fn [item]
-                                 (if-let [updated-at (:updated-at item)]
-                                   (-> updated-at
-                                       to-local-date
-                                       .toEpochDay)
-                                   0))))
+     :stalest-todo (if-let [todos (seq (:todos today-stuff))]
+                     (apply min-key
+                            (fn [item]
+                              (if-let [updated-at (:updated-at item)]
+                                (-> updated-at
+                                    to-local-date
+                                    .toEpochDay)
+                                0))
+                            todos))
      :future         (rest not-past)
      :past           (for [[date :as date+item] (reverse (sort by-day))
                            :when (compare/<= date today)]
