@@ -40,7 +40,10 @@
 
 (defn to-local-date
   [x]
-  (cond-> x (not (instance? LocalDate x)) .toLocalDate))
+  (try
+    (cond-> x (not (instance? LocalDate x)) .toLocalDate)
+    (catch Exception e
+      (throw (ex-info "bad to-local-date" {:arg x} e)))))
 
 (defn format-effort
   [^Duration duration]
