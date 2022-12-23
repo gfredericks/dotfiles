@@ -38,6 +38,14 @@
   (let [[_ _ d t] (re-matches org-timestamp-regex s)]
     (LocalDateTime/of (LocalDate/parse d) (LocalTime/parse t))))
 
+(defn parse-org-date-or-datetime
+  [s]
+  (let [[_ _ d t] (re-matches org-timestamp-regex s)
+        ld (LocalDate/parse d)]
+    (if t
+      (LocalDateTime/of ld (LocalTime/parse t))
+      ld)))
+
 (defn to-local-date
   [x]
   (try
@@ -225,7 +233,7 @@
                       :scheduled          (:base scheduled)
                       :created-at         created-at
                       :updated-at         (or (some-> (get properties "UPDATED_AT")
-                                                      parse-org-datetime)
+                                                      parse-org-date-or-datetime)
                                               (if scheduled
                                                 (or (:base scheduled) scheduled))
                                               created-at)

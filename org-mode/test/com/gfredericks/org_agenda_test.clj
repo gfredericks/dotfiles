@@ -110,3 +110,15 @@
      now
      (fn [agenda]
        (is (re-find #"Something is happening" agenda))))))
+
+
+(deftest regression-test-2022-12-23
+  (let [now (ZonedDateTime/of 2022 12 23 16 22 15 0 oa/CHICAGO)]
+    ;; fixing an issue with UPDATED_AT being just a date, not a
+    ;; datetime
+    (do-integration
+     {"only-file.org"
+      "* TODO heyo heyo\n  :PROPERTIES:\n  :UPDATED_AT: [2022-12-20 Tue]\n  :END:"}
+     now
+     (fn [agenda]
+       (is (re-find #"heyo heyo" agenda))))))
