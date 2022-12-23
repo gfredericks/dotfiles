@@ -18,7 +18,7 @@
 (def CHICAGO (ZoneId/of "America/Chicago"))
 
 (def org-timestamp-regex
-  #"[<\[]([-\d]{10})(?: \w{3})?(?: (\d\d:\d\d)(?:-(\d\d:\d\d))?)?(?: (\+|\+\+|\.\+)(\d+)([ymwdh]))?( [^>\]]*?)?[>\]]")
+  #"([<\[])([-\d]{10})(?: \w{3})?(?: (\d\d:\d\d)(?:-(\d\d:\d\d))?)?(?: (\+|\+\+|\.\+)(\d+)([ymwdh]))?(?: [^>\]]*?)?([>\]])")
 
 (def TODO-states #{"TODO" "BLOCKED" "DONE"})
 (def DONE-states #{"DONE"})
@@ -35,7 +35,7 @@
 
 (defn parse-org-datetime
   [s]
-  (let [[_ d t] (re-matches org-timestamp-regex s)]
+  (let [[_ _ d t] (re-matches org-timestamp-regex s)]
     (LocalDateTime/of (LocalDate/parse d) (LocalTime/parse t))))
 
 (defn to-local-date
@@ -87,19 +87,24 @@
   [context-regex-format-string]
   (let [pattern (re-pattern (format context-regex-format-string org-timestamp-regex))]
     (fn [line]
-      (let [[_ date time time-end r-type r-num r-unit] (re-matches pattern line)
-            base (if time
-                   (let [t1 (LocalDateTime/parse (str date "T" time))]
-                     (if time-end
-                       (let [t2 (LocalDateTime/parse (str date "T" time-end))]
-                         [t1 t2])
-                       t1))
-                   (if date
-                     (LocalDate/parse date)))]
-        (if r-type
-          {:repeater [r-type (Long/parseLong r-num) r-unit]
-           :base base}
-          base)))))
+      (if-let [[_ left-bracket date time time-end r-type r-num r-unit right-bracket]
+               (re-matches pattern line)]
+        (let [base (if time
+                     (let [t1 (LocalDateTime/parse (str date "T" time))]
+                       (if time-end
+                         (let [t2 (LocalDateTime/parse (str date "T" time-end))]
+                           [t1 t2])
+                         t1))
+                     (if date
+                       (LocalDate/parse date)))]
+          (if (not (#{["<" ">"] ["[" "]"]} [left-bracket right-bracket]))
+            ;; alternately we could just return nil
+            (throw (ex-info "Mismatched timestamp brackets" {:line line})))
+          (cond->
+              {:base base
+               :active? (= "<" left-bracket)}
+              r-type
+              (assoc :repeater [r-type (Long/parseLong r-num) r-unit])))))))
 
 (defn apply-repeater
   [[r-type r-num r-unit] base today max-date]
@@ -146,6 +151,7 @@
       closed-finder            (timestamp-finder "\\s*CLOSED: %s.*")
       created-at-finder        (timestamp-finder "\\s*Created at %s")
       agenda-timestamp-finder  (timestamp-finder ".*(?<!(?:SCHEDULED|DEADLINE): )(?=<)%s(?<=>).*")
+      general-timestamp-finder (timestamp-finder ".*%s.*")
 
       agenda-date-range-pattern
       #"<(\d{4}-\d\d-\d\d)(?: \w\w\w)?>--<(\d{4}-\d\d-\d\d)(?: \w\w\w)?>"
@@ -170,6 +176,16 @@
                                   (throw (ex-info "Sorry man can't have a repeater there" {}))
                                   ret)))
               max-repeater-date (.plusDays today 60)
+              general-timestamps (->> (cons header prelude)
+                                      (remove (some-fn scheduled-finder
+                                                       deadline-finder))
+                                      (keep general-timestamp-finder)
+                                      (filter :active?)
+                                      (mapcat (fn [{:keys [repeater base]}]
+                                                (if repeater
+                                                  (apply-repeater
+                                                   repeater base today max-repeater-date)
+                                                  [base]))))
               [_ stars todo priority-cookie rest] (re-matches header-pattern header)
               raw-header header
               header (remove-tags rest)
@@ -199,23 +215,23 @@
                               (map (fn [[_ start end]]
                                      [(parse-org-datetime start)
                                       (some-> end parse-org-datetime)])))
-              created-at (get-timestamp created-at-finder false)
+              created-at (:base (get-timestamp created-at-finder false))
               base (with-meta
                      {:todo               (if (contains? DONE-states todo) nil todo)
                       :done               (if (contains? DONE-states todo) todo)
                       :raw-header         raw-header
                       :header             header
                       :ancestor-headers   ancestor-headers
-                      :scheduled          scheduled
+                      :scheduled          (:base scheduled)
                       :created-at         created-at
                       :updated-at         (or (some-> (get properties "UPDATED_AT")
                                                       parse-org-datetime)
                                               (if scheduled
                                                 (or (:base scheduled) scheduled))
                                               created-at)
-                      :deadline           deadline
-                      :agenda-timestamp   (get-timestamp agenda-timestamp-finder false)
-                      :closed-at          (get-timestamp closed-finder false)
+                      :deadline           (:base deadline)
+                      :agenda-timestamp   (:base (get-timestamp agenda-timestamp-finder false))
+                      :closed-at          (:base (get-timestamp closed-finder false))
 
                       :last-repeat        (some-> props-with-ancestors
                                                   first
@@ -250,38 +266,41 @@
           (when (< 1 (count (filter identity [date-range scheduled-repeater? deadline-repeater?])))
             (throw (ex-info "Can't have more than one of [date-range scheduled-repeater? deadline-repeater?]"
                             {})))
-          (cond date-range
-                (let [[_ d1 d2] date-range
-                      d1 (LocalDate/parse d1)
-                      d2 (LocalDate/parse d2)
-                      all-dates (->> (iterate #(.plusDays % 1) d1)
-                                     (take-while #(compare/<= % d2)))]
-                  (->> all-dates
-                       (map-indexed (fn [idx date]
-                                      (-> base
-                                          (assoc :agenda-timestamp date)
-                                          (update :header #(format "DAY %d/%d: %s"
-                                                                   (inc idx)
-                                                                   (count all-dates)
-                                                                   %)))))))
+          (concat
+           (cond date-range
+                 (let [[_ d1 d2] date-range
+                       d1 (LocalDate/parse d1)
+                       d2 (LocalDate/parse d2)
+                       all-dates (->> (iterate #(.plusDays % 1) d1)
+                                      (take-while #(compare/<= % d2)))]
+                   (->> all-dates
+                        (map-indexed (fn [idx date]
+                                       (-> base
+                                           (assoc :agenda-timestamp date)
+                                           (update :header #(format "DAY %d/%d: %s"
+                                                                    (inc idx)
+                                                                    (count all-dates)
+                                                                    %)))))))
 
-                scheduled-repeater?
-                (->> (apply-repeater (:repeater scheduled) (:base scheduled) today max-repeater-date)
-                     (map-indexed (fn [idx scheduled]
-                                    (-> base
-                                        (assoc :scheduled scheduled)
-                                        (cond-> (pos? idx)
-                                          (assoc :repeat? true :last-repeat nil))))))
+                 scheduled-repeater?
+                 (->> (apply-repeater (:repeater scheduled) (:base scheduled) today max-repeater-date)
+                      (map-indexed (fn [idx scheduled]
+                                     (-> base
+                                         (assoc :scheduled scheduled)
+                                         (cond-> (pos? idx)
+                                           (assoc :repeat? true :last-repeat nil))))))
 
-                deadline-repeater?
-                (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
-                     (map-indexed (fn [idx deadline]
-                                    (-> base
-                                        (assoc :deadline deadline)
-                                        (cond-> (pos? idx)
-                                          (assoc :repeat? true :last-repeat nil))))))
+                 deadline-repeater?
+                 (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
+                      (map-indexed (fn [idx deadline]
+                                     (-> base
+                                         (assoc :deadline deadline)
+                                         (cond-> (pos? idx)
+                                           (assoc :repeat? true :last-repeat nil))))))
 
-                :else [base])))
+                 :else [base])
+           (for [ts general-timestamps]
+             (assoc base :agenda-timestamp ts)))))
       (catch Exception e
         (let [f (format "/tmp/agenda-err-%02d.org" (mod (hash section) 100))
               header (format "AGENDA ERROR[%s]: %s" f (.getMessage e))]
@@ -310,10 +329,13 @@
 
 (defn relevant-date
   [item]
-  (some-> (or (let [s (:scheduled item)]
-                (cond-> s (vector? s) first))
-              (:deadline item))
-          to-local-date))
+  (try
+    (some-> (or (let [s (:scheduled item)]
+                  (cond-> s (vector? s) first))
+                (:deadline item))
+            to-local-date)
+    (catch Exception e
+      (throw (ex-info "Error getting relevant date" {:item item} e)))))
 
 (defn timetable-slot
   "Returns nil or [t1 t2] where both are LocalDateTimes. For items with
