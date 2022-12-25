@@ -35,8 +35,9 @@
 
 (defn parse-org-datetime
   [s]
-  (let [[_ d t] (re-matches org-timestamp-regex s)]
-    (LocalDateTime/of (LocalDate/parse d) (LocalTime/parse t))))
+  (if-let [[_ d t] (re-matches org-timestamp-regex s)]
+    (LocalDateTime/of (LocalDate/parse d) (LocalTime/parse t))
+    (throw (ex-info "Bad arg to parse-org-datetime" {:arg s}))))
 
 (defn to-local-date
   [x]
