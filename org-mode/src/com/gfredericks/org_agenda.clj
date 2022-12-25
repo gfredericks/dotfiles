@@ -682,6 +682,10 @@
                 (println (format "# (%d items with no effort estimate)" unefforted-count)))
               (when (pos? count-without-duration)
                 (println (format "# (%d calendar items with no duration)" count-without-duration))))]
+        (when-let [todo (:stalest-todo agenda)]
+          (println "== STALEST TODO ==")
+          (print-todo-line todo {})
+          (println))
         (println "== TODAY ==")
         (let [{:keys [stats todos calendar-events]} today]
           (when-not stats
@@ -695,9 +699,6 @@
                        (when agenda-section
                          (printf "\n*%s*\n" (.toUpperCase agenda-section)))
                        (run! #(print-todo-line % {}) todos)))))
-        (when-let [todo (:stalest-todo agenda)]
-          (println "\n== STALEST TODO ==")
-          (print-todo-line todo {}))
         (println "\n\n--------------------------------------------------------------------------------")
         (println "|                                  future                                      |")
         (println "--------------------------------------------------------------------------------")
