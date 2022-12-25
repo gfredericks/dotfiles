@@ -880,7 +880,7 @@
   (try
     (watch-abstract
      {:directory directory
-      :map-fn agenda-data-for-file
+      :map-fn #'agenda-data-for-file
       :synthesize-fn (fn [by-file today]
                        (calculate-agenda by-file cfg (ZonedDateTime/now CHICAGO)))
       :reset-all-file reset-all-file
