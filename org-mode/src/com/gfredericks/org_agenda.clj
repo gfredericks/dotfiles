@@ -789,14 +789,16 @@
      :backlog        (sort-by sort-key backlog)
      :today          today-stuff
      :stalest-todo (if-let [todos (seq (:todos today-stuff))]
-                     (apply min-key
-                            (fn [item]
-                              (if-let [updated-at (:updated-at item)]
-                                (-> updated-at
-                                    to-local-date
-                                    .toEpochDay)
-                                0))
-                            todos))
+                     (->> todos
+                          (remove :descendent-TODOs?)
+                          (remove :shadowed-by-sibling?)
+                          (apply min-key
+                                 (fn [item]
+                                   (if-let [updated-at (:updated-at item)]
+                                     (-> updated-at
+                                         to-local-date
+                                         .toEpochDay)
+                                     0)))))
      :future         (rest not-past)
      :past           (for [[date :as date+item] (reverse (sort by-day))
                            :when (compare/<= date today)]
