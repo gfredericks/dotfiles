@@ -386,6 +386,8 @@
   (and (:agenda-timestamp item)
        (not (or (:todo item) (:done item)))))
 
+(defn all-headers [item] (conj (:ancestor-headers item) (:raw-header item)))
+
 (defn agenda-data-for-file
   [file today]
   (try
@@ -394,6 +396,18 @@
                          (mapcat #(parse-section-for-agenda % file-str today)))
           calendar-events (->> all-items
                                (filter calendar-event?))
+          ;; maybe up here we can precalculate each sibling that is
+          ;; shadowed, and then do a lookup?
+          shadowed-siblings (->> all-items
+                                 (filter :todo)
+                                 (filter :parent-is-ordered?)
+                                 (group-by :ancestor-headers)
+                                 (mapcat (fn [[_ items]]
+                                           (->> items
+                                                (sort-by :line-number)
+                                                (rest))))
+                                 (map all-headers))
+
           todos (->> all-items
                      (filter :todo)
                      (map (fn [todo]
@@ -409,15 +423,14 @@
                                      :shadowed-by-sibling?
                                      ;; figure out if its parent has "ORDERED" set and
                                      ;; a prior sibling has "TODO"
-                                     (boolean
-                                      (and (:parent-is-ordered? todo)
-                                           (->> all-items
-                                                (filter :todo)
-                                                (some (fn [todo2]
-                                                        (and (= (:ancestor-headers todo)
-                                                                (:ancestor-headers todo2))
-                                                             (< (:line-number todo2)
-                                                                (:line-number todo)))))))))))))]
+
+                                     ;; actually we need to figure out if this applies
+                                     ;; to any of its ancestors also...
+                                     (->> shadowed-siblings
+                                          (some (fn [headers]
+                                                  (= headers (take (count headers)
+                                                                   search))))
+                                          (boolean)))))))]
       {:todos   todos
        :todones (->> all-items
                      (filter :done))

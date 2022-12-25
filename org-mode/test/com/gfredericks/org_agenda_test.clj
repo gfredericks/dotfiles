@@ -77,24 +77,23 @@
        (fn [agenda]
          (is (= 20 (count (re-seq #"just appear once" agenda)))))))))
 
-(comment
-  ;; Currently failing
-  (deftest ordered-test
-    (do-integration
-     {"only-file.org"
-      (str "* Hello\n"
-           "  :PROPERTIES:\n"
-           "  :ORDERED: t\n"
-           "  :END:\n"
-           "** TODO Aaa\n"
-           "*** TODO Bbb\n"
-           "** TODO Ccc\n"
-           "*** TODO Ddd\n")}
-     ;; doesn't matter
-     (ZonedDateTime/of 2022 7 10 16 22 15 0 oa/CHICAGO)
-     (fn [agenda]
-       (is (= 1 (count (re-seq #"TODO" agenda))))
-       (is (re-find #"Bbb" agenda))))))
+(deftest ordered-test
+  ;; testing that ORDERED works correctly with descendents
+  (do-integration
+   {"only-file.org"
+    (str "* Hello\n"
+         "  :PROPERTIES:\n"
+         "  :ORDERED: t\n"
+         "  :END:\n"
+         "** TODO Aaa\n"
+         "*** TODO Bbb\n"
+         "** TODO Ccc\n"
+         "*** TODO Ddd\n")}
+   ;; doesn't matter
+   (ZonedDateTime/of 2022 7 10 16 22 15 0 oa/CHICAGO)
+   (fn [agenda]
+     (is (= 1 (count (re-seq #"TODO" agenda))))
+     (is (re-find #"Bbb" agenda)))))
 
 (deftest calendar-reference-test
   (let [now (ZonedDateTime/of 2022 7 10 16 22 15 0 oa/CHICAGO)]
