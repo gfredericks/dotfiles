@@ -802,10 +802,11 @@
      :triage         (sort-by sort-key triage)
      :backlog        (sort-by sort-key backlog)
      :today          today-stuff
-     :stalest-todo (if-let [todos (seq (:todos today-stuff))]
+     :stalest-todo (if-let [todos (->> (:todos today-stuff)
+                                       (remove :descendent-TODOs?)
+                                       (remove :shadowed-by-sibling?)
+                                       (seq))]
                      (->> todos
-                          (remove :descendent-TODOs?)
-                          (remove :shadowed-by-sibling?)
                           (apply min-key
                                  (fn [item]
                                    (if-let [updated-at (:updated-at item)]
