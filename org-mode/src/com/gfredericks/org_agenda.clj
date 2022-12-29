@@ -387,6 +387,8 @@
   (and (:agenda-timestamp item)
        (not (or (:todo item) (:done item)))))
 
+(defn all-headers [item] (conj (:ancestor-headers item) (:raw-header item)))
+
 (defn agenda-data-for-file
   [file today]
   (try
@@ -395,6 +397,18 @@
                          (mapcat #(parse-section-for-agenda % file-str today)))
           calendar-events (->> all-items
                                (filter calendar-event?))
+          ;; maybe up here we can precalculate each sibling that is
+          ;; shadowed, and then do a lookup?
+          shadowed-siblings (->> all-items
+                                 (filter :todo)
+                                 (filter :parent-is-ordered?)
+                                 (group-by :ancestor-headers)
+                                 (mapcat (fn [[_ items]]
+                                           (->> items
+                                                (sort-by :line-number)
+                                                (rest))))
+                                 (map all-headers))
+
           todos (->> all-items
                      (filter :todo)
                      (map (fn [todo]
@@ -410,15 +424,14 @@
                                      :shadowed-by-sibling?
                                      ;; figure out if its parent has "ORDERED" set and
                                      ;; a prior sibling has "TODO"
-                                     (boolean
-                                      (and (:parent-is-ordered? todo)
-                                           (->> all-items
-                                                (filter :todo)
-                                                (some (fn [todo2]
-                                                        (and (= (:ancestor-headers todo)
-                                                                (:ancestor-headers todo2))
-                                                             (< (:line-number todo2)
-                                                                (:line-number todo)))))))))))))]
+
+                                     ;; actually we need to figure out if this applies
+                                     ;; to any of its ancestors also...
+                                     (->> shadowed-siblings
+                                          (some (fn [headers]
+                                                  (= headers (take (count headers)
+                                                                   search))))
+                                          (boolean)))))))]
       {:todos   todos
        :todones (->> all-items
                      (filter :done))
@@ -683,6 +696,10 @@
                 (println (format "# (%d items with no effort estimate)" unefforted-count)))
               (when (pos? count-without-duration)
                 (println (format "# (%d calendar items with no duration)" count-without-duration))))]
+        (when-let [todo (:stalest-todo agenda)]
+          (println "== STALEST TODO ==")
+          (print-todo-line todo {})
+          (println))
         (println "== TODAY ==")
         (let [{:keys [stats todos calendar-events]} today]
           (when-not stats
@@ -696,9 +713,6 @@
                        (when agenda-section
                          (printf "\n*%s*\n" (.toUpperCase agenda-section)))
                        (run! #(print-todo-line % {}) todos)))))
-        (when-let [todo (:stalest-todo agenda)]
-          (println "\n== STALEST TODO ==")
-          (print-todo-line todo {}))
         (println "\n\n--------------------------------------------------------------------------------")
         (println "|                                  future                                      |")
         (println "--------------------------------------------------------------------------------")
@@ -789,14 +803,16 @@
      :backlog        (sort-by sort-key backlog)
      :today          today-stuff
      :stalest-todo (if-let [todos (seq (:todos today-stuff))]
-                     (apply min-key
-                            (fn [item]
-                              (if-let [updated-at (:updated-at item)]
-                                (-> updated-at
-                                    to-local-date
-                                    .toEpochDay)
-                                0))
-                            todos))
+                     (->> todos
+                          (remove :descendent-TODOs?)
+                          (remove :shadowed-by-sibling?)
+                          (apply min-key
+                                 (fn [item]
+                                   (if-let [updated-at (:updated-at item)]
+                                     (-> updated-at
+                                         to-local-date
+                                         .toEpochDay)
+                                     0)))))
      :future         (rest not-past)
      :past           (for [[date :as date+item] (reverse (sort by-day))
                            :when (compare/<= date today)]
@@ -878,7 +894,7 @@
   (try
     (watch-abstract
      {:directory directory
-      :map-fn agenda-data-for-file
+      :map-fn #'agenda-data-for-file
       :synthesize-fn (fn [by-file today]
                        (calculate-agenda by-file cfg (ZonedDateTime/now CHICAGO)))
       :reset-all-file reset-all-file
