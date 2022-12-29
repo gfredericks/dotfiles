@@ -14,13 +14,14 @@
 
 (deftest timestamp-finder-test
   (are [format-str line out] (= out ((oa/timestamp-finder format-str) line))
-    "%s" "[2022-06-11 Sat 11:14]" (LDT "2022-06-11T11:14:00")
-    "%s" "<2022-06-18>" (LD "2022-06-18")
-    " heyo %s.*" " heyo <2022-01-01 Sat 08:00-10:43> anything" [(LDT "2022-01-01T08:00")
-                                                                (LDT "2022-01-01T10:43")]
-    "%s" "<2022-06-18 Sat +3d>" {:repeater ["+" 3 "d"] :base (LD "2022-06-18")}
-    "%s" "<2022-06-18 Sat ++3d>" {:repeater ["++" 3 "d"] :base (LD "2022-06-18")}
-    "%s" "<2022-06-18 Sat 19:00 .+1w>" {:repeater [".+" 1 "w"] :base (LDT "2022-06-18T19:00")}))
+    "%s" "[2022-06-11 Sat 11:14]" {:base (LDT "2022-06-11T11:14:00") :active? false}
+    "%s" "<2022-06-18>" {:base (LD "2022-06-18") :active? true}
+    " heyo %s.*" " heyo <2022-01-01 Sat 08:00-10:43> anything" {:base [(LDT "2022-01-01T08:00")
+                                                                       (LDT "2022-01-01T10:43")]
+                                                                :active? true}
+    "%s" "<2022-06-18 Sat +3d>" {:repeater ["+" 3 "d"] :base (LD "2022-06-18") :active? true}
+    "%s" "<2022-06-18 Sat ++3d>" {:repeater ["++" 3 "d"] :base (LD "2022-06-18") :active? true}
+    "%s" "<2022-06-18 Sat 19:00 .+1w>" {:repeater [".+" 1 "w"] :base (LDT "2022-06-18T19:00") :active? true}))
 
 (deftest apply-repeater-test
   (are [repeater base today max-date out] (= out (oa/apply-repeater repeater base today max-date))
@@ -94,3 +95,30 @@
      (fn [agenda]
        (is (= 1 (count (re-seq #"TODO" agenda))))
        (is (re-find #"Bbb" agenda))))))
+
+(deftest calendar-reference-test
+  (let [now (ZonedDateTime/of 2022 7 10 16 22 15 0 oa/CHICAGO)]
+    (do-integration
+     {"only-file.org"
+      "* Something is happening on <2022-07-10 Sun>"}
+     now
+     (fn [agenda]
+       (is (re-find #"Something is happening" agenda))))
+    (do-integration
+     {"only-file.org"
+      "* Something is happening!\n But not until <2022-07-10 Sun>"}
+     now
+     (fn [agenda]
+       (is (re-find #"Something is happening" agenda))))))
+
+
+(deftest regression-test-2022-12-23
+  (let [now (ZonedDateTime/of 2022 12 23 16 22 15 0 oa/CHICAGO)]
+    ;; fixing an issue with UPDATED_AT being just a date, not a
+    ;; datetime
+    (do-integration
+     {"only-file.org"
+      "* TODO heyo heyo\n  :PROPERTIES:\n  :UPDATED_AT: [2022-12-20 Tue]\n  :END:"}
+     now
+     (fn [agenda]
+       (is (re-find #"heyo heyo" agenda))))))
