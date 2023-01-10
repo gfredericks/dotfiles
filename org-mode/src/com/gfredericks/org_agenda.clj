@@ -609,7 +609,7 @@
                                 (make-org-link item header))))
         print-todo-line (fn [{:keys [effort properties] :as item}
                              {:keys [omit-effort?]}]
-                          (println (format "-%s %s%s%s"
+                          (println (format "-%s %s%s%s%s"
                                            (if omit-effort?
                                              ""
                                              (str " "
@@ -624,6 +624,13 @@
                                            (if-let [lt (:later-today-time item)]
                                              (format "(not until %s) " lt)
                                              "")
+                                           (let [{:keys [tag->decoration]} cfg
+                                                 s (->> tag->decoration
+                                                        (map (fn [[tag decoration]]
+                                                               (if (contains? (:tags item) tag)
+                                                                 decoration)))
+                                                        (apply str))]
+                                             (if (empty? s) s (str s " ")))
                                            (format-todo item)))
                           (when (= "t" (get properties "DEBUG"))
                             (clojure.pprint/pprint item)))
