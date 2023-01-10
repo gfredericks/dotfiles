@@ -636,8 +636,8 @@
                               (run! (fn [[[[t1 t2] item] [[t3 t4] _item2]]]
                                       (let [past? (:past? item)
                                             overlap? (and t3 (compare/< t3 t2))
-                                            t1 (.toLocalTime t1)
-                                            t2 (some-> t2 .toLocalTime)]
+                                            lt1 (.toLocalTime t1)
+                                            lt2 (some-> t2 .toLocalTime)]
                                         (printf "    %s%s%s%s: %s %s\n"
                                                 (if (and (not past?) overlap?)
                                                   "!!"
@@ -645,16 +645,18 @@
                                                 (if (= "t" (get (:properties item) "NO_DURATION")) "*" " ")
                                                 (if past? "# " "")
                                                 (if t2
-                                                  (if (all-day? item)
+                                                  (if (:all-day? item)
                                                     "(ALL DAY)"
-                                                    (str t1 "-" t2))
-                                                  t1)
+                                                    (str lt1 "-" lt2))
+                                                  lt1)
                                                 (if (or (:todo item) (:done item))
                                                   (format-todo item)
                                                   (:header item))
                                                 ;; once we figure out enough elisp to stop using links this
                                                 ;; can just be implicit
-                                                (make-org-link item "(link)")))))))
+                                                (if (:free-time? item)
+                                                  ""
+                                                  (make-org-link item "(link)"))))))))
         {:keys [deadlines triage today future past backlog]} agenda]
     (with-atomic-write-with-postamble-to cfg
       (when-let [preamble (:preamble cfg)]
@@ -802,14 +804,41 @@
                           :calendar-events (->> calendar-events
                                                 (map (juxt timetable-slot identity))
                                                 (filter first)
+                                                ((fn [events]
+                                                   (let [free-slots
+                                                         (->> events
+                                                              (map first)
+                                                              (reduce (fn [slots [t1 t2]]
+                                                                        (mapcat
+                                                                         (fn [[t3 t4 :as slot]]
+                                                                           (if (or (compare/<= t2 t3)
+                                                                                   (compare/<= t4 t1))
+                                                                             [slot]
+                                                                             (filter identity
+                                                                                     [(when (compare/< t3 t1)
+                                                                                        [t3 t1])
+                                                                                      (when (compare/< t2 t4)
+                                                                                        [t2 t4])])))
+                                                                         slots))
+                                                                      [ ;; TODO: configurable
+                                                                       [(LocalDateTime/of date (LocalTime/of 8 0))
+                                                                        (LocalDateTime/of date (LocalTime/of 17 0))]]))]
+                                                     (concat events (for [[t1 t2 :as slot] free-slots
+                                                                          :let [header
+                                                                                (let [free-seconds (- (.toSecondOfDay (.toLocalTime t2))
+                                                                                                      (.toSecondOfDay (.toLocalTime t1)))
+                                                                                      free-minutes (quot free-seconds 60)
+                                                                                      [h m] ((juxt quot mod) free-minutes 60)]
+                                                                                  (format "%02d:%02d free!" h m))]]
+                                                                      [slot {:header header
+                                                                             :agenda-timestamp slot
+                                                                             :free-time? true}])))))
                                                 (sort-by first)
                                                 (map (fn [[[t1 t2] item]]
                                                        (let [past? (compare/< (.atZone (or t2 t1) CHICAGO) now)
                                                              t1 (.toLocalTime t1)
                                                              t2 (some-> t2 .toLocalTime)]
-                                                         (assoc item
-                                                                :timetable-slot [t1 t2]
-                                                                :past? past?)))))}])
+                                                         (assoc item :past? past?)))))}])
         sort-key (juxt (comp - priority) :created-at :file :line-number)
         today-stuff (second (first not-past))]
     {:deadlines      (sort-by sort-key deadlines)

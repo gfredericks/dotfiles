@@ -172,3 +172,15 @@
      now
      (fn [agenda]
        (is (not (re-find #"!!" agenda)))))))
+
+
+(deftest calendar-gap-test
+  (let [now (ZonedDateTime/of 2022 12 23 9 22 15 0 oa/CHICAGO)]
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* Thing one <2022-12-23 Fri 12:00-13:00>"
+       "* Thing two <2022-12-23 Fri 14:30-16:00>")}
+     now
+     (fn [agenda]
+       (is (re-find #"01:30 free!" agenda))))))
