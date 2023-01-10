@@ -5,6 +5,10 @@
    [com.gfredericks.org-agenda :as oa])
   (:import (java.time LocalDate LocalDateTime ZonedDateTime)))
 
+(defn lines
+  [& lines]
+  (apply str (mapcat vector lines (repeat \newline))))
+
 (defn LDT [s] (LocalDateTime/parse s))
 (defn LD [s] (LocalDate/parse s))
 
@@ -70,9 +74,9 @@
     (doseq [rep [".+1d" "++1d"]]
       (do-integration
        {"only-file.org"
-        (str "* TODO this should just appear once a day\n"
-             (format "  SCHEDULED: <2022-07-11 Mon %s>\n"
-                     rep))}
+        (lines
+         "* TODO this should just appear once a day"
+         (format "  SCHEDULED: <2022-07-11 Mon %s>" rep))}
        now
        (fn [agenda]
          (is (= 20 (count (re-seq #"just appear once" agenda)))))))))
@@ -81,14 +85,15 @@
   ;; testing that ORDERED works correctly with descendents
   (do-integration
    {"only-file.org"
-    (str "* Hello\n"
-         "  :PROPERTIES:\n"
-         "  :ORDERED: t\n"
-         "  :END:\n"
-         "** TODO Aaa\n"
-         "*** TODO Bbb\n"
-         "** TODO Ccc\n"
-         "*** TODO Ddd\n")}
+    (lines
+     "* Hello"
+     "  :PROPERTIES:"
+     "  :ORDERED: t"
+     "  :END:"
+     "** TODO Aaa"
+     "*** TODO Bbb"
+     "** TODO Ccc"
+     "*** TODO Ddd")}
    ;; doesn't matter
    (ZonedDateTime/of 2022 7 10 16 22 15 0 oa/CHICAGO)
    (fn [agenda]
@@ -117,7 +122,11 @@
     ;; datetime
     (do-integration
      {"only-file.org"
-      "* TODO heyo heyo\n  :PROPERTIES:\n  :UPDATED_AT: [2022-12-20 Tue]\n  :END:"}
+      (lines
+       "* TODO heyo heyo"
+       "  :PROPERTIES:"
+       "  :UPDATED_AT: [2022-12-20 Tue]"
+       "  :END:")}
      now
      (fn [agenda]
        (is (re-find #"heyo heyo" agenda))))))
