@@ -111,7 +111,9 @@
        (is (= 2 (count (re-seq #"Something is happening" agenda))))))
     (do-integration
      {"only-file.org"
-      "* Something is happening!\n But not until <2022-07-10 Sun>"}
+      (lines
+       "* Something is happening!"
+       "But not until <2022-07-10 Sun>")}
      now
      (fn [agenda]
        (is (= 2 (count (re-seq #"Something is happening" agenda))))))))
@@ -143,3 +145,30 @@
      now
      (fn [agenda]
        (is (re-find #"heyo heyo" agenda))))))
+
+(deftest calendar-overlap-test
+  (let [now (ZonedDateTime/of 2022 12 23 9 22 15 0 oa/CHICAGO)]
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* Thing one <2022-12-23 Fri 12:00-13:00>"
+       "* Thing two <2022-12-23 Fri 12:30-14:00>")}
+     now
+     (fn [agenda]
+       (is (re-find #"!!" agenda))))
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* Thing one <2022-12-23 Fri 08:00-08:30>"
+       "* Thing two <2022-12-23 Fri 08:20-09:03>")}
+     now
+     (fn [agenda]
+       ;; no indicator when it's in the past
+       (is (not (re-find #"!!" agenda)))))
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* Thing one <2022-12-23 Fri 12:00-13:00>")}
+     now
+     (fn [agenda]
+       (is (not (re-find #"!!" agenda)))))))

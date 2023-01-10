@@ -632,11 +632,16 @@
                               (map (juxt timetable-slot identity))
                               (filter first)
                               (sort-by first)
-                              (run! (fn [[[t1 t2] item]]
+                              (partition-all 2 1)
+                              (run! (fn [[[[t1 t2] item] [[t3 t4] _item2]]]
                                       (let [past? (:past? item)
+                                            overlap? (and t3 (compare/< t3 t2))
                                             t1 (.toLocalTime t1)
                                             t2 (some-> t2 .toLocalTime)]
-                                        (printf "      %s%s%s: %s %s\n"
+                                        (printf "    %s%s%s%s: %s %s\n"
+                                                (if (and (not past?) overlap?)
+                                                  "!!"
+                                                  "  ")
                                                 (if (= "t" (get (:properties item) "NO_DURATION")) "*" " ")
                                                 (if past? "# " "")
                                                 (if t2
