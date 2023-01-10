@@ -107,13 +107,14 @@
       "* Something is happening on <2022-07-10 Sun>"}
      now
      (fn [agenda]
-       (is (re-find #"Something is happening" agenda))))
+       ;; 2 because the link contains it as well
+       (is (= 2 (count (re-seq #"Something is happening" agenda))))))
     (do-integration
      {"only-file.org"
       "* Something is happening!\n But not until <2022-07-10 Sun>"}
      now
      (fn [agenda]
-       (is (re-find #"Something is happening" agenda))))))
+       (is (= 2 (count (re-seq #"Something is happening" agenda))))))))
 
 
 (deftest regression-test-2022-12-23
@@ -127,6 +128,18 @@
        "  :PROPERTIES:"
        "  :UPDATED_AT: [2022-12-20 Tue]"
        "  :END:")}
+     now
+     (fn [agenda]
+       (is (re-find #"heyo heyo" agenda))))))
+
+(deftest show-shadowed-deadlines
+  (let [now (ZonedDateTime/of 2022 12 23 16 22 15 0 oa/CHICAGO)]
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* TODO heyo heyo"
+       "  DEADLINE: <2022-12-25 Sun>"
+       "** TODO This is shadowing it")}
      now
      (fn [agenda]
        (is (re-find #"heyo heyo" agenda))))))

@@ -160,7 +160,6 @@
       closed-finder            (timestamp-finder "\\s*CLOSED: %s.*")
       created-at-finder        (timestamp-finder "\\s*Created at %s")
       agenda-timestamp-finder  (timestamp-finder ".*(?<!(?:SCHEDULED|DEADLINE): )(?=<)%s(?<=>).*")
-      general-timestamp-finder (timestamp-finder ".*%s.*")
 
       agenda-date-range-pattern
       #"<(\d{4}-\d\d-\d\d)(?: \w\w\w)?>--<(\d{4}-\d\d-\d\d)(?: \w\w\w)?>"
@@ -176,8 +175,8 @@
      today]
     (try
       (when (not-any? #(re-matches #"(?i)archive" %) (apply concat tags-with-ancestors))
-        (let [get-timestamp (fn [finder allow-repeater?]
-                              (let [ret (some->> prelude
+        (let [get-timestamp (fn [finder allow-repeater? include-header?]
+                              (let [ret (some->> (cond->> prelude include-header? (cons header))
                                                  (keep finder)
                                                  (first))]
                                 (if (and (:repeater ret)
@@ -185,16 +184,6 @@
                                   (throw (ex-info "Sorry man can't have a repeater there" {}))
                                   ret)))
               max-repeater-date (.plusDays today 60)
-              general-timestamps (->> (cons header prelude)
-                                      (remove (some-fn scheduled-finder
-                                                       deadline-finder))
-                                      (keep general-timestamp-finder)
-                                      (filter :active?)
-                                      (mapcat (fn [{:keys [repeater base]}]
-                                                (if repeater
-                                                  (apply-repeater
-                                                   repeater base today max-repeater-date)
-                                                  [base]))))
               [_ stars todo priority-cookie rest] (re-matches header-pattern header)
               raw-header header
               header (remove-tags rest)
@@ -202,8 +191,8 @@
                        (when-let [[_ hours minutes] (re-matches #"(\d+):(\d+)" s)]
                          (Duration/ofMinutes (+ (Long/parseLong minutes)
                                                 (* 60 (Long/parseLong hours))))))
-              scheduled (get-timestamp scheduled-finder true)
-              deadline  (get-timestamp deadline-finder true)
+              scheduled (get-timestamp scheduled-finder true false)
+              deadline  (get-timestamp deadline-finder true false)
               tags (reduce into #{} tags-with-ancestors)
               properties (first props-with-ancestors)
               agenda-notes (->> prelude
@@ -224,7 +213,9 @@
                               (map (fn [[_ start end]]
                                      [(parse-org-datetime start)
                                       (some-> end parse-org-datetime)])))
-              created-at (:base (get-timestamp created-at-finder false))
+              created-at (:base (get-timestamp created-at-finder false false))
+              scheduled-repeater? (:repeater scheduled)
+              deadline-repeater? (:repeater deadline)
               base (with-meta
                      {:todo               (if (contains? DONE-states todo) nil todo)
                       :done               (if (contains? DONE-states todo) todo)
@@ -239,8 +230,8 @@
                                                 (or (:base scheduled) scheduled))
                                               created-at)
                       :deadline           (:base deadline)
-                      :agenda-timestamp   (:base (get-timestamp agenda-timestamp-finder false))
-                      :closed-at          (:base (get-timestamp closed-finder false))
+                      :agenda-timestamp   (:base (get-timestamp agenda-timestamp-finder false true))
+                      :closed-at          (:base (get-timestamp closed-finder false false))
 
                       :last-repeat        (some-> props-with-ancestors
                                                   first
@@ -259,57 +250,57 @@
                                                (boolean))
                       :agenda-notes       agenda-notes
                       :parent-is-ordered? (-> props-with-ancestors second (get "ORDERED") (= "t"))
-                      :agenda-section     (get properties "AGENDA_SECTION")
+                      :backlog-section     (or (get properties "BACKLOG_SECTION")
+                                               ;; legacy name
+                                               (get properties "AGENDA_SECTION")
+                                               (if (contains? tags "backlog")
+                                                 "legacy_backlog_tag"))
                       :properties         properties
                       :tags               tags
                       :own-tags           (first tags-with-ancestors)
                       :effort             effort
-                      :backlog?           (contains? tags "backlog")}
+                      :repeat?            (or scheduled-repeater? deadline-repeater?)}
                      {:raw-section section})
               date-range (->> prelude
                               (keep (fn [line]
                                       (re-find agenda-date-range-pattern line)))
                               (first))
-              scheduled-repeater? (:repeater scheduled)
-              deadline-repeater? (:repeater deadline)]
+              ]
           (when (< 1 (count (filter identity [date-range scheduled-repeater? deadline-repeater?])))
             (throw (ex-info "Can't have more than one of [date-range scheduled-repeater? deadline-repeater?]"
                             {})))
-          (concat
-           (cond date-range
-                 (let [[_ d1 d2] date-range
-                       d1 (LocalDate/parse d1)
-                       d2 (LocalDate/parse d2)
-                       all-dates (->> (iterate #(.plusDays % 1) d1)
-                                      (take-while #(compare/<= % d2)))]
-                   (->> all-dates
-                        (map-indexed (fn [idx date]
-                                       (-> base
-                                           (assoc :agenda-timestamp date)
-                                           (update :header #(format "DAY %d/%d: %s"
-                                                                    (inc idx)
-                                                                    (count all-dates)
-                                                                    %)))))))
+          (cond date-range
+                (let [[_ d1 d2] date-range
+                      d1 (LocalDate/parse d1)
+                      d2 (LocalDate/parse d2)
+                      all-dates (->> (iterate #(.plusDays % 1) d1)
+                                     (take-while #(compare/<= % d2)))]
+                  (->> all-dates
+                       (map-indexed (fn [idx date]
+                                      (-> base
+                                          (assoc :agenda-timestamp date)
+                                          (update :header #(format "DAY %d/%d: %s"
+                                                                   (inc idx)
+                                                                   (count all-dates)
+                                                                   %)))))))
 
-                 scheduled-repeater?
-                 (->> (apply-repeater (:repeater scheduled) (:base scheduled) today max-repeater-date)
-                      (map-indexed (fn [idx scheduled]
-                                     (-> base
-                                         (assoc :scheduled scheduled)
-                                         (cond-> (pos? idx)
-                                           (assoc :repeat? true :last-repeat nil))))))
+                scheduled-repeater?
+                (->> (apply-repeater (:repeater scheduled) (:base scheduled) today max-repeater-date)
+                     (map-indexed (fn [idx scheduled]
+                                    (-> base
+                                        (assoc :scheduled scheduled)
+                                        (cond-> (pos? idx)
+                                          (assoc :last-repeat nil))))))
 
-                 deadline-repeater?
-                 (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
-                      (map-indexed (fn [idx deadline]
-                                     (-> base
-                                         (assoc :deadline deadline)
-                                         (cond-> (pos? idx)
-                                           (assoc :repeat? true :last-repeat nil))))))
+                deadline-repeater?
+                (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
+                     (map-indexed (fn [idx deadline]
+                                    (-> base
+                                        (assoc :deadline deadline)
+                                        (cond-> (pos? idx)
+                                          (assoc :last-repeat nil))))))
 
-                 :else [base])
-           (for [ts general-timestamps]
-             (assoc base :agenda-timestamp ts)))))
+                :else [base])))
       (catch Exception e
         (let [f (format "/tmp/agenda-err-%02d.org" (mod (hash section) 100))
               header (format "AGENDA ERROR[%s]: %s" f (.getMessage e))]
@@ -450,6 +441,10 @@
       (log/warn "FileNotFoundException")
       {:todos [] :todones [] :calendar-events []})))
 
+(defn org-blocked?
+  [item]
+  (or (:descendent-TODOs? item)
+      (:shadowed-by-sibling? item)))
 
 (defn synthesize-agenda
   [deets-by-file today]
@@ -458,22 +453,21 @@
         m (->> deets-by-file
                vals
                (mapcat :todos)
-               (remove :descendent-TODOs?)
-               (remove :shadowed-by-sibling?)
                (remove #(some->> %
                                  :priority-cookie
                                  (re-find #"\d")))
-               (keep (fn [{:keys [todo header deadline backlog?] :as item}]
-                       (if backlog?
-                         {:backlog #{item}}
-                         (if (and deadline (compare/<= (to-local-date deadline) today))
-                           {:deadlines #{item}}
-                           (if-let [d (relevant-date item)]
-                             (if-not (compare/< today+10 d)
-                               {(compare/max today d) #{item}})
-                             (if (:agenda-section item)
-                               {today #{item}}
-                               {:triage #{item}}))))))
+               (keep (fn [{:keys [todo header deadline backlog-section] :as item}]
+                       (if deadline
+                         {:deadlines #{item}}
+                         (when-not (org-blocked? item)
+                           (if backlog-section
+                             {:backlog #{item}}
+                             (if-let [d (relevant-date item)]
+                               (if-not (compare/< today+10 d)
+                                 {(compare/max today d) #{item}})
+                               (if (:backlog-section item)
+                                 {today #{item}}
+                                 {:triage #{item}})))))))
                (apply merge-with into))
         calendar-events (->> deets-by-file
                              vals
@@ -523,6 +517,8 @@
                                 ;; in link text
                                 (string/replace "[" "&#x5b;")
                                 (string/replace "]" "&#x5d;"))]
+      (when (nil? header)
+        (throw (ex-info "Bad item" {:item item})))
       (if-let [id (get (:properties item) "CUSTOM_ID")]
         (format "[[file:%s::#%s][%s]]"
                 file id escaped-link-text)
@@ -673,11 +669,15 @@
                                 preamble-string)]
           (println preamble-string)))
 
-      (println (format "Things to do right now: %d\n" (:todo-now-count agenda)))
+      (println (format "Things to do right now: %d" (:todo-now-count agenda)))
+      (println (format "Items in the backlog: %d"
+                       (count backlog)))
+      (println)
 
       (when (seq deadlines)
         (println "== DEADLINES ==")
         (println "(TODO: show upcoming deadlines based on the -0d cookie)")
+        (println "(TODO: show when the deadline is relative to today)")
         (doseq [item deadlines]
           (print-todo-line item {}))
         (println))
@@ -696,23 +696,23 @@
                 (println (format "# (%d items with no effort estimate)" unefforted-count)))
               (when (pos? count-without-duration)
                 (println (format "# (%d calendar items with no duration)" count-without-duration))))]
-        (when-let [todo (:stalest-todo agenda)]
-          (println "== STALEST TODO ==")
-          (print-todo-line todo {})
-          (println))
-        (println "== TODAY ==")
-        (let [{:keys [stats todos calendar-events]} today]
+        (let [{:keys [stats todos calendar-events]} today
+              {:keys [today-date]} agenda
+              {past false today true} (group-by #(boolean (or (= today-date (-> % :scheduled to-local-date))
+                                                              (:repeat? %)))
+                                                todos)]
+          (when (seq past)
+            (println "== PRIOR DAYS ==")
+            (run! #(print-todo-line % {}) past))
+          (println "== TODAY ==")
           (when-not stats
             (throw (ex-info "Dang 1" {})))
+          (println "Today's todos")
+          (let [{repeating true one-off false} (group-by (comp boolean :repeat?) today)]
+            (run! #(print-todo-line % {}) one-off)
+            (run! #(print-todo-line % {}) repeating))
           (print-stats stats)
-          (print-calendar calendar-events)
-          (->> todos
-               (group-by :agenda-section)
-               (sort)
-               (run! (fn [[agenda-section todos]]
-                       (when agenda-section
-                         (printf "\n*%s*\n" (.toUpperCase agenda-section)))
-                       (run! #(print-todo-line % {}) todos)))))
+          (print-calendar calendar-events))
         (println "\n\n--------------------------------------------------------------------------------")
         (println "|                                  future                                      |")
         (println "--------------------------------------------------------------------------------")
@@ -740,15 +740,24 @@
       (doseq [[date {:keys [calendar-events past-log]}] past]
         (println)
         (println (format "== LOG: %s ==" (format-org-local-date date)))
-        (print-calendar calendar-events)
+        (when (not= date (:today-date agenda))
+          (print-calendar calendar-events))
         (doseq [item past-log]
           (print-todo-line item {:omit-effort? true})))
       (when (seq backlog)
         (println "\n\n--------------------------------------------------------------------------------")
         (println "|                                   backlog                                    |")
         (println "--------------------------------------------------------------------------------")
-        (doseq [item backlog]
-          (print-todo-line item {}))))))
+        (when-let [todo (:stalest-backlog-item agenda)]
+          (println "== STALEST BACKLOG ITEM ==")
+          (print-todo-line todo {})
+          (println))
+        (->> backlog
+             (group-by :backlog-section)
+             (sort)
+             (run! (fn [[section items]]
+                     (printf "== %s ==\n" section)
+                     (run! #(print-todo-line % {}) items))))))))
 
 (defn calculate-agenda
   [deets-by-file cfg now]
@@ -802,18 +811,19 @@
      :triage         (sort-by sort-key triage)
      :backlog        (sort-by sort-key backlog)
      :today          today-stuff
-     :stalest-todo (if-let [todos (->> (:todos today-stuff)
-                                       (remove :descendent-TODOs?)
-                                       (remove :shadowed-by-sibling?)
-                                       (seq))]
-                     (->> todos
-                          (apply min-key
-                                 (fn [item]
-                                   (if-let [updated-at (:updated-at item)]
-                                     (-> updated-at
-                                         to-local-date
-                                         .toEpochDay)
-                                     0)))))
+     :today-date     today
+     :stalest-backlog-item (if-let [todos (->> backlog
+                                               (remove :descendent-TODOs?)
+                                               (remove :shadowed-by-sibling?)
+                                               (seq))]
+                             (->> todos
+                                  (apply min-key
+                                         (fn [item]
+                                           (if-let [updated-at (:updated-at item)]
+                                             (-> updated-at
+                                                 to-local-date
+                                                 .toEpochDay)
+                                             0)))))
      :future         (rest not-past)
      :past           (for [[date :as date+item] (reverse (sort by-day))
                            :when (compare/<= date today)]
@@ -901,6 +911,7 @@
       :reset-all-file reset-all-file
       :output-fn (fn [agenda]
                    (write-to-agenda-file agenda cfg)
+                   (log/infof "Wrote to %s" (:agenda-file cfg))
                    (when callback
                      (callback agenda)))})
     (catch Exception e
