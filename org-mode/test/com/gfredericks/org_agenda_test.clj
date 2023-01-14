@@ -253,3 +253,14 @@
        ;; doesn't show up at all, because the SCHEDULED date is
        ;; way in the future as well
        (is (not (re-find #"days.+This thing" agenda)))))))
+
+(deftest todos-with-time-ranges-appear-in-calendar
+  (let [now (ZonedDateTime/of 2022 12 23 9 22 15 0 oa/CHICAGO)]
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* TODO This thing"
+       "  <2022-12-23 Fri 12:00-13:30>")}
+     now
+     (fn [agenda]
+       (is (re-find #"12:00-13:30: TODO This thing" agenda))))))

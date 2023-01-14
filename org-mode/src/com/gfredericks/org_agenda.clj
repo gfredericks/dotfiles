@@ -390,8 +390,7 @@
 
 (defn calendar-event?
   [item]
-  (and (:agenda-timestamp item)
-       (not (or (:todo item) (:done item)))))
+  (some? (:agenda-timestamp item)))
 
 (defn all-headers [item] (conj (:ancestor-headers item) (:raw-header item)))
 
@@ -694,8 +693,8 @@
                                                     "(ALL DAY)"
                                                     (str lt1 "-" lt2))
                                                   lt1)
-                                                (if (or (:todo item) (:done item))
-                                                  (format-todo item)
+                                                (if-let [x (or (:todo item) (:done item))]
+                                                  (str x " " (:header item))
                                                   (:header item))
                                                 ;; once we figure out enough elisp to stop using links this
                                                 ;; can just be implicit
@@ -758,7 +757,8 @@
               (when (pos? count-without-duration)
                 (println (format "# (%d calendar items with no duration)" count-without-duration))))]
         (let [{:keys [stats todos calendar-events]} today
-              {past false today true} (group-by #(boolean (or (= today-date (-> % :scheduled to-local-date))
+              {past false today true} (group-by #(boolean (or (= today-date
+                                                                 (-> % :scheduled to-local-date))
                                                               (:repeat? %)))
                                                 todos)]
           (when (seq past)
