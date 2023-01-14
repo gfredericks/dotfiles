@@ -772,3 +772,9 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 
 (defun gfredericks-touch () (interactive)
   (org-set-property "UPDATED_AT" (inactive-timestamp)))
+
+(defun gfredericks-schedule-today (time-range)
+  (interactive "sTime range: ")
+  (let ((date (substring (inactive-timestamp) 1 11)))
+    (org-set-property "SCHEDULED_TODAY"
+                      (format "<%s %s>" date time-range))))
