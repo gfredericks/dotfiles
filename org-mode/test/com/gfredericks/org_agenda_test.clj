@@ -240,3 +240,16 @@
      (fn [agenda]
        (is (re-find #"truths" agenda))
        (is (re-find #"TODO.+This thing" agenda))))))
+
+(deftest deadline-with-scheduled-test
+  (let [now (ZonedDateTime/of 2022 12 23 9 22 15 0 oa/CHICAGO)]
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* TODO This thing"
+       "  SCHEDULED: <2023-02-01 Wed> DEADLINE: <2023-02-03 Fri>")}
+     now
+     (fn [agenda]
+       ;; doesn't show up at all, because the SCHEDULED date is
+       ;; way in the future as well
+       (is (not (re-find #"days.+This thing" agenda)))))))

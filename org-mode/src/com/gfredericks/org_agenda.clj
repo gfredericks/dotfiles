@@ -168,8 +168,8 @@
       (pos? min-indention)
       (map #(subs % min-indention)))))
 
-(let [scheduled-finder         (timestamp-finder "\\s*SCHEDULED: %s")
-      deadline-finder          (timestamp-finder "\\s*DEADLINE: %s")
+(let [scheduled-finder         (timestamp-finder "\\s*SCHEDULED: %s(?: DEADLINE: .*)?")
+      deadline-finder          (timestamp-finder "\\s*DEADLINE: %s(?: SCHEDULED: .*)?")
       closed-finder            (timestamp-finder "\\s*CLOSED: %s.*")
       created-at-finder        (timestamp-finder "\\s*Created at %s")
       agenda-timestamp-finder  (timestamp-finder ".*(?<!(?:SCHEDULED|DEADLINE): )(?=<)%s(?<=>).*")
