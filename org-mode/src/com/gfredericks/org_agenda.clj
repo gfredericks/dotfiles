@@ -590,7 +590,8 @@
 
 (defn write-to-agenda-file
   [agenda cfg]
-  (let [format-todo (fn [{:keys [done todo priority-cookie header] :as item}]
+  (let [{:keys [today-date]} agenda
+        format-todo (fn [{:keys [done todo priority-cookie header] :as item}]
                       (format "%s%s %s%s%s"
                               (cond-> (or done todo)
                                 (= "[#C]" priority-cookie)
@@ -607,9 +608,9 @@
                               (if (= "t" (get (:properties item) "AGENDA_NO_LINK"))
                                 header
                                 (make-org-link item header))))
-        print-todo-line (fn [{:keys [effort properties] :as item}
+        print-todo-line (fn [{:keys [effort deadline properties] :as item}
                              {:keys [omit-effort?]}]
-                          (println (format "-%s %s%s%s%s"
+                          (println (format "-%s %s%s%s%s%s"
                                            (if omit-effort?
                                              ""
                                              (str " "
@@ -620,6 +621,27 @@
                                                       "?:??"))))
                                            (if (= 1 (priority item))
                                              "  "
+                                             "")
+                                           (if deadline
+                                             (let [days-left (- (-> deadline
+                                                                    to-local-date
+                                                                    .toEpochDay)
+                                                                (.toEpochDay today-date))]
+                                               (format "*%s* "
+                                                       (cond (zero? days-left)
+                                                             "!due today!"
+
+                                                             (= 1 days-left)
+                                                             "!due tomorrow!"
+
+                                                             (pos? days-left)
+                                                             (format "(in %d days)" days-left)
+
+                                                             (= -1 days-left)
+                                                             "!1 day overdue!"
+
+                                                             :else
+                                                             (format "!%d days overdue!" (- days-left)))))
                                              "")
                                            (if-let [lt (:later-today-time item)]
                                              (format "(not until %s) " lt)
@@ -691,7 +713,6 @@
       (when (seq deadlines)
         (println "== DEADLINES ==")
         (println "(TODO: show upcoming deadlines based on the -0d cookie)")
-        (println "(TODO: show when the deadline is relative to today)")
         (doseq [item deadlines]
           (print-todo-line item {}))
         (println))
@@ -711,7 +732,6 @@
               (when (pos? count-without-duration)
                 (println (format "# (%d calendar items with no duration)" count-without-duration))))]
         (let [{:keys [stats todos calendar-events]} today
-              {:keys [today-date]} agenda
               {past false today true} (group-by #(boolean (or (= today-date (-> % :scheduled to-local-date))
                                                               (:repeat? %)))
                                                 todos)]

@@ -184,3 +184,24 @@
      now
      (fn [agenda]
        (is (re-find #"01:30 free!" agenda))))))
+
+(deftest deadline-daycount-test
+  (let [now (ZonedDateTime/of 2022 12 23 9 22 15 0 oa/CHICAGO)]
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* TODO This thing"
+       "  DEADLINE: <2022-12-25 Sun>")}
+     now
+     (fn [agenda]
+       (is (re-find #"in 2 days.+TODO.+This thing" agenda)))))
+  (let [now (ZonedDateTime/of 2022 12 23 9 22 15 0 oa/CHICAGO)]
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* TODO This thing"
+       "  DEADLINE: <2022-12-14 Wed>")}
+     now
+     (fn [agenda]
+       (is (re-find #"!9 days overdue!.+TODO.+This thing" agenda))))))
+
