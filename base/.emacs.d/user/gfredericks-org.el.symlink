@@ -759,9 +759,9 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
       (org-set-property "CUSTOM_ID" (get-random-uuid))
       (call-interactively 'org-store-link))))
 
-(defun agenda-section (section)
+(defun backlog-section (section)
   (interactive "sSection: ")
-  (org-set-property "AGENDA_SECTION" section))
+  (org-set-property "BACKLOG_SECTION" section))
 
 ;; I don't like the default blank lines added by org-insert-item
 (defun never-add-blank-lines-between-org-list-items
