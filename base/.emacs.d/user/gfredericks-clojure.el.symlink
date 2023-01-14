@@ -6,6 +6,7 @@
 (gfredericks-packages-install 'cider)
 (gfredericks-packages-install 'align-cljlet)
 (gfredericks-packages-install 'paredit)
+(gfredericks-packages-install 'inf-clojure)
 
 (require 'clojure-mode)
 (require 'cider)
