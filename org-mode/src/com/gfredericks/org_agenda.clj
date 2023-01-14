@@ -257,7 +257,7 @@
                                                  "legacy_backlog_tag"))
                       :properties         properties
                       :tags               tags
-                      :own-tags           (first tags-with-ancestors)
+                      :own-tags           (set (first tags-with-ancestors))
                       :effort             effort
                       :repeat?            (or scheduled-repeater? deadline-repeater?)}
                      {:raw-section section})
@@ -649,7 +649,7 @@
                                            (let [{:keys [tag->decoration]} cfg
                                                  s (->> tag->decoration
                                                         (map (fn [[tag decoration]]
-                                                               (if (contains? (:tags item) tag)
+                                                               (if (contains? (:own-tags item) tag)
                                                                  decoration)))
                                                         (apply str))]
                                              (if (empty? s) s (str s " ")))
@@ -685,7 +685,8 @@
                                                 ;; can just be implicit
                                                 (if (:free-time? item)
                                                   ""
-                                                  (make-org-link item "(link)"))))))))
+                                                  (format "(%s)"
+                                                          (make-org-link item "link")))))))))
         {:keys [deadlines triage today future past backlog]} agenda]
     (with-atomic-write-with-postamble-to cfg
       (when-let [preamble (:preamble cfg)]
@@ -722,7 +723,14 @@
           (print-todo-line item {}))
         (println))
       (let [print-stats
-            (fn [{:keys [total-effort total-cal-time unefforted-count count-without-duration]}]
+            (fn [{:keys [total-effort total-cal-time unefforted-count count-without-duration net-free-time gross-free-time] :as stats}]
+              (if (.isNegative net-free-time)
+                (printf "  !! time shortage of %s (out of %s)\n"
+                        (format-effort net-free-time)
+                        (format-effort gross-free-time))
+                (printf "  Free time surplus of %s out of %s\n"
+                        (format-effort net-free-time)
+                        (format-effort gross-free-time)))
               (when-not (.isZero total-effort)
                 (println (format "  Total effort: %s" (format-effort total-effort))))
               (when-not (.isZero total-cal-time)
@@ -793,6 +801,48 @@
                      (printf "== %s ==\n" section)
                      (run! #(print-todo-line % {}) items))))))))
 
+(defn add-free-time
+  [calendar-events date now]
+  (->> calendar-events
+       (map (juxt timetable-slot identity))
+       (filter first)
+       ((fn [events]
+          (let [free-slots
+                (->> events
+                     (map first)
+                     (reduce (fn [slots [t1 t2]]
+                               (mapcat
+                                (fn [[t3 t4 :as slot]]
+                                  (if (or (compare/<= t2 t3)
+                                          (compare/<= t4 t1))
+                                    [slot]
+                                    (filter identity
+                                            [(when (compare/< t3 t1)
+                                               [t3 t1])
+                                             (when (compare/< t2 t4)
+                                               [t2 t4])])))
+                                slots))
+                             [ ;; TODO: configurable
+                              [(LocalDateTime/of date (LocalTime/of 8 0))
+                               (LocalDateTime/of date (LocalTime/of 17 30))]]))]
+            (concat events (for [[t1 t2 :as slot] free-slots
+                                 :let [header
+                                       (let [free-seconds (- (.toSecondOfDay (.toLocalTime t2))
+                                                             (.toSecondOfDay (.toLocalTime t1)))
+                                             free-minutes (quot free-seconds 60)
+                                             [h m] ((juxt quot mod) free-minutes 60)]
+                                         (format "== %02d:%02d free! ==" h m))]]
+                             [slot {:header header
+                                    :agenda-timestamp slot
+                                    :scheduled slot
+                                    :free-time? true}])))))
+       (sort-by first)
+       (map (fn [[[t1 t2] item]]
+              (let [past? (compare/< (.atZone (or t2 t1) CHICAGO) now)
+                    t1 (.toLocalTime t1)
+                    t2 (some-> t2 .toLocalTime)]
+                (assoc item :past? past?))))))
+
 (defn calculate-agenda
   [deets-by-file cfg now]
   (let [today (.toLocalDate now)
@@ -800,7 +850,19 @@
         custom-prefix (:custom-prefix cfg (constantly nil))
         stats-by-date (into {}
                             (for [[date {:keys [todos calendar-events]}] (sort by-day)
-                                  :let [[total-cal-time count-without-duration] (summarize-calendar-events calendar-events)]]
+                                  :let [[total-cal-time count-without-duration] (summarize-calendar-events calendar-events)
+                                        total-effort (->> todos
+                                                          (keep :effort)
+                                                          (reduce #(.plus %1 %2) Duration/ZERO))
+                                        gross-free-time (->> (add-free-time calendar-events date now)
+                                                             (filter :free-time?)
+                                                             (map :scheduled)
+                                                             (map (fn [[t1 t2]]
+                                                                    (Duration/ofSeconds
+                                                                     (- (-> t2 .toLocalTime .toSecondOfDay)
+                                                                        (-> t1 .toLocalTime .toSecondOfDay)))))
+                                                             (reduce #(.plus %1 %2) Duration/ZERO))
+                                        net-free-time (.minus gross-free-time total-effort)]]
                               [date
                                {:unefforted-count (->> todos
                                                        (remove :effort)
@@ -808,9 +870,9 @@
                                                        ;; function or add a :needs-effort? attr to the map
                                                        (remove #(= "t" (get (:properties %) "EFFORT_EXEMPT")))
                                                        (count))
-                                :total-effort (->> todos
-                                                   (keep :effort)
-                                                   (reduce #(.plus %1 %2) Duration/ZERO))
+                                :total-effort total-effort
+                                :gross-free-time gross-free-time
+                                :net-free-time net-free-time
                                 :total-cal-time total-cal-time
                                 :count-without-duration count-without-duration}]))
         not-past (for [[date {:keys [todos calendar-events]}] (sort by-day)
@@ -828,44 +890,7 @@
                                                               #(or (relevant-date %) today)
                                                               :file
                                                               :line-number)))
-                          :calendar-events (->> calendar-events
-                                                (map (juxt timetable-slot identity))
-                                                (filter first)
-                                                ((fn [events]
-                                                   (let [free-slots
-                                                         (->> events
-                                                              (map first)
-                                                              (reduce (fn [slots [t1 t2]]
-                                                                        (mapcat
-                                                                         (fn [[t3 t4 :as slot]]
-                                                                           (if (or (compare/<= t2 t3)
-                                                                                   (compare/<= t4 t1))
-                                                                             [slot]
-                                                                             (filter identity
-                                                                                     [(when (compare/< t3 t1)
-                                                                                        [t3 t1])
-                                                                                      (when (compare/< t2 t4)
-                                                                                        [t2 t4])])))
-                                                                         slots))
-                                                                      [ ;; TODO: configurable
-                                                                       [(LocalDateTime/of date (LocalTime/of 8 0))
-                                                                        (LocalDateTime/of date (LocalTime/of 17 0))]]))]
-                                                     (concat events (for [[t1 t2 :as slot] free-slots
-                                                                          :let [header
-                                                                                (let [free-seconds (- (.toSecondOfDay (.toLocalTime t2))
-                                                                                                      (.toSecondOfDay (.toLocalTime t1)))
-                                                                                      free-minutes (quot free-seconds 60)
-                                                                                      [h m] ((juxt quot mod) free-minutes 60)]
-                                                                                  (format "%02d:%02d free!" h m))]]
-                                                                      [slot {:header header
-                                                                             :agenda-timestamp slot
-                                                                             :free-time? true}])))))
-                                                (sort-by first)
-                                                (map (fn [[[t1 t2] item]]
-                                                       (let [past? (compare/< (.atZone (or t2 t1) CHICAGO) now)
-                                                             t1 (.toLocalTime t1)
-                                                             t2 (some-> t2 .toLocalTime)]
-                                                         (assoc item :past? past?)))))}])
+                          :calendar-events (add-free-time calendar-events date now)}])
         sort-key (juxt (comp - priority) :created-at :file :line-number)
         today-stuff (second (first not-past))]
     {:deadlines      (sort-by sort-key deadlines)
@@ -873,6 +898,7 @@
      :backlog        (sort-by sort-key backlog)
      :today          today-stuff
      :today-date     today
+     :now            now
      :stalest-backlog-item (if-let [todos (->> backlog
                                                (remove :descendent-TODOs?)
                                                (remove :shadowed-by-sibling?)
@@ -909,9 +935,12 @@
   :directory        the directory containing org files
   :map-fn           fn of file, today
   :synthesize-fn    fn of {filename, map-fn-output}, today
-  :output-fn        fn of synthesize-fn-output"
-  [{:keys [directory map-fn synthesize-fn output-fn reset-all-file]}]
-  (let [q (LinkedBlockingQueue.)]
+  :output-fn        fn of synthesize-fn-output
+  :max-staleness    java.time.Duration, optional, default 5 minutes"
+  [{:keys [directory map-fn synthesize-fn output-fn reset-all-file max-staleness]
+    :or {max-staleness (Duration/ofMinutes 5)}}]
+  (let [q (LinkedBlockingQueue.)
+        max-staleness-ms (.toMillis max-staleness)]
     (run! #(.add q %) (all-org-files directory))
     (let [do-refresh-all (fn []
                            (log/info "Refreshing all agenda input files")
@@ -926,30 +955,43 @@
       (try
         (loop [by-file {}
                today (LocalDate/now CHICAGO)]
-          (let [x (.poll q 1 TimeUnit/MINUTES)
+          (let [x (.poll q max-staleness-ms TimeUnit/MILLISECONDS)
                 old-today today
                 today (LocalDate/now CHICAGO)]
             (when (not= today old-today) (do-refresh-all))
-            (if x
-              (let [start (System/currentTimeMillis)
-                    now (ZonedDateTime/now CHICAGO)
-                    all (->> (repeatedly #(.poll q 50 TimeUnit/MILLISECONDS))
-                             (take-while identity)
-                             (cons x)
-                             (distinct)
-                             (doall))
-                    by-file (into by-file
-                                  (for [file all]
-                                    [file (map-fn file today)]))]
-                (output-fn (synthesize-fn by-file today))
-                (log/infof "Updated at %s with %d changed files in %dms"
-                           (pr-str (java.util.Date.))
-                           (count all)
-                           (- (System/currentTimeMillis) start))
-                (recur by-file today))
+            (let [start (System/currentTimeMillis)
+                  now (ZonedDateTime/now CHICAGO)
+                  all (->> (repeatedly #(.poll q 50 TimeUnit/MILLISECONDS))
+                           (take-while identity)
+                           ((fn [xs] (cond->> xs x (cons x))))
+                           (distinct)
+                           (doall))
+                  by-file (into by-file
+                                (for [file all]
+                                  [file (map-fn file today)]))]
+              (output-fn (synthesize-fn by-file today))
+              (log/infof "Updated at %s with %d changed files in %dms"
+                         (pr-str (java.util.Date.))
+                         (count all)
+                         (- (System/currentTimeMillis) start))
               (recur by-file today))))
         (finally
           (close-watcher watcher))))))
+
+(defn send-notifications
+  [agenda cfg]
+  (when-let [notify (:notify cfg)]
+    (let [{:keys [now today]} agenda]
+      (->> today
+           :todos
+           (run! (fn [item]
+                   (when-let [scheduled (:scheduled item)]
+                     (let [ldt (if (vector? scheduled) (first scheduled) scheduled)
+                           ldt-now (.toLocalDateTime (:now agenda))]
+                       (when (and (instance? LocalDateTime ldt)
+                                  (compare/<= ldt ldt-now)
+                                  (compare/<= ldt-now (.plusMinutes ldt 30)))
+                         (notify item))))))))))
 
 (defn watch
   "cfg:
@@ -973,6 +1015,7 @@
       :output-fn (fn [agenda]
                    (write-to-agenda-file agenda cfg)
                    (log/infof "Wrote to %s" (:agenda-file cfg))
+                   (send-notifications agenda cfg)
                    (when callback
                      (callback agenda)))})
     (catch Exception e
