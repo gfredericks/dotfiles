@@ -725,7 +725,6 @@
 
       (when (seq deadlines)
         (println "== DEADLINES ==")
-        (println "(TODO: show upcoming deadlines based on the -0d cookie)")
         (doseq [item deadlines
                 :let [warning-period (-> item :deadline (get :warning-period DEFAULT-WARNING-PERIOD))
                       first-warning-day (-> item :deadline :base to-local-date (.minus warning-period))]
