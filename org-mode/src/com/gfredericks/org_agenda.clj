@@ -11,14 +11,17 @@
    [juxt.dirwatch :refer [close-watcher watch-dir]])
   (:import
    (java.io File FileNotFoundException)
-   (java.time Duration LocalDate LocalDateTime LocalTime ZonedDateTime ZoneId)
+   (java.time Duration LocalDate LocalDateTime LocalTime Period ZonedDateTime ZoneId)
    (java.time.format DateTimeFormatter)
    (java.util.concurrent LinkedBlockingQueue TimeUnit)))
 
 (def CHICAGO (ZoneId/of "America/Chicago"))
+(def DEFAULT-WARNING-PERIOD
+  "same as org-deadline-warning-days"
+  (Period/ofDays 14))
 
 (def org-timestamp-regex
-  #"([<\[])([-\d]{10})(?: \w{3})?(?: (\d\d:\d\d)(?:-(\d\d:\d\d))?)?(?: (\+|\+\+|\.\+)(\d+)([ymwdh]))?(?: [^>\]]*?)?([>\]])")
+  #"([<\[])([-\d]{10})(?: \w{3})?(?: (\d\d:\d\d)(?:-(\d\d:\d\d))?)?(?: (\+|\+\+|\.\+)(\d+)([ymwdh]))?(?: -(\d+)([ymwdh]))?(?: [^>\]]*?)?([>\]])")
 
 (def TODO-states #{"TODO" "BLOCKED" "DONE"})
 (def DONE-states #{"DONE"})
@@ -96,7 +99,7 @@
   [context-regex-format-string]
   (let [pattern (re-pattern (format context-regex-format-string org-timestamp-regex))]
     (fn [line]
-      (if-let [[_ left-bracket date time time-end r-type r-num r-unit right-bracket]
+      (if-let [[_ left-bracket date time time-end r-type r-num r-unit warning-period warning-period-unit right-bracket]
                (re-matches pattern line)]
         (let [base (if time
                      (let [t1 (LocalDateTime/parse (str date "T" time))]
@@ -113,7 +116,17 @@
               {:base base
                :active? (= "<" left-bracket)}
               r-type
-              (assoc :repeater [r-type (Long/parseLong r-num) r-unit])))))))
+              (assoc :repeater [r-type (Long/parseLong r-num) r-unit])
+
+              warning-period
+              (assoc :warning-period
+                     (let [wp (Long/parseLong warning-period)]
+                       (case warning-period-unit
+                         "y" (Period/ofYears wp)
+                         "m" (Period/ofMonths wp)
+                         "w" (Period/ofWeeks wp)
+                         "d" (Period/ofDays wp)
+                         "h" (throw (ex-info "Bad warning period" {:line line})))))))))))
 
 (defn apply-repeater
   [[r-type r-num r-unit] base today max-date]
@@ -229,7 +242,7 @@
                                               (if scheduled
                                                 (or (:base scheduled) scheduled))
                                               created-at)
-                      :deadline           (:base deadline)
+                      :deadline           deadline
                       :agenda-timestamp   (:base (get-timestamp agenda-timestamp-finder false true))
                       :closed-at          (:base (get-timestamp closed-finder false false))
 
@@ -264,8 +277,7 @@
               date-range (->> prelude
                               (keep (fn [line]
                                       (re-find agenda-date-range-pattern line)))
-                              (first))
-              ]
+                              (first))]
           (when (< 1 (count (filter identity [date-range scheduled-repeater? deadline-repeater?])))
             (throw (ex-info "Can't have more than one of [date-range scheduled-repeater? deadline-repeater?]"
                             {})))
@@ -294,9 +306,9 @@
 
                 deadline-repeater?
                 (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
-                     (map-indexed (fn [idx deadline]
+                     (map-indexed (fn [idx new-deadline]
                                     (-> base
-                                        (assoc :deadline deadline)
+                                        (assoc :deadline (assoc deadline :base new-deadline))
                                         (cond-> (pos? idx)
                                           (assoc :last-repeat nil))))))
 
@@ -327,12 +339,11 @@
     "[#B]" 4
     "[#C]" 1))
 
-(defn relevant-date
+(defn scheduled-date
   [item]
   (try
-    (some-> (or (let [s (:scheduled item)]
-                  (cond-> s (vector? s) first))
-                (:deadline item))
+    (some-> (let [s (:scheduled item)]
+              (cond-> s (vector? s) first))
             to-local-date)
     (catch Exception e
       (throw (ex-info "Error getting relevant date" {:item item} e)))))
@@ -457,17 +468,17 @@
                                  :priority-cookie
                                  (re-find #"\d")))
                (keep (fn [{:keys [todo header deadline backlog-section] :as item}]
-                       (if deadline
-                         {:deadlines #{item}}
-                         (when-not (org-blocked? item)
-                           (if backlog-section
-                             {:backlog #{item}}
-                             (if-let [d (relevant-date item)]
-                               (if-not (compare/< today+10 d)
-                                 {(compare/max today d) #{item}})
-                               (if (:backlog-section item)
-                                 {today #{item}}
-                                 {:triage #{item}})))))))
+                       (cond-> (when-not (org-blocked? item)
+                                 (if backlog-section
+                                   {:backlog #{item}}
+                                   (if-let [d (scheduled-date item)]
+                                     (if-not (compare/< today+10 d)
+                                       {(compare/max today d) #{item}})
+                                     (if (:backlog-section item)
+                                       {today #{item}}
+                                       {:triage #{item}}))))
+                         deadline
+                         (assoc :deadlines #{item}))))
                (apply merge-with into))
         calendar-events (->> deets-by-file
                              vals
@@ -624,6 +635,7 @@
                                              "")
                                            (if deadline
                                              (let [days-left (- (-> deadline
+                                                                    :base
                                                                     to-local-date
                                                                     .toEpochDay)
                                                                 (.toEpochDay today-date))]
@@ -714,7 +726,10 @@
       (when (seq deadlines)
         (println "== DEADLINES ==")
         (println "(TODO: show upcoming deadlines based on the -0d cookie)")
-        (doseq [item deadlines]
+        (doseq [item deadlines
+                :let [warning-period (-> item :deadline (get :warning-period DEFAULT-WARNING-PERIOD))
+                      first-warning-day (-> item :deadline :base to-local-date (.minus warning-period))]
+                :when (compare/>= today-date first-warning-day)]
           (print-todo-line item {}))
         (println))
       (when (seq triage)
@@ -887,7 +902,7 @@
                                                               ;; move rep entries to the bottom for the future blocks, so that
                                                               ;; nonrepeating items stick out
                                                               (if (= date today) (constantly nil) :repeat?)
-                                                              #(or (relevant-date %) today)
+                                                              #(or (scheduled-date %) today)
                                                               :file
                                                               :line-number)))
                           :calendar-events (add-free-time calendar-events date now)}])

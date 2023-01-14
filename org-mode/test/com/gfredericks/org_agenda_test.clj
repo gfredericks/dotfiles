@@ -205,3 +205,38 @@
      (fn [agenda]
        (is (re-find #"!9 days overdue!.+TODO.+This thing" agenda))))))
 
+(deftest deadline-hiding-rules-test
+  (let [now (ZonedDateTime/of 2022 12 23 9 22 15 0 oa/CHICAGO)
+        deadline-section #(second (re-matches #"(?s)(.*?)== (TODAY|TRIAGE) ==.*" %))]
+    ;; default warning period is 14 days
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* TODO This thing"
+       "  DEADLINE: <2023-02-03 Fri>")}
+     now
+     (fn [agenda]
+       (is (not (re-find #"days.+This thing" (deadline-section agenda))))
+       ))
+    ;; can set a custom warning period
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* TODO This thing"
+       "  DEADLINE: <2022-12-30 Fri -3d>")}
+     now
+     (fn [agenda]
+       (is (not (re-find #"7 days.+This thing" (deadline-section agenda))))))
+    ;; hidden deadlines can still show up as regular TODOs
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* TODO This thing"
+       "  DEADLINE: <2023-02-03 Fri>"
+       "  :PROPERTIES:"
+       "  :BACKLOG_SECTION: truths"
+       "  :END:")}
+     now
+     (fn [agenda]
+       (is (re-find #"truths" agenda))
+       (is (re-find #"TODO.+This thing" agenda))))))
