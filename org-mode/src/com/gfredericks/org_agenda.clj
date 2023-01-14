@@ -50,12 +50,16 @@
       (LocalDateTime/of ld (LocalTime/parse t))
       ld)))
 
-(defn to-local-date
-  [x]
-  (try
-    (cond-> x (not (instance? LocalDate x)) .toLocalDate)
-    (catch Exception e
-      (throw (ex-info "bad to-local-date" {:arg x} e)))))
+(defprotocol IToLocalDate
+  (to-local-date [x]))
+
+(extend-protocol IToLocalDate
+  LocalDate
+  (to-local-date [x] x)
+  ZonedDateTime
+  (to-local-date [x] (.toLocalDate x))
+  LocalDateTime
+  (to-local-date [x] (.toLocalDate x)))
 
 (defn format-effort
   [^Duration duration]
