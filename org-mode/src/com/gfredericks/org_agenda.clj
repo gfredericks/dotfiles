@@ -306,7 +306,7 @@
                                     (-> base
                                         (assoc :scheduled scheduled)
                                         (cond-> (pos? idx)
-                                          (assoc :last-repeat nil))))))
+                                          (assoc :last-repeat nil :generated-repeat? true))))))
 
                 deadline-repeater?
                 (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
@@ -314,7 +314,7 @@
                                     (-> base
                                         (assoc :deadline (assoc deadline :base new-deadline))
                                         (cond-> (pos? idx)
-                                          (assoc :last-repeat nil))))))
+                                          (assoc :last-repeat nil :generated-repeat? true))))))
 
                 :else [base])))
       (catch Exception e
@@ -913,7 +913,7 @@
         today-stuff (second (first not-past))]
     {:deadlines      (sort-by sort-key deadlines)
      :triage         (sort-by sort-key triage)
-     :backlog        (sort-by sort-key backlog)
+     :backlog        (remove :generated-repeat? (sort-by sort-key backlog))
      :today          today-stuff
      :today-date     today
      :now            now
