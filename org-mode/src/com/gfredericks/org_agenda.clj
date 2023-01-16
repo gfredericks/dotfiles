@@ -306,7 +306,9 @@
                                     (-> base
                                         (assoc :scheduled scheduled)
                                         (cond-> (pos? idx)
-                                          (assoc :last-repeat nil :generated-repeat? true))))))
+                                          (assoc :last-repeat nil
+                                                 :agenda-timestamp nil
+                                                 :generated-repeat? true))))))
 
                 deadline-repeater?
                 (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
@@ -314,7 +316,9 @@
                                     (-> base
                                         (assoc :deadline (assoc deadline :base new-deadline))
                                         (cond-> (pos? idx)
-                                          (assoc :last-repeat nil :generated-repeat? true))))))
+                                          (assoc :last-repeat nil
+                                                 :agenda-timestamp nil
+                                                 :generated-repeat? true))))))
 
                 :else [base])))
       (catch Exception e
@@ -660,7 +664,9 @@
                                              "")
                                            (if-let [lt (:later-today-time item)]
                                              (format "(not until %s) " lt)
-                                             "")
+                                             (if (:scheduled-time-for-today? item)
+                                               "# "
+                                               ""))
                                            (let [{:keys [tag->decoration]} cfg
                                                  s (->> tag->decoration
                                                         (map (fn [[tag decoration]]
@@ -898,6 +904,12 @@
                    [date {:stats          (stats-by-date date)
                           :todos          (->> todos
                                                (map #(assoc %
+                                                            :scheduled-time-for-today?
+                                                            (and (:agenda-timestamp %)
+                                                                 (-> (:agenda-timestamp %)
+                                                                     (as-> <> (if (vector? <>) (first <>) <>))
+                                                                     to-local-date
+                                                                     (= today)))
                                                             :later-today-time (later-today-time % now)
                                                             :custom-prefix (custom-prefix today %)))
                                                (sort-by (juxt :later-today-time ;; put future things at the bottom
