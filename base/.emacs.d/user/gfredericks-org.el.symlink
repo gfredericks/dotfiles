@@ -686,6 +686,15 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (setq current-prefix-arg 1)
   (call-interactively 'recenter-top-bottom))
 
+(defun gfredericks-agenda-mode-find-backlog
+    ()
+  (interactive)
+  (beginning-of-buffer)
+  (re-search-forward "^. +backlog +.$")
+  (beginning-of-line)
+  (setq current-prefix-arg 1)
+  (call-interactively 'recenter-top-bottom))
+
 (defun gfredericks-agenda-mode-find-future
     ()
   (interactive)
@@ -735,6 +744,8 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
       (kbd "RET") 'gfredericks-agenda-switch-to)
     (define-key km
       (kbd "t") 'gfredericks-agenda-mode-find-today)
+    (define-key km
+      (kbd "b") 'gfredericks-agenda-mode-find-backlog)
     (define-key km
       (kbd "f") 'gfredericks-agenda-mode-find-future)
     (define-key km
