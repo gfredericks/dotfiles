@@ -611,6 +611,18 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 ;; where does this even come from? I have no idea
 (org-babel-do-load-languages 'org-babel-load-languages '((shell . t)))
 
+(defun gfredericks-goto-agenda
+    ()
+  (interactive)
+  (if (not (= 0 (alist-get 'uid (wg-current-workgroup))))
+      (wg-switch-to-index-0))
+  (delete-other-windows)
+  (switch-to-buffer "agenda.org")
+  (beginning-of-buffer))
+
+(define-key org-mode-map "\C-c\C-a" nil)
+(global-set-key "\C-c\C-a" 'gfredericks-goto-agenda)
+
 (defun gfredericks-agenda-mode-refresh
     ()
   (interactive)

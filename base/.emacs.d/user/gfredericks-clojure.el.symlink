@@ -50,7 +50,6 @@
 (add-hook 'clojure-mode-hook
           (lambda () (paredit-mode +1)
                      (show-paren-mode +1)
-                     (define-key clojure-mode-map (kbd "C-c C-a") 'align-cljlet)
                      (define-key clojure-mode-map (kbd "M-RET")   'indent-new-comment-line)
                      (define-key clojure-mode-map (kbd "C-M-w") 'intellij-paredit-select-around)))
 
