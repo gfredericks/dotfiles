@@ -15,6 +15,16 @@
    (java.time.format DateTimeFormatter)
    (java.util.concurrent LinkedBlockingQueue TimeUnit)))
 
+(defn colorize
+  [s ansi-flags]
+  (format "\u001b[%sm%s\u001b[0m" ansi-flags s))
+
+;; 1 bold
+;; 3 italic
+;; 4 underline
+(defn red [s] (colorize s "31"))
+(defn red-bold [s] (colorize s "31;1"))
+
 (def CHICAGO (ZoneId/of "America/Chicago"))
 (def DEFAULT-WARNING-PERIOD
   "same as org-deadline-warning-days"
@@ -611,7 +621,7 @@
   (let [{:keys [today-date]} agenda
         format-todo (fn [{:keys [done todo priority-cookie header] :as item}]
                       (format "%s%s %s%s%s"
-                              (cond-> (or done todo)
+                              (cond-> (or done (red-bold todo))
                                 (= "[#C]" priority-cookie)
                                 (->> .toLowerCase (format "(%s)")))
                               (if priority-cookie
