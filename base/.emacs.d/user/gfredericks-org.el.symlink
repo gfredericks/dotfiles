@@ -801,3 +801,19 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (let ((date (substring (inactive-timestamp) 1 11)))
     (org-set-property "SCHEDULED_TODAY"
                       (format "<%s %s>" date time-range))))
+
+(defun gfredericks-apply-ansi-colors ()
+  (interactive)
+  (message "applying ansi colors")
+  (let ((inhibit-read-only t))
+    (ansi-color-apply-on-region (point-min) (point-max))
+    (not-modified)))
+
+(defun gfredericks-agenda-mode-ansi-colors-setup ()
+  (interactive)
+  (gfredericks-apply-ansi-colors)
+  (add-hook 'after-revert-hook 'gfredericks-apply-ansi-colors
+            nil t))
+
+(add-hook 'gfredericks-agenda-mode-hook
+          'gfredericks-agenda-mode-ansi-colors-setup)
