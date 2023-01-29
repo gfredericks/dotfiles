@@ -24,6 +24,7 @@
 ;; 4 underline
 (defn red [s] (colorize s "31"))
 (defn red-bold [s] (colorize s "31;1"))
+(defn yellow-italic [s] (colorize s "33;3"))
 
 (def CHICAGO (ZoneId/of "America/Chicago"))
 (def DEFAULT-WARNING-PERIOD
@@ -698,20 +699,25 @@
                                             overlap? (and t3 (compare/< t3 t2))
                                             lt1 (.toLocalTime t1)
                                             lt2 (some-> t2 .toLocalTime)]
-                                        (printf "    %s%s%s%s: %s %s\n"
+                                        (printf "    %s%s%s: %s %s\n"
                                                 (if (and (not past?) overlap?)
                                                   "!!"
                                                   "  ")
                                                 (if (= "t" (get (:properties item) "NO_DURATION")) "*" " ")
-                                                (if past? "# " "")
-                                                (if t2
-                                                  (if (:all-day? item)
-                                                    "(ALL DAY)"
-                                                    (str lt1 "-" lt2))
-                                                  lt1)
-                                                (if-let [x (or (:todo item) (:done item))]
-                                                  (str x " " (:header item))
-                                                  (:header item))
+                                                (cond->
+                                                    (if t2
+                                                      (if (:all-day? item)
+                                                        "(ALL DAY)"
+                                                        (str lt1 "-" lt2))
+                                                      lt1)
+                                                  past?
+                                                  yellow-italic)
+                                                (let [header (cond-> (:header item)
+                                                               past?
+                                                               yellow-italic)]
+                                                  (if-let [x (or (:todo item) (:done item))]
+                                                    (str x " " header)
+                                                    header))
                                                 ;; once we figure out enough elisp to stop using links this
                                                 ;; can just be implicit
                                                 (if (:free-time? item)
