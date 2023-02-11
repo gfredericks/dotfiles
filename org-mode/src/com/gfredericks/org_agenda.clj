@@ -1049,7 +1049,10 @@
   :refresh-file     a file which, when touched, triggers a regeneration
                     of the agenda
   :callback         (optional) function of the agenda data that is called
-                    each time the agenda changes"
+                    each time the agenda changes
+  :notify           (optional) function of a map describing an item scheduled
+                    at a particular time, called regularly during the first
+                    thirty minutes following the start time"
   [{:keys [directory reset-all-file callback] :as cfg}]
   (try
     (watch-abstract
