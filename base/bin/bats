@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 
-# Shows all files in the given directory using bat
+# Shows all files in the given directory using bat; also
+# supports a single file, just for convenience.
 
 if [[ $# -ne 1 ]]; then
   echo >&2 "USAGE: $0 DIRNAME"
   exit 1
 fi
 
-find "$1" -type f | xargs bat
+if [[ -f "$1" ]]; then
+    bat "$1"
+elif [[ -d "$1" ]]; then
+    find "$1" -type f | xargs bat
+else
+    echo >&2 "Not found: $1"
+fi
