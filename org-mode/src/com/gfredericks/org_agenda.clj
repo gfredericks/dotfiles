@@ -22,7 +22,11 @@
 ;; 1 bold
 ;; 3 italic
 ;; 4 underline
+(defn bold [s] (colorize s "1"))
+(defn bold-underline [s] (colorize s "1;4"))
+(defn bold-italic [s] (colorize s "1;3"))
 (defn red [s] (colorize s "31"))
+(defn blue [s] (colorize s "34"))
 (defn red-bold [s] (colorize s "31;1"))
 (defn yellow-italic [s] (colorize s "33;3"))
 
@@ -183,8 +187,15 @@
       (pos? min-indention)
       (map #(subs % min-indention)))))
 
-(let [scheduled-finder         (timestamp-finder "\\s*SCHEDULED: %s(?: DEADLINE: .*)?")
-      deadline-finder          (timestamp-finder "\\s*DEADLINE: %s(?: SCHEDULED: .*)?")
+(defn updated-at
+  [{:keys [properties scheduled created-at]}]
+  (or (some-> (get properties "UPDATED_AT")
+              parse-org-date-or-datetime)
+      scheduled
+      created-at))
+
+(let [scheduled-finder         (timestamp-finder "\\s*(?: DEADLINE: .*?)?SCHEDULED: %s(?: DEADLINE: .*)?")
+      deadline-finder          (timestamp-finder "\\s*(?: SCHEDULED: .*?)?DEADLINE: %s(?: SCHEDULED: .*)?")
       closed-finder            (timestamp-finder "\\s*CLOSED: %s.*")
       created-at-finder        (timestamp-finder "\\s*Created at %s")
       agenda-timestamp-finder  (timestamp-finder ".*(?<!(?:SCHEDULED|DEADLINE): )(?=<)%s(?<=>).*")
@@ -252,11 +263,6 @@
                       :ancestor-headers   ancestor-headers
                       :scheduled          (:base scheduled)
                       :created-at         created-at
-                      :updated-at         (or (some-> (get properties "UPDATED_AT")
-                                                      parse-org-date-or-datetime)
-                                              (if scheduled
-                                                (or (:base scheduled) scheduled))
-                                              created-at)
                       :deadline           deadline
                       :agenda-timestamp   (:base (get-timestamp agenda-timestamp-finder false true))
                       :closed-at          (:base (get-timestamp closed-finder false false))
@@ -289,6 +295,7 @@
                       :effort             effort
                       :repeat?            (or scheduled-repeater? deadline-repeater?)}
                      {:raw-section section})
+              base (assoc base :updated-at (updated-at base))
               date-range (->> prelude
                               (keep (fn [line]
                                       (re-find agenda-date-range-pattern line)))
@@ -632,7 +639,7 @@
                                 (str prefix " ")
                                 "")
                               (if (:repeat? item)
-                                "[rep] "
+                                (blue "(r) ")
                                 "")
                               (if (= "t" (get (:properties item) "AGENDA_NO_LINK"))
                                 header
@@ -657,34 +664,40 @@
                                                                     to-local-date
                                                                     .toEpochDay)
                                                                 (.toEpochDay today-date))]
-                                               (format "*%s* "
-                                                       (cond (zero? days-left)
-                                                             "!due today!"
+                                               (format "%s "
+                                                       (bold-underline
+                                                        (cond (zero? days-left)
+                                                              "due today!"
 
-                                                             (= 1 days-left)
-                                                             "!due tomorrow!"
+                                                              (= 1 days-left)
+                                                              "due tomorrow!"
 
-                                                             (pos? days-left)
-                                                             (format "(in %d days)" days-left)
+                                                              (pos? days-left)
+                                                              (format "(in %d days)" days-left)
 
-                                                             (= -1 days-left)
-                                                             "!1 day overdue!"
+                                                              (= -1 days-left)
+                                                              "1 day overdue!"
 
-                                                             :else
-                                                             (format "!%d days overdue!" (- days-left)))))
+                                                              :else
+                                                              (format "%d days overdue!" (- days-left))))))
                                              "")
                                            (if-let [lt (:later-today-time item)]
                                              (format "(not until %s) " lt)
                                              (if (:scheduled-time-for-today? item)
                                                "# "
                                                ""))
-                                           (let [{:keys [tag->decoration]} cfg
-                                                 s (->> tag->decoration
-                                                        (map (fn [[tag decoration]]
-                                                               (if (contains? (:own-tags item) tag)
-                                                                 decoration)))
-                                                        (apply str))]
-                                             (if (empty? s) s (str s " ")))
+                                           (str
+                                            (if-let [bumps (some-> (get properties "BUMPS")
+                                                                   (Long/parseLong))]
+                                              (bold (format "(%d) " bumps))
+                                              "")
+                                            (let [{:keys [tag->decoration]} cfg
+                                                  s (->> tag->decoration
+                                                         (map (fn [[tag decoration]]
+                                                                (if (contains? (:own-tags item) tag)
+                                                                  decoration)))
+                                                         (apply str))]
+                                              (if (empty? s) s (str s " "))))
                                            (format-todo item)))
                           (when (= "t" (get properties "DEBUG"))
                             (clojure.pprint/pprint item)))
@@ -699,7 +712,10 @@
                                             overlap? (and t3 (compare/< t3 t2))
                                             lt1 (.toLocalTime t1)
                                             lt2 (some-> t2 .toLocalTime)]
-                                        (printf "    %s%s%s: %s %s\n"
+                                        (printf "%s%s%s%s: %s %s\n"
+                                                (if (:nearest-start-time item)
+                                                  " -->"
+                                                  "    ")
                                                 (if (and (not past?) overlap?)
                                                   "!!"
                                                   "  ")
@@ -710,8 +726,8 @@
                                                         "(ALL DAY)"
                                                         (str lt1 "-" lt2))
                                                       lt1)
-                                                  past?
-                                                  yellow-italic)
+                                                    past?
+                                                    yellow-italic)
                                                 (let [header (cond-> (:header item)
                                                                past?
                                                                yellow-italic)]
@@ -772,15 +788,20 @@
                         (format-effort gross-free-time)))
               (when-not (.isZero total-effort)
                 (println (format "  Total effort: %s" (format-effort total-effort))))
-              (when-not (.isZero total-cal-time)
-                (println (format "  Total calendar time: %s" (format-effort total-cal-time))))
+              (println (format "  Total calendar time: %s" (format-effort total-cal-time)))
               (when (pos? unefforted-count)
                 (println (format "# (%d items with no effort estimate)" unefforted-count)))
               (when (pos? count-without-duration)
                 (println (format "# (%d calendar items with no duration)" count-without-duration))))]
         (let [{:keys [stats todos calendar-events]} today
               {past false today true} (group-by #(boolean (or (= today-date
-                                                                 (-> % :scheduled to-local-date))
+                                                                 (-> %
+                                                                     :scheduled
+                                                                     (as-> <>
+                                                                         (cond-> <>
+                                                                           (vector? <>)
+                                                                           first))
+                                                                     to-local-date))
                                                               (:repeat? %)))
                                                 todos)]
           (when (seq past)
@@ -871,7 +892,7 @@
                                                              (.toSecondOfDay (.toLocalTime t1)))
                                              free-minutes (quot free-seconds 60)
                                              [h m] ((juxt quot mod) free-minutes 60)]
-                                         (format "== %02d:%02d free! ==" h m))]]
+                                         (blue (format "-- %02d:%02d free!" h m)))]]
                              [slot {:header header
                                     :agenda-timestamp slot
                                     :scheduled slot
@@ -882,6 +903,31 @@
                     t1 (.toLocalTime t1)
                     t2 (some-> t2 .toLocalTime)]
                 (assoc item :past? past?))))))
+
+(defn flag-nearest-start-time
+  [calendar-events now]
+  (if (empty? calendar-events)
+    calendar-events
+    (let [now-seconds (.toEpochSecond now)
+          idx-of-nearest-start-time (->> calendar-events
+                                         (map-indexed vector)
+                                         (apply min-key (fn [[idx event]]
+                                                          (let [seconds (-> event
+                                                                            timetable-slot
+                                                                            first
+                                                                            ;; there's some
+                                                                            ;; cleaner way
+                                                                            ;; to accomplish
+                                                                            ;; this but I'm
+                                                                            ;; not sure what
+                                                                            ;; it is
+                                                                            (.atZone CHICAGO)
+                                                                            .toEpochSecond)]
+                                                            (Math/abs (- seconds now-seconds)))))
+                                         first)]
+      (-> calendar-events
+          (cond-> (not (vector? calendar-events)) (vec))
+          (update idx-of-nearest-start-time assoc :nearest-start-time true)))))
 
 (defn calculate-agenda
   [deets-by-file cfg now]
@@ -936,7 +982,9 @@
                                                               #(or (scheduled-date %) today)
                                                               :file
                                                               :line-number)))
-                          :calendar-events (add-free-time calendar-events date now)}])
+                          :calendar-events (-> calendar-events
+                                               (add-free-time date now)
+                                               (flag-nearest-start-time now))}])
         sort-key (juxt (comp - priority) :created-at :file :line-number)
         today-stuff (second (first not-past))]
     {:deadlines      (sort-by sort-key deadlines)
