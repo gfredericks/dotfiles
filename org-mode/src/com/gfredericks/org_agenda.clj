@@ -188,11 +188,14 @@
       (map #(subs % min-indention)))))
 
 (defn updated-at
-  [{:keys [properties scheduled created-at]}]
-  (or (some-> (get properties "UPDATED_AT")
-              parse-org-date-or-datetime)
-      scheduled
-      created-at))
+  [{:keys [properties scheduled created-at]} logbook-timestamps]
+  (let [all (concat logbook-timestamps
+                    (remove nil? [(some-> (get properties "UPDATED_AT")
+                                          parse-org-date-or-datetime)
+                                  scheduled
+                                  created-at]))]
+    (when (seq all)
+      (apply compare/max (map to-local-date all)))))
 
 (let [scheduled-finder         (timestamp-finder "\\s*(?: DEADLINE: .*?)?SCHEDULED: %s(?: DEADLINE: .*)?")
       deadline-finder          (timestamp-finder "\\s*(?: SCHEDULED: .*?)?DEADLINE: %s(?: SCHEDULED: .*)?")
@@ -222,6 +225,13 @@
                                          (not allow-repeater?))
                                   (throw (ex-info "Sorry man can't have a repeater there" {}))
                                   ret)))
+              logbook-timestamps (->> prelude
+                                      (drop-while #(not (re-matches #" +:LOGBOOK: *" %)))
+                                      (next)
+                                      (take-while #(not (re-matches #" +:END: *" %)))
+                                      (keep (fn [line]
+                                              (if-let [[_ odt] (re-matches #" *- Note taken on (\[.*?\]) \\\\ *" line)]
+                                                (parse-org-datetime odt)))))
               max-repeater-date (.plusDays today 60)
               [_ stars todo priority-cookie rest] (re-matches header-pattern header)
               raw-header header
@@ -295,7 +305,7 @@
                       :effort             effort
                       :repeat?            (or scheduled-repeater? deadline-repeater?)}
                      {:raw-section section})
-              base (assoc base :updated-at (updated-at base))
+              base (assoc base :updated-at (updated-at base logbook-timestamps))
               date-range (->> prelude
                               (keep (fn [line]
                                       (re-find agenda-date-range-pattern line)))
