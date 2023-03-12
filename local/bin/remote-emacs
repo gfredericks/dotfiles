@@ -9,7 +9,7 @@ I3_WORKSPACE=${3:-1}
 
 listen_for_open_url_requests(){
 
-    python2 - $THE_PORT "$BROWSER_COMMAND" "$I3_WORKSPACE" &> $LOG <<EOF
+    python2 - $THE_PORT "$BROWSER_COMMAND" "$I3_WORKSPACE" &> $LOG <<EOF &
 import re
 import SocketServer
 import sys
@@ -81,12 +81,11 @@ if __name__ == "__main__":
     server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
     server.serve_forever()
 EOF
+    PYTHON_PID=$!
+    trap "kill $PYTHON_PID" EXIT
 }
 
-# Hoping this ensures the python process gets killed whenever ssh does
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
-
-listen_for_open_url_requests &
+listen_for_open_url_requests
 
 go(){
   ssh \
