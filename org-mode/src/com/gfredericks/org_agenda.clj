@@ -195,7 +195,10 @@
                                   scheduled
                                   created-at]))]
     (when (seq all)
-      (apply compare/max (map to-local-date all)))))
+      (->> all
+           (map (fn [x] (cond-> x (vector? x) first)))
+           (map to-local-date)
+           (apply compare/max)))))
 
 (let [scheduled-finder         (timestamp-finder "\\s*(?: DEADLINE: .*?)?SCHEDULED: %s(?: DEADLINE: .*)?")
       deadline-finder          (timestamp-finder "\\s*(?: SCHEDULED: .*?)?DEADLINE: %s(?: SCHEDULED: .*)?")
