@@ -91,3 +91,12 @@
     ;; (add-hook 'window-size-change-functions
     ;;           'window-size-change-function-for-bug-32720)
     ))
+
+(defun scratch
+    ()
+  (interactive)
+  (if (not (= 1 (alist-get 'uid (wg-current-workgroup))))
+      (wg-switch-to-index-1))
+  (delete-other-windows)
+  (setq current-prefix-arg 4)
+  (call-interactively 'my-start-term))
