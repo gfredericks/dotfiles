@@ -312,46 +312,63 @@
               date-range (->> prelude
                               (keep (fn [line]
                                       (re-find agenda-date-range-pattern line)))
-                              (first))]
+                              (first))
+              mkerror (fn [err]
+                        (merge
+                         {:todo "TODO"
+                          :raw-header (str "* TODO [#A] " err)
+                          :header err
+                          :ancestor-headers []
+                          :priority-cookie "[#A]"}
+                         (select-keys base [:file :line-number])))
+              errors (remove nil?
+                             [(when-let [scheduled-dow (get properties "SCHEDULED_DOW")]
+                                (when (not= scheduled-dow
+                                            (some-> (:base scheduled)
+                                                    (to-local-date)
+                                                    (.getDayOfWeek)
+                                                    (str)))
+                                  (mkerror (str "Bad SCHEDULED_DOW: " (:header base)))))])]
           (when (< 1 (count (filter identity [date-range scheduled-repeater? deadline-repeater?])))
             (throw (ex-info "Can't have more than one of [date-range scheduled-repeater? deadline-repeater?]"
                             {})))
-          (cond date-range
-                (let [[_ d1 d2] date-range
-                      d1 (LocalDate/parse d1)
-                      d2 (LocalDate/parse d2)
-                      all-dates (->> (iterate #(.plusDays % 1) d1)
-                                     (take-while #(compare/<= % d2)))]
-                  (->> all-dates
-                       (map-indexed (fn [idx date]
-                                      (-> base
-                                          (assoc :agenda-timestamp date)
-                                          (update :header #(format "DAY %d/%d: %s"
-                                                                   (inc idx)
-                                                                   (count all-dates)
-                                                                   %)))))))
+          (concat errors
+                  (cond date-range
+                        (let [[_ d1 d2] date-range
+                              d1 (LocalDate/parse d1)
+                              d2 (LocalDate/parse d2)
+                              all-dates (->> (iterate #(.plusDays % 1) d1)
+                                             (take-while #(compare/<= % d2)))]
+                          (->> all-dates
+                               (map-indexed (fn [idx date]
+                                              (-> base
+                                                  (assoc :agenda-timestamp date)
+                                                  (update :header #(format "DAY %d/%d: %s"
+                                                                           (inc idx)
+                                                                           (count all-dates)
+                                                                           %)))))))
 
-                scheduled-repeater?
-                (->> (apply-repeater (:repeater scheduled) (:base scheduled) today max-repeater-date)
-                     (map-indexed (fn [idx scheduled]
-                                    (-> base
-                                        (assoc :scheduled scheduled)
-                                        (cond-> (pos? idx)
-                                          (assoc :last-repeat nil
-                                                 :agenda-timestamp nil
-                                                 :generated-repeat? true))))))
+                        scheduled-repeater?
+                        (->> (apply-repeater (:repeater scheduled) (:base scheduled) today max-repeater-date)
+                             (map-indexed (fn [idx scheduled]
+                                            (-> base
+                                                (assoc :scheduled scheduled)
+                                                (cond-> (pos? idx)
+                                                  (assoc :last-repeat nil
+                                                         :agenda-timestamp nil
+                                                         :generated-repeat? true))))))
 
-                deadline-repeater?
-                (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
-                     (map-indexed (fn [idx new-deadline]
-                                    (-> base
-                                        (assoc :deadline (assoc deadline :base new-deadline))
-                                        (cond-> (pos? idx)
-                                          (assoc :last-repeat nil
-                                                 :agenda-timestamp nil
-                                                 :generated-repeat? true))))))
+                        deadline-repeater?
+                        (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
+                             (map-indexed (fn [idx new-deadline]
+                                            (-> base
+                                                (assoc :deadline (assoc deadline :base new-deadline))
+                                                (cond-> (pos? idx)
+                                                  (assoc :last-repeat nil
+                                                         :agenda-timestamp nil
+                                                         :generated-repeat? true))))))
 
-                :else [base])))
+                        :else [base]))))
       (catch Exception e
         (let [f (format "/tmp/agenda-err-%02d.org" (mod (hash section) 100))
               header (format "AGENDA ERROR[%s]: %s" f (.getMessage e))]

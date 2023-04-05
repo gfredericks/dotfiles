@@ -264,3 +264,37 @@
      now
      (fn [agenda]
        (is (re-find #"12:00-13:30: TODO This thing" agenda))))))
+
+(deftest schedule-dow-test
+  (let [now (ZonedDateTime/of 2023 4 5 7 37 15 221 oa/CHICAGO)
+        test-regex #"Bad SCHEDULED_DOW.+This thing"]
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* TODO This thing"
+       "  SCHEDULED: <2023-04-05 Wed>")}
+     now
+     (fn [agenda]
+       (is (not (re-find test-regex agenda)))))
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* TODO This thing"
+       "  SCHEDULED: <2023-04-05 Wed>"
+       "  :PROPERTIES:"
+       "  :SCHEDULED_DOW: WEDNESDAY"
+       "  :END:")}
+     now
+     (fn [agenda]
+       (is (not (re-find test-regex agenda)))))
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* TODO This thing"
+       "  SCHEDULED: <2023-04-05 Wed>"
+       "  :PROPERTIES:"
+       "  :SCHEDULED_DOW: SUNDAY"
+       "  :END:")}
+     now
+     (fn [agenda]
+       (is (re-find test-regex agenda))))))
