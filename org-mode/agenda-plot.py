@@ -28,11 +28,13 @@ def date_2_agenda_size(date):
 
 freshenings = {}
 
+t2 = time.time()
 resp = requests.get(
     f"https://www.beeminder.com/api/v1/users/gfredericks/goals/{GOAL_NAME}/datapoints.json",
     params={"auth_token": AUTH_TOKEN}
 )
 resp.raise_for_status()
+print(f"Datapoints request took {time.time() - t2:.1f}s")
 
 all_data = json.loads(resp.content)
 for item in all_data:
