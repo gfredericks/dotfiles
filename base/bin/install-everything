@@ -45,6 +45,7 @@ do
       # better to put latex stuff in one place or something?
       sudo apt-get install -y tree htop texlive-latex-extra \
            python-pygments xclip rlwrap xautolock \
+           lilypond \
            entr flameshot \
            net-tools # net-tools has netstat, used by remote-emacs
   fi
