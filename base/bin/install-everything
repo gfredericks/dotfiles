@@ -150,7 +150,9 @@ do
 
   if [ "$1" == "all" -o "$1" == "server" -o "$1" == "python3" ]
   then
-    sudo apt-get install -y libffi-dev libreadline-dev libsqlite3-dev libbz2-dev liblzma-dev
+      sudo apt-get install -y \
+           libffi-dev libreadline-dev libsqlite3-dev libbz2-dev liblzma-dev \
+           libjpeg-dev zlib1g-dev
     BUILDDIR=$BUILDDIRBASE/python3
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
     wget https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tgz
