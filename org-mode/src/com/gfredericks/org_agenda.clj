@@ -29,6 +29,7 @@
 (defn blue [s] (colorize s "34"))
 (defn red-bold [s] (colorize s "31;1"))
 (defn yellow-italic [s] (colorize s "33;3"))
+(defn green [s] (colorize s "32;1"))
 
 (def CHICAGO (ZoneId/of "America/Chicago"))
 (def DEFAULT-WARNING-PERIOD
@@ -254,6 +255,13 @@
                                 ((fn [lines]
                                    (when (seq lines)
                                      (dedent lines)))))
+              followup-note (->> prelude
+                                 (keep #(re-matches #"\s*FOLLOWUP_NOTE:(?: (.+))?" %))
+                                 (map second)
+                                 ;; logbook items go in reverse chronological order,
+                                 ;; so if that's where we're putting them then first
+                                 ;; is the correct choice
+                                 (first))
               clock-logs (->> prelude
                               ;; this isn't the exact logic used by
                               ;; org-mode I'm sure, but it's a good
@@ -296,6 +304,7 @@
                                                (some #(nil? (second %)))
                                                (boolean))
                       :agenda-notes       agenda-notes
+                      :followup-note      followup-note
                       :parent-is-ordered? (-> props-with-ancestors second (get "ORDERED") (= "t"))
                       :backlog-section     (or (get properties "BACKLOG_SECTION")
                                                ;; legacy name
@@ -729,6 +738,10 @@
                                                          (apply str))]
                                               (if (empty? s) s (str s " "))))
                                            (format-todo item)))
+                          (when-let [fn (:followup-note item)]
+                            (printf "  %s %s\n"
+                                    (green ">>")
+                                    fn))
                           (when (= "t" (get properties "DEBUG"))
                             (clojure.pprint/pprint item)))
         print-calendar (fn [items]
