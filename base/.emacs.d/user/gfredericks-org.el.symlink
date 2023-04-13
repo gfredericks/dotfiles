@@ -830,3 +830,13 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 
 (add-hook 'gfredericks-agenda-mode-hook
           'gfredericks-agenda-mode-ansi-colors-setup)
+
+(defun followup-note
+    ()
+  (interactive)
+  (org-add-log-setup
+   'note
+   nil
+   nil
+   nil
+   "FOLLOWUP_NOTE: "))
