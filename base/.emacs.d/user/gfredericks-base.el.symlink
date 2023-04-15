@@ -15,7 +15,8 @@
     smex
     window-numbering
     workgroups
-    yaml-mode))
+    yaml-mode
+    dash))
 
 (dolist (package-name gfredericks-base-packages)
   (gfredericks-packages-install package-name))
