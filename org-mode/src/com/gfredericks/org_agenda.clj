@@ -685,7 +685,7 @@
                                 (make-org-link item header))))
         print-todo-line (fn [{:keys [effort deadline properties] :as item}
                              {:keys [omit-effort?]}]
-                          (println (format "-%s %s%s%s%s%s"
+                          (println (format "-%s %s%s%s%s"
                                            (if omit-effort?
                                              ""
                                              (str " "
@@ -696,29 +696,6 @@
                                                       "?:??"))))
                                            (if (= 1 (priority item))
                                              "  "
-                                             "")
-                                           (if deadline
-                                             (let [days-left (- (-> deadline
-                                                                    :base
-                                                                    to-local-date
-                                                                    .toEpochDay)
-                                                                (.toEpochDay today-date))]
-                                               (format "%s "
-                                                       (bold-underline
-                                                        (cond (zero? days-left)
-                                                              "due today!"
-
-                                                              (= 1 days-left)
-                                                              "due tomorrow!"
-
-                                                              (pos? days-left)
-                                                              (format "(in %d days)" days-left)
-
-                                                              (= -1 days-left)
-                                                              "1 day overdue!"
-
-                                                              :else
-                                                              (format "%d days overdue!" (- days-left))))))
                                              "")
                                            (if-let [lt (:later-today-time item)]
                                              (format "(not until %s) " lt)
@@ -738,8 +715,31 @@
                                                          (apply str))]
                                               (if (empty? s) s (str s " "))))
                                            (format-todo item)))
+                          (when deadline
+                            (let [days-left (- (-> deadline
+                                                   :base
+                                                   to-local-date
+                                                   .toEpochDay)
+                                               (.toEpochDay today-date))]
+                              (printf "       %s   %s\n"
+                                      (red ">>")
+                                      (bold-underline
+                                       (cond (zero? days-left)
+                                             "due today!"
+
+                                             (= 1 days-left)
+                                             "due tomorrow!"
+
+                                             (pos? days-left)
+                                             (format "(due in %d days)" days-left)
+
+                                             (= -1 days-left)
+                                             "1 day overdue!"
+
+                                             :else
+                                             (format "%d days overdue!" (- days-left)))))))
                           (when-let [fn (:followup-note item)]
-                            (printf "  %s %s\n"
+                            (printf "       %s   %s\n"
                                     (green ">>")
                                     fn))
                           (when (= "t" (get properties "DEBUG"))
