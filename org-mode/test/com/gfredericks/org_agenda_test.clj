@@ -306,3 +306,52 @@
      now
      (fn [agenda]
        (is (re-find test-regex agenda))))))
+
+#_ ;; Not implemented yet
+(deftest blocked-by-test
+  (let [now (ZonedDateTime/of 2023 4 5 7 37 15 221 oa/CHICAGO)]
+    (do-integration
+     {"file-1.org"
+      (lines
+       "* TODO This one is blocked by the last one in this file"
+       "  :PROPERTIES:"
+       "  :BLOCKED_BY: 8cbae507-9b29-4b4a-9a55-1265c3f2b57f"
+       "  :END:"
+       "* TODO This one is blocked by the one in the other file"
+       "  :PROPERTIES:"
+       "  :BLOCKED_BY: 2d0ed083-7922-489f-b77c-8009320ec3b0"
+       "  :CUSTOM_ID: 1d55b951-41d1-4876-bde8-603f086adb1e"
+       "  :END:"
+       "* TODO The first one is blocked by this one"
+       "  :PROPERTIES:"
+       "  :CUSTOM_ID: 8cbae507-9b29-4b4a-9a55-1265c3f2b57f"
+       "  :END:"
+       "* TODO This one DOES show up because its blocker is DONE"
+       "  :PROPERTIES:"
+       "  :BLOCKED_BY: 5ae318cc-ce9e-41cd-93bf-958d6432d29d"
+       "  :END:"
+       "* DONE See this one shouldn't be blocking anything anymore"
+       "  :PROPERTIES:"
+       "  :CUSTOM_ID: 5ae318cc-ce9e-41cd-93bf-958d6432d29d"
+       "  :END:"
+       "* TODO This one DOES show up because its blocker does not exist"
+       "  :PROPERTIES:"
+       "  :BLOCKED_BY: fb237be2-9ce7-43c7-981c-55a018b45974"
+       "  :END:"
+       "* TODO This one is blocked by another task that is blocked"
+       "  :PROPERTIES:"
+       "  :BLOCKED_BY: 1d55b951-41d1-4876-bde8-603f086adb1e"
+       "  :END:")
+      "file-2.org"
+      (lines
+       "* TODO This blocker is in a different file"
+       "  :PROPERTIES:"
+       "  :CUSTOM_ID: 2d0ed083-7922-489f-b77c-8009320ec3b0"
+       "  :END:")}
+     now
+     (fn [agenda]
+       (is (re-find #"The first one is blocked by this one" agenda))
+       (is (re-find #"This blocker is in a different file" agenda))
+       (is (not (re-find #"This one is blocked" agenda)))
+       (is (re-find #"This one DOES show up because its blocker is DONE" agenda))
+       (is (re-find #"This one DOES show up because its blocker does not exist" agenda))))))
