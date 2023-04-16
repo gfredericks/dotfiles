@@ -3,7 +3,9 @@
    [clojure.java.io :as io]
    [clojure.test :refer [are deftest is]]
    [com.gfredericks.org-agenda :as oa])
-  (:import (java.time LocalDate LocalDateTime ZonedDateTime)))
+  (:import
+   (java.time LocalDate LocalDateTime ZonedDateTime)
+   (java.nio.file Files)))
 
 (defn lines
   [& lines]
@@ -60,14 +62,20 @@
 (let [empty-file-attrs (make-array java.nio.file.attribute.FileAttribute 0)]
   (defn do-integration
     [filenames->contents now agenda-validator]
-    (let [dir (java.nio.file.Files/createTempDirectory "org-agenda-tests-" empty-file-attrs)
-          agenda (str (java.nio.file.Files/createTempFile "org-agenda-tests-" ".org" empty-file-attrs))]
-      (doseq [[filename contents] filenames->contents]
-        (spit (str dir "/" filename) contents))
-      (oa/do-once {:directory (str dir)
-                   :agenda-file agenda}
-                  now)
-      (agenda-validator (slurp agenda)))))
+    (let [dir (Files/createTempDirectory "org-agenda-tests-" empty-file-attrs)
+          agenda (Files/createTempFile "org-agenda-tests-" ".org" empty-file-attrs)]
+      (try
+        (doseq [[filename contents] filenames->contents]
+          (spit (str dir "/" filename) contents))
+        (oa/do-once {:directory (str dir)
+                     :agenda-file (str agenda)}
+                    now)
+        (agenda-validator (slurp (str agenda)))
+        (finally
+          (doseq [filename (keys filenames->contents)]
+            (Files/delete (.resolve dir filename)))
+          (Files/delete dir)
+          (Files/delete agenda))))))
 
 (deftest repeat-repeater-regression
   (let [now (ZonedDateTime/of 2022 7 10 16 22 15 0 oa/CHICAGO)]

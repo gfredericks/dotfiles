@@ -640,17 +640,15 @@
   `(let [cfg# ~cfg]
      (with-atomic-write-to
        (:agenda-file cfg#)
-       (let [cfg# ~cfg
-             tmp-file# (File/createTempFile "org-agenda-" ".tmp")]
-         ~@body
-         (print "\n\n")
-         (println (apply str (repeat 80 \;)))
-         (println ";; Postamble\n")
-         (println ";; Local Variables:")
-         (println ";; eval: (gfredericks-agenda-mode 1)")
-         (if-let [rf# (:refresh-file cfg#)]
-           (printf ";; gfredericks-agenda-mode-refresh-file: \"%s\"\n" rf#))
-         (println ";; End:")))))
+       ~@body
+       (print "\n\n")
+       (println (apply str (repeat 80 \;)))
+       (println ";; Postamble\n")
+       (println ";; Local Variables:")
+       (println ";; eval: (gfredericks-agenda-mode 1)")
+       (if-let [rf# (:refresh-file cfg#)]
+         (printf ";; gfredericks-agenda-mode-refresh-file: \"%s\"\n" rf#))
+       (println ";; End:"))))
 
 (defn later-today-time
   "If the item is scheduled for today, but still in the future, then returns
