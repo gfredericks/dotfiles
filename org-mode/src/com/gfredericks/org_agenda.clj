@@ -895,7 +895,8 @@
         (println "|                                   backlog                                    |")
         (println "--------------------------------------------------------------------------------")
         (when-let [todo (:stalest-backlog-item agenda)]
-          (println "== STALEST BACKLOG ITEM ==")
+          (printf "== STALEST BACKLOG ITEM (%d days) ==\n"
+                  (:staleness-days todo))
           (print-todo-line todo {})
           (println))
         (->> backlog
@@ -1040,14 +1041,17 @@
                                                (remove :descendent-TODOs?)
                                                (remove :shadowed-by-sibling?)
                                                (seq))]
-                             (->> todos
-                                  (apply min-key
-                                         (fn [item]
-                                           (if-let [updated-at (:updated-at item)]
-                                             (-> updated-at
-                                                 to-local-date
-                                                 .toEpochDay)
-                                             0)))))
+                             (let [today-epoch-day (.toEpochDay today)
+                                   staleness-days (fn [item]
+                                                    (if-let [updated-at (:updated-at item)]
+                                                      (- today-epoch-day
+                                                         (-> updated-at
+                                                             to-local-date
+                                                             .toEpochDay))
+                                                      today-epoch-day))]
+                               (->> todos
+                                    (apply max-key staleness-days)
+                                    ((fn [todo] (assoc todo :staleness-days (staleness-days todo)))))))
      :future         (rest not-past)
      :past           (for [[date :as date+item] (reverse (sort by-day))
                            :when (compare/<= date today)]
