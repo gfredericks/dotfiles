@@ -17,7 +17,15 @@ TOTAL_MATCHES=0
 while read LINE; do
     TOTAL_MATCHES=$((TOTAL_MATCHES + 1))
     echo -e "\u001b[34;1m$LINE\u001b[0m";
-done < <(git-cached-grep-staged "$GREP_PATTERN")
+done < <(
+    # I don't like having to couple here to the implementation
+    # detail that git-cached-grep-staged is a python script, but
+    # setting this does make it consistently faster, and I don't
+    # know a clean way of making git-cached-grep-staged handle
+    # that detail
+    PYTHONNOUSERSITE=1 \
+    git-cached-grep-staged "$GREP_PATTERN"
+)
 
 NO_COMMIT_DURATION=$(($(date +%s%3N) - $NO_COMMIT_START))
 
