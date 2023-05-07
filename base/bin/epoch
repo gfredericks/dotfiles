@@ -1,24 +1,41 @@
 #!/usr/bin/env bash
 
 if [[ $# -eq 0 ]]; then
-    echo >&2 "USAGE: $0 [epoch-seconds | epoch-millis | epoch-nanos]"
+    echo >&2 "USAGE: $0 [-u] [epoch-seconds | epoch-millis | epoch-nanos]"
+    echo >&2 "-u: print just utc"
     exit 2
 fi
 
+if [[ "$1" == "-u" ]]; then
+    UTC=1
+    shift
+else
+    UTC=0
+fi
+
 NUM="$1"
+
 if [[ "$NUM" -lt 1000000000000 ]]; then
     # seconds
-    echo "(interpreting as seconds)"
-    date --date=@"$NUM" -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
-    date --date=@"$NUM" +"%Y-%m-%dT%H:%M:%S.%3N[CHI]"
+    M="(interpreting as seconds)"
+    U="$(date --date=@"$NUM" -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
+    C="$(date --date=@"$NUM" +"%Y-%m-%dT%H:%M:%S.%3N[CHI]")"
 elif [[ "$NUM" -lt 1000000000000000 ]]; then
     SECS=$($(which bc) -i <(echo scale=3) <<<"$NUM / 1000" | tail -n 1)
-    echo "(interpreting as milliseconds)"
-    date --date=@"$SECS" -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
-    date --date=@"$SECS" +"%Y-%m-%dT%H:%M:%S.%3N[CHI]"
+    M="(interpreting as milliseconds)"
+    U="$(date --date=@"$SECS" -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
+    C="$(date --date=@"$SECS" +"%Y-%m-%dT%H:%M:%S.%3N[CHI]")"
 else
-    echo "(interpreting as nanoseconds)"
+    M="(interpreting as nanoseconds)"
     SECS=$($(which bc) -i <(echo scale=3) <<<"$NUM / 1000000000" | tail -n 1)
-    date --date=@"$SECS" -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
-    date --date=@"$SECS" +"%Y-%m-%dT%H:%M:%S.%3N[CHI]"
+    U="$(date --date=@"$SECS" -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
+    C="$(date --date=@"$SECS" +"%Y-%m-%dT%H:%M:%S.%3N[CHI]")"
+fi
+
+if [[ $UTC == 1 ]]; then
+    echo "$U"
+else
+    echo $M
+    echo $U
+    echo $C
 fi
