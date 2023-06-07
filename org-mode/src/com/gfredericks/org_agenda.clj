@@ -787,7 +787,7 @@
         (let [preamble-string (cond (string? preamble)
                                     preamble
 
-                                    (fn? preamble)
+                                    (ifn? preamble)
                                     (preamble)
 
                                     :else
@@ -1056,6 +1056,8 @@
                        date+item)
      :todo-now-count (->> (concat (:todos today-stuff) triage deadlines)
                           (remove #(= "[#C]" (:priority-cookie %)))
+                          (map (juxt :file :line-number))
+                          (distinct)
                           (count))}))
 
 (defn all-agenda-data
