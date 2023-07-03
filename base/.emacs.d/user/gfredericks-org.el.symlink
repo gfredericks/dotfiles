@@ -14,7 +14,8 @@
 ;; like org-end-of-subtree, but interactive
 (defun gfredericks-org-end-of-subtree ()
   (interactive)
-  (org-end-of-subtree))
+  (org-end-of-subtree)
+  (beginning-of-line))
 
 (defun org-custom ()
   "org-mode-hook"
@@ -30,7 +31,7 @@
   ;; custom implementations to support multi-digit priorities
   (org-defkey org-agenda-keymap (kbd "+") 'my-org-agenda-inc-priority)
   (org-defkey org-agenda-keymap (kbd "-") 'my-org-agenda-dec-priority)
-  (org-defkey org-mode-map (kbd "C-c C-M-n") 'gfredericks-org-end-of-subtree))
+  (org-defkey org-mode-map (kbd "C-c M->") 'gfredericks-org-end-of-subtree))
 (add-hook 'org-mode-hook 'org-custom)
 
 ;; so the org agenda doesn't give me this weird 3/4 window
