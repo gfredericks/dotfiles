@@ -20,12 +20,17 @@ SIGNAL_FILE="$(mktemp)"
     fg
 ) &
 
+# I believe this line always prints "fg: no job control"
+# when I run from org-babel, but if I delete the line then
+# the whole thing hangs; or maybe it was the "exit 3" that
+# was missing below? I really don't know.
 disown
 
 TIMES=10
 while [[ 0 == $(wc -c "$SIGNAL_FILE") ]]; do
     if [[ "$TIMES" -eq 0 ]]; then
         echo >&2 "Error: background process failed to signal"
+        break
     fi
     sleep 0.1
     TIMES=$((TIMES - 1))
