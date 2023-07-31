@@ -159,8 +159,8 @@
       (cond->
           {:live    (nil-if-equivalent new-live-file-contents live)
            :archive (nil-if-equivalent new-archive-file-contents archive)}
-        deleted
-        (assoc :deleted
+          deleted
+          (assoc :deleted
                  (when (seq new-deleted-entries)
                    (wrap-in-archive-file-prelude time-zone category
                                                  (concat (::org/sections deleted)
