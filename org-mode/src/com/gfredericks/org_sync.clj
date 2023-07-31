@@ -124,12 +124,13 @@
                                (into {}))]
     (when-not (= (count all-entries)
                  (count all-entries-by-id))
-      (throw (ex-info "Colliding IDs!"
-                      {:example-id-and-cardinality (->> all-entries
-                                                        (map id-fn)
-                                                        frequencies
-                                                        (filter #(< 1 (val %)))
-                                                        (first))})))
+      (let [all-colliding (->> all-entries
+                               (map id-fn)
+                               frequencies
+                               (filter #(< 1 (val %))))]
+        (throw (ex-info "Colliding IDs!"
+                        {:example-id-and-cardinality (first all-colliding)
+                         :total-colliding (count all-colliding)}))))
     (let [[retained-entries new-deleted-entries]
           (if deleted
             ((juxt filter remove) (comp new-entries-by-id id-fn) all-entries)
