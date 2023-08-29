@@ -162,6 +162,8 @@ delete_ansi_codes() {
     echo "$1" | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g"
 }
 
+# Could have a more meaningful check by having run-checks log to a
+# file, and then here we check that the file was recently modified
 ( crontab -l | grep run-checks >/dev/null ) \
   || echo "ERROR: run-checks missing from crontab"\!
 
