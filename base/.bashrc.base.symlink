@@ -162,6 +162,9 @@ delete_ansi_codes() {
     echo "$1" | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g"
 }
 
+( crontab -l | grep run-checks >/dev/null ) \
+  || echo "ERROR: run-checks missing from crontab"\!
+
 HAS_DONE_WALCOM=0
 
 # I believe this is an effective test for when we're creating a
