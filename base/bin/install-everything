@@ -42,12 +42,12 @@ do
 
   if [ "$1" == "all" -o "$1" == "server" -o "$1" == "misc" ]
   then
-      # better to put latex stuff in one place or something?
+      # - better to put latex stuff in one place or something?
+      # - moreutils is for sponge
+      # - net-tools has netstat, used by remote-emacs
       sudo apt-get install -y tree htop texlive-latex-extra \
-           python-pygments xclip rlwrap xautolock \
-           lilypond \
-           entr flameshot \
-           net-tools # net-tools has netstat, used by remote-emacs
+           python-pygments xclip rlwrap xautolock moreutils \
+           lilypond entr flameshot net-tools
   fi
 
   ###
