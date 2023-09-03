@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+# finds the clojure stacktrace from /tmp and displays it
+
+if [[ -t 1 ]]; then
+  if which bat &>/dev/null; then
+    CMD=bat
+  else
+    CMD=less
+  fi
+else
+  CMD=cat
+fi
+
+$CMD "$(ls -t /tmp/clojure-*.edn | head -n 1)"
