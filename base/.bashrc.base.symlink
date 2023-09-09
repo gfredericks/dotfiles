@@ -24,6 +24,7 @@ alias lsla="ls -la"
 alias lslh="ls -lh"
 alias wcl="wc -l"
 alias rgrep="grep -r"
+alias gerp=grep
 alias today="date +%Y-%m-%d"
 alias jqu="jq --unbuffered"
 alias jqr="jq -r"
