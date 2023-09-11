@@ -8,11 +8,12 @@ BROWSER_COMMAND=${2:-firefox}
 I3_WORKSPACE=${3:-1}
 
 
-python2 - $THE_PORT "$BROWSER_COMMAND" "$I3_WORKSPACE" &> $LOG <<EOF &
+python3 - $THE_PORT "$BROWSER_COMMAND" "$I3_WORKSPACE" &> $LOG <<EOF &
 
 import re
-import SocketServer
+import socketserver
 import sys
+import traceback
 from socket import timeout,SHUT_RDWR
 from subprocess import call,Popen,PIPE
 
@@ -22,7 +23,7 @@ def _shell_escape(s):
         s2 += "\\\\" + s[i]
     return s2
 
-class MyTCPHandler(SocketServer.BaseRequestHandler):
+class MyTCPHandler(socketserver.BaseRequestHandler):
     browser_command=sys.argv[2]
     i3_workspace=sys.argv[3]
     def handle(self):
@@ -30,55 +31,55 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
         sock.settimeout(1)
         s = sock.recv(5)
         try:
-            if(s == 'copy '):
+            if(s == b'copy '):
                 call(["notify-send","remote copy"])
                 p = Popen(["/usr/bin/env", "bash", "-c", "base64 -d | copy"],stdin=PIPE)
                 last_was_newline=False
                 while True:
-                    s = sock.recv(4096)
+                    s = sock.recv(4096).decode("UTF-8")
                     if(len(s) == 0):
                         break
                     if(last_was_newline and s[0] == "\n"):
                         break
                     last_was_newline = (s[-1] == "\n")
                     if("\n\n" in s):
-                        p.stdin.write(s.split("\n\n")[0])
+                        p.stdin.write(s.split("\n\n")[0].encode("UTF-8"))
                         break
                     else:
-                        p.stdin.write(s)
+                        p.stdin.write(s.encode("UTF-8"))
                 p.communicate()
-            elif(s == 'paste'):
+            elif(s == b'paste'):
                 call(["notify-send","remote paste"])
                 call("paste", stdout=sock.fileno())
-            elif(s == 'note '):
+            elif(s == b'note '):
                 s = s[5:-1] + sock.recv(4096)
                 if("\n" in s):
                     title = s.split("\n")[0]
                     call(["notify-send","remote note: {}".format(title)])
                 else:
-                    sock.sendall("ERROR: EXPECTED SINGLE LINE")
-            elif(s == 'open '):
+                    sock.sendall(b"ERROR: EXPECTED SINGLE LINE")
+            elif(s == b'open '):
                 call(["notify-send","remote open"])
-                s = s[5:-1] + sock.recv(4096)
+                s = s.decode("UTF-8")[5:-1] + sock.recv(4096).decode("UTF-8")
                 if("\n" in s):
                     url = _shell_escape(s.split("\n")[0])
                     call(["i3-msg","workspace",self.i3_workspace])
                     call(["i3-msg","exec",self.browser_command,url])
                 else:
-                    sock.sendall("ERROR: EXPECTED URL+NEWLINE")
+                    sock.sendall(b"ERROR: EXPECTED URL+NEWLINE")
             else:
-                sock.sendall("ERROR: BAD COMMAND")
+                sock.sendall(b"ERROR: BAD COMMAND")
         except timeout:
-            sock.sendall("SOCKET TIMEOUT")
-        except:
-            sock.sendall("ERR ({})".format(sys.exc_info()))
+            sock.sendall(b"SOCKET TIMEOUT")
+        except Exception as e:
+            sock.sendall(b"ERR ({})".format(sys.exc_info()))
         sock.shutdown(SHUT_RDWR)
         sock.close()
 
 if __name__ == "__main__":
-    HOST, PORT = "localhost", int(sys.argv[1])
-    SocketServer.TCPServer.allow_reuse_address = True
-    server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
+    HOST, PORT = "127.0.0.1", int(sys.argv[1])
+    socketserver.TCPServer.allow_reuse_address = True
+    server = socketserver.TCPServer((HOST, PORT), MyTCPHandler)
     server.serve_forever()
 EOF
 
@@ -88,7 +89,7 @@ trap "kill $PYTHON_PID" EXIT
 go(){
   ssh \
       -A \
-      -R $THE_PORT:localhost:$THE_PORT \
+      -R $THE_PORT:127.0.0.1:$THE_PORT \
       -o "ExitOnForwardFailure yes" \
       "$HOST" -t /usr/bin/env bash -l -c $'
     # Kill/cleanup other connections
