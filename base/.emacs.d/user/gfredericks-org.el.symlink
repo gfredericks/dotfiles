@@ -749,8 +749,11 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 
 (define-minor-mode gfredericks-agenda-mode
   "okay"
+  :init-value
   nil
+  :lighter
   " gfragenda"
+  :keymap
   (let ((km (make-sparse-keymap)))
     (define-key km
       (kbd "g") 'gfredericks-agenda-mode-refresh)
