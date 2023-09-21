@@ -40,26 +40,26 @@
 
 (setq org-log-done 'note)
 
-
 ;; these get customized in my machine-local files
 (defvar my-org-open-subtree-in-web-browser-local-file nil)
 (defvar my-org-open-subtree-in-web-browser-url nil)
 
 (defun my-org-open-subtree-in-web-browser ()
   (interactive)
-  (let ((orig-oesteb org-export-show-temporary-export-buffer))
-    (setq org-export-show-temporary-export-buffer nil)
-    ;; I couldn't get the last arg of org-html-export-as-html to have
-    ;; the effect of these setqs; not sure if it's supposed to be able
-    ;; to do that
-    (org-html-export-as-html nil t)
-    (setq org-export-show-temporary-export-buffer orig-oesteb))
+  (let ((time (floor (* 1000 (float-time)))))
+    (let ((orig-oesteb org-export-show-temporary-export-buffer))
+      (setq org-export-show-temporary-export-buffer nil)
+      ;; I couldn't get the last arg of org-html-export-as-html to have
+      ;; the effect of these setqs; not sure if it's supposed to be able
+      ;; to do that
+      (org-html-export-as-html nil t)
+      (setq org-export-show-temporary-export-buffer orig-oesteb))
 
-  (with-current-buffer "*Org HTML Export*"
-    (write-file my-org-open-subtree-in-web-browser-local-file)
-    (kill-buffer))
-  (call-to-open-url-in-browser-from-remote
-   my-org-open-subtree-in-web-browser-url))
+    (with-current-buffer "*Org HTML Export*"
+      (write-file (format my-org-open-subtree-in-web-browser-local-file time))
+      (kill-buffer))
+    (call-to-open-url-in-browser-from-remote
+     (format my-org-open-subtree-in-web-browser-url time))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; agenda/capture helpers
