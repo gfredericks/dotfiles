@@ -637,11 +637,16 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 (defun gfredericks-agenda-mode-follow-link
     ()
   (interactive)
-  (save-excursion
-    (beginning-of-line)
-    (org-next-link)
-    (org-open-at-point)
-    (org-reveal)))
+  (if (org-in-regexp org-link-any-re nil t)
+      (org-open-at-point)
+    ;; if we want the behavior where the *next* link is the next
+    ;; fallback rather than the first link in the line, we could do
+    ;; (org-next-link) and check if point is on the same line
+    (save-excursion
+      (beginning-of-line)
+      (org-next-link)
+      (org-open-at-point)
+      (org-reveal))))
 
 (defun gfredericks-agenda-mode-org-todo
     ()
