@@ -10,6 +10,7 @@
 (global-set-key "\C-cotdc" 'org-table-delete-column)
 (global-set-key "\C-cc" 'org-capture)
 (setq org-clock-into-drawer t)
+(setq org-adapt-indentation t)
 
 ;; like org-end-of-subtree, but interactive
 (defun gfredericks-org-end-of-subtree ()
@@ -39,26 +40,26 @@
 
 (setq org-log-done 'note)
 
-
 ;; these get customized in my machine-local files
 (defvar my-org-open-subtree-in-web-browser-local-file nil)
 (defvar my-org-open-subtree-in-web-browser-url nil)
 
 (defun my-org-open-subtree-in-web-browser ()
   (interactive)
-  (let ((orig-oesteb org-export-show-temporary-export-buffer))
-    (setq org-export-show-temporary-export-buffer nil)
-    ;; I couldn't get the last arg of org-html-export-as-html to have
-    ;; the effect of these setqs; not sure if it's supposed to be able
-    ;; to do that
-    (org-html-export-as-html nil t)
-    (setq org-export-show-temporary-export-buffer orig-oesteb))
+  (let ((time (floor (* 1000 (float-time)))))
+    (let ((orig-oesteb org-export-show-temporary-export-buffer))
+      (setq org-export-show-temporary-export-buffer nil)
+      ;; I couldn't get the last arg of org-html-export-as-html to have
+      ;; the effect of these setqs; not sure if it's supposed to be able
+      ;; to do that
+      (org-html-export-as-html nil t)
+      (setq org-export-show-temporary-export-buffer orig-oesteb))
 
-  (with-current-buffer "*Org HTML Export*"
-    (write-file my-org-open-subtree-in-web-browser-local-file)
-    (kill-buffer))
-  (call-to-open-url-in-browser-from-remote
-   my-org-open-subtree-in-web-browser-url))
+    (with-current-buffer "*Org HTML Export*"
+      (write-file (format my-org-open-subtree-in-web-browser-local-file time))
+      (kill-buffer))
+    (call-to-open-url-in-browser-from-remote
+     (format my-org-open-subtree-in-web-browser-url time))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; agenda/capture helpers
@@ -636,11 +637,16 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 (defun gfredericks-agenda-mode-follow-link
     ()
   (interactive)
-  (save-excursion
-    (beginning-of-line)
-    (org-next-link)
-    (org-open-at-point)
-    (org-reveal)))
+  (if (org-in-regexp org-link-any-re nil t)
+      (org-open-at-point)
+    ;; if we want the behavior where the *next* link is the next
+    ;; fallback rather than the first link in the line, we could do
+    ;; (org-next-link) and check if point is on the same line
+    (save-excursion
+      (beginning-of-line)
+      (org-next-link)
+      (org-open-at-point)
+      (org-reveal))))
 
 (defun gfredericks-agenda-mode-org-todo
     ()
@@ -749,8 +755,11 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 
 (define-minor-mode gfredericks-agenda-mode
   "okay"
+  :init-value
   nil
+  :lighter
   " gfragenda"
+  :keymap
   (let ((km (make-sparse-keymap)))
     (define-key km
       (kbd "g") 'gfredericks-agenda-mode-refresh)

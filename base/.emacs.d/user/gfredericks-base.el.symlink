@@ -11,6 +11,7 @@
     htmlize ;; used for org-mode exports
     magit
     git-timemachine
+    paredit
     real-auto-save
     smex
     window-numbering

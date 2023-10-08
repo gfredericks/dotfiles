@@ -22,6 +22,7 @@ alias lsl="ls -l"
 alias lsa="ls -a"
 alias lsla="ls -la"
 alias lslh="ls -lh"
+alias lslrt="ls -lrt"
 alias wcl="wc -l"
 alias rgrep="grep -r"
 alias gerp=grep
