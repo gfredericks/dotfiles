@@ -61,6 +61,10 @@ include "%L"   # import the default Compose file for your locale
 <Multi_key> <quotedbl> <U> : "Ú"
 <Multi_key> <quotedbl> <Y> : "Ý"
 
+# For keyboards that make ~ difficult to type
+<Multi_key> <n> <n> : "ñ"
+<Multi_key> <N> <N> : "Ñ"
+
 <Multi_key> <colon> <a> : "ä"
 <Multi_key> <colon> <e> : "ë"
 <Multi_key> <colon> <i> : "ï"
