@@ -665,13 +665,14 @@
   [agenda cfg]
   (let [{:keys [today-date]} agenda
         format-todo (fn [{:keys [done todo priority-cookie header] :as item}]
-                      (format "%s%s %s%s%s"
-                              (cond-> (or done (red-bold todo))
-                                (= "[#C]" priority-cookie)
-                                (->> .toLowerCase (format "(%s)")))
-                              (if priority-cookie
-                                (str " " priority-cookie)
-                                "")
+                      (format "%s %s%s%s"
+                              (->> [(if (not= "t" (get (:properties item) "DO_NOT_RENDER_AS_TODO"))
+                                      (cond-> (or done (red-bold todo))
+                                        (= "[#C]" priority-cookie)
+                                        (->> .toLowerCase (format "(%s)"))))
+                                    priority-cookie]
+                                   (remove nil?)
+                                   (string/join " "))
                               (if-let [prefix (:custom-prefix item)]
                                 (str prefix " ")
                                 "")
