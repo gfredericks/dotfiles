@@ -299,6 +299,7 @@
                       :file               file-str
                       :line-number        line-number
                       :priority-cookie    priority-cookie
+                      :blocked-by         (get properties "BLOCKED_BY")
                       :clock-logs         clock-logs
                       :clocked-in?        (->> clock-logs
                                                (some #(nil? (second %)))
@@ -525,12 +526,21 @@
   [deets-by-file today]
   (let [today+10 (.plusDays today 10)
         today-7 (.plusDays today -7)
+        blocking-ids (->> deets-by-file
+                          vals
+                          (mapcat :todos)
+                          (keep (fn [todo]
+                                  (get-in todo [:properties "CUSTOM_ID"])))
+                          (set))
         m (->> deets-by-file
                vals
                (mapcat :todos)
                (remove #(some->> %
                                  :priority-cookie
                                  (re-find #"\d")))
+               (remove #(let [{:keys [blocked-by]} %]
+                          (and blocked-by
+                               (contains? blocking-ids blocked-by))))
                (keep (fn [{:keys [todo header deadline backlog-section] :as item}]
                        (cond-> (when-not (org-blocked? item)
                                  (if backlog-section

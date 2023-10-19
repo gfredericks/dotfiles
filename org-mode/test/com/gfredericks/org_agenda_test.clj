@@ -307,7 +307,6 @@
      (fn [agenda]
        (is (re-find test-regex agenda))))))
 
-#_ ;; Not implemented yet
 (deftest blocked-by-test
   (let [now (ZonedDateTime/of 2023 4 5 7 37 15 221 oa/CHICAGO)]
     (do-integration
