@@ -16,6 +16,7 @@
     smex
     window-numbering
     workgroups
+    rust-mode
     yaml-mode
     dash))
 
