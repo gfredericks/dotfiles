@@ -841,6 +841,35 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 (add-hook 'gfredericks-agenda-mode-hook
           'gfredericks-agenda-mode-ansi-colors-setup)
 
+(defvar gfredericks-agenda-p nil)
+(defvar gfredericks-agenda-ws nil)
+
+(defun gfredericks-save-point-etc ()
+  (setq gfredericks-agenda-p (point))
+  (setq gfredericks-agenda-ws (window-start)))
+
+;; NOCOMMIT: I think maybe there's a couple issues here:
+;; - doesn't commute with the other after-revert-hook
+;; - might be running the restore in a different window
+;;   or something due to a race condition
+(defun gfredericks-restore-point-etc ()
+  (message "RESTORING FOR [%s] %s TO %s AND %s"
+           (current-buffer)
+           (selected-window)
+           gfredericks-agenda-p
+           gfredericks-agenda-ws)
+  (set-point gfredericks-agenda-p)
+  (set-window-start (selected-window) gfredericks-agenda-ws))
+
+(defun gfredericks-agenda-revert-management-setup ()
+  (add-hook 'post-command-hook 'gfredericks-save-point-etc
+            nil t)
+  (add-hook 'after-revert-hook 'gfredericks-restore-point-etc
+            nil t))
+
+(add-hook 'gfredericks-agenda-mode-hook
+          'gfredericks-agenda-revert-management-setup)
+
 (defun followup-note
     ()
   (interactive)
