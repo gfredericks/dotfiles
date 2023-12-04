@@ -25,6 +25,11 @@ elif [[ "$NUM" -lt 1000000000000000 ]]; then
     M="(interpreting as milliseconds)"
     U="$(date --date=@"$SECS" -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
     C="$(date --date=@"$SECS" +"%Y-%m-%dT%H:%M:%S.%3N[CHI]")"
+elif [[ "$NUM" -lt 1000000000000000000 ]]; then
+    SECS=$($(which bc) -i <(echo scale=3) <<<"$NUM / 1000000" | tail -n 1)
+    M="(interpreting as microseconds)"
+    U="$(date --date=@"$SECS" -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
+    C="$(date --date=@"$SECS" +"%Y-%m-%dT%H:%M:%S.%3N[CHI]")"
 else
     M="(interpreting as nanoseconds)"
     SECS=$($(which bc) -i <(echo scale=3) <<<"$NUM / 1000000000" | tail -n 1)
