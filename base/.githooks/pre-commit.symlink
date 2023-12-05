@@ -7,6 +7,16 @@ if [[ -n "${SKIP_NO_COMMIT_CHECK:-}" ]]; then
     exit 0
 fi
 
+NO_COMMIT_IS_RUNNING=$(mktemp)
+
+(
+    sleep 3
+    if [[ -f "$NO_COMMIT_IS_RUNNING" ]]; then
+        echo "(to skip the NO ""COMMIT check, set SKIP_NO_COMMIT_CHECK=1)"
+        rm -f "$NO_COMMIT_IS_RUNNING"
+    fi
+) &
+
 NO_COMMIT_START=$(date +%s%3N)
 
 # specifically excludes --no-commit since that is a flag to git-merge
@@ -26,6 +36,8 @@ done < <(
     PYTHONNOUSERSITE=1 \
     git-cached-grep-staged "$GREP_PATTERN"
 )
+
+rm "$NO_COMMIT_IS_RUNNING"
 
 NO_COMMIT_DURATION=$(($(date +%s%3N) - $NO_COMMIT_START))
 
