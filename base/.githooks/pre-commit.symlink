@@ -37,7 +37,7 @@ done < <(
     git-cached-grep-staged "$GREP_PATTERN"
 )
 
-rm "$NO_COMMIT_IS_RUNNING"
+rm -f "$NO_COMMIT_IS_RUNNING"
 
 NO_COMMIT_DURATION=$(($(date +%s%3N) - $NO_COMMIT_START))
 
