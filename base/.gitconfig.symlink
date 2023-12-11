@@ -3,6 +3,7 @@
   excludesfile = ~/.gitignore_global
   attributesfile = ~/.gitattributes
   hooksPath = ~/.githooks
+  pager = cat
 [color]
   ui = auto
 [color "branch"]
