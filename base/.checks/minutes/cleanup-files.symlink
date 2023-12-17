@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+for d in ~/tmp ~/Downloads ~/trash; do
+    if [[ -d "$d" ]]; then
+        # the -mindepth 1 prevents it from deleting the top level
+        # directory
+        find -mindepth 1 "$d" -mtime +28 -exec rm -rf '{}' \;
+    fi
+done
