@@ -41,6 +41,13 @@ bc(){
   echo "(I'm setting scale to 10; use scale=\$N to change it)"
   "$(which bc)" -i $F
 }
+
+_escape_prompt_string(){
+    # Backticks have special meaning in PS1/PS2/PS3 apparently, and
+    # this (prepending a backslash) should suffice to address that
+    echo "${1//\`/\\\`}"
+}
+
 _find_root_of_git_dir(){
   (
     while [[ (! -e .git) && "$PWD" != / ]]; do
@@ -361,6 +368,10 @@ __prompt_command() {
       PS0="$RCol"
       PS2="${Theme}> $INPUT_COLOR"
     fi
+
+    PS1="$(_escape_prompt_string "$PS1")"
+    PS2="$(_escape_prompt_string "$PS2")"
+    PS3="$(_escape_prompt_string "$PS3")"
 
     # So we can tell how long since the last command finished
     SECONDS=0
