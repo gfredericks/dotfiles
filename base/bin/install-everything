@@ -314,7 +314,7 @@ do
     rm -rf $BUILDDIR
     git clone git@github.com:gfredericks/dynamic-colors.git $BUILDDIR
     cd $BUILDDIR
-    git checkout 55c539b48c92f43ea121f906ca1470762ddfe13b
+    git checkout 876a6798c2860f37363d9023de16c7e6b7b995fd
     BIN=$BUILDDIR/bin
     rm -f ~/bin/dynamic-colors.bin
     ln -s $BIN ~/bin/dynamic-colors.bin
