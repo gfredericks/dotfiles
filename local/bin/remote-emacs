@@ -17,15 +17,39 @@ import traceback
 from socket import timeout,SHUT_RDWR
 from subprocess import call,Popen,PIPE
 
+def log(s):
+    print(s, file=sys.stderr)
+
 def _shell_escape(s):
     s2 = ""
     for i in range(len(s)):
         s2 += "\\\\" + s[i]
     return s2
 
+def is_wsl():
+    try:
+        with open('/proc/version', 'r') as f:
+            return 'microsoft' in f.read().lower()
+    except FileNotFoundError:
+        return False
+
+browser_command=sys.argv[2]
+i3_workspace=sys.argv[3]
+
+if is_wsl():
+    log("WSL DETECTED")
+    def open_url(url):
+        log(f"Opening {url!r}")
+        call(["cmd.exe", "/c", "start", browser_command, url])
+else:
+    def open_url(url):
+        url = _shell_escape(url)
+        call(["notify-send","remote open"])
+        call(["i3-msg","workspace",i3_workspace])
+        call(["i3-msg","exec",browser_command,url])
+
+
 class MyTCPHandler(socketserver.BaseRequestHandler):
-    browser_command=sys.argv[2]
-    i3_workspace=sys.argv[3]
     def handle(self):
         sock = self.request
         sock.settimeout(1)
@@ -59,12 +83,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                 else:
                     sock.sendall(b"ERROR: EXPECTED SINGLE LINE")
             elif(s == b'open '):
-                call(["notify-send","remote open"])
                 s = s.decode("UTF-8")[5:-1] + sock.recv(4096).decode("UTF-8")
                 if("\n" in s):
-                    url = _shell_escape(s.split("\n")[0])
-                    call(["i3-msg","workspace",self.i3_workspace])
-                    call(["i3-msg","exec",self.browser_command,url])
+                    url = s.split("\n")[0]
+                    open_url(url)
                 else:
                     sock.sendall(b"ERROR: EXPECTED URL+NEWLINE")
             else:
@@ -72,7 +94,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         except timeout:
             sock.sendall(b"SOCKET TIMEOUT")
         except Exception as e:
-            sock.sendall(b"ERR ({})".format(sys.exc_info()))
+            log(f"ERR: {sys.exc_info()}")
+            traceback.print_exc(file=sys.stderr)
+            sock.sendall("ERR ({})".format(sys.exc_info()).encode("UTF-8"))
         sock.shutdown(SHUT_RDWR)
         sock.close()
 
