@@ -1,2 +1,3 @@
 $include /etc/inputrc
+$include .inputrc.extras
 set mark-symlinked-directories on
