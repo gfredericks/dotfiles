@@ -306,33 +306,38 @@ __prompt_command() {
 
     local PROMPT_LINES=()
 
-    local FIRST=1
-    local LINE_LEN=1
-    for k in "${KEYS[@]}"; do
-        if [ $FIRST -eq "0" ]; then
-            MAIN_LINE="$MAIN_LINE $CIRCLE"
-        else
-            FIRST=0
-        fi
-        COMP="${PROMPT_COMPONENTS["$k"]}"
-        # counting the line length manually because the color codes
-        # make the length of the string and the actual display length
-        # different; the color codes seem escaped at this point, which
-        # is surprising
-        COMP_NO_COLORS="$(delete_ansi_codes "$COMP")"
-        LINE_LEN=$(( $LINE_LEN + 3 + ${#COMP_NO_COLORS} ))
-        MAIN_LINE="$MAIN_LINE $COMP"
-    done
-    MAIN_LINE="$MAIN_LINE $Theme▶ $RCol"
 
-    if [[ $LINE_LEN -gt $COLUMNS ]]; then
-        for k in "${KEYS[@]}"; do
-            COMP="${PROMPT_COMPONENTS["$k"]}"
-            PROMPT_LINES+=("$Theme◀$RCol $COMP")
+
+    while [[ ${#KEYS[@]} -gt 0 ]]; do
+        local TOTAL=0
+        local LINE_LEN=3
+        local MAIN_LINE="$Theme◀$RCol"
+        while [[ ${#KEYS[@]} -gt 0 ]]; do
+            OLD_MAIN_LINE="$MAIN_LINE"
+            if [[ $TOTAL -gt 0 ]]; then
+                MAIN_LINE="$MAIN_LINE $CIRCLE"
+            fi
+            TOTAL=$((TOTAL+1))
+            K="${KEYS[0]}"
+            COMP="${PROMPT_COMPONENTS["$K"]}"
+            # counting the line length manually because the color codes
+            # make the length of the string and the actual display length
+            # different; the color codes seem escaped at this point, which
+            # is surprising
+            COMP_NO_COLORS="$(delete_ansi_codes "$COMP")"
+            LINE_LEN=$(( $LINE_LEN + 3 + ${#COMP_NO_COLORS} ))
+            MAIN_LINE="$MAIN_LINE $COMP"
+            if [[ "$LINE_LEN" -gt $COLUMNS ]] && [[ $TOTAL -gt 1 ]]; then
+                # too long, roll back
+                PROMPT_LINES+=("$OLD_MAIN_LINE $Theme▶ $RCol")
+                break
+            else
+                KEYS=("${KEYS[@]:1}")
+            fi
         done
-    else
-        PROMPT_LINES+=("$MAIN_LINE")
-    fi
+    done
+    PROMPT_LINES+=("$MAIN_LINE $Theme▶ $RCol")
+
 
     # I believe bash is designed to let you have a separate
     # font for the input text, but emacs' term-mode has
