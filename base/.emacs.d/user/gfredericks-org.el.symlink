@@ -487,6 +487,61 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 		    org-agenda-buffer-name)))
   (when open (org-open-file file)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; orglog
+
+;; - should we have two? one that's automatic and one that's manual?
+;;   - and the automatic one would not use custom-id, so it would just
+;;     be best-effort
+;; - do we need to GC the earlier lines, or leave that to manual? probably
+;;   just manual
+
+(defun my-get-current-org-headline ()
+  "Get the header of the current Org-mode headline."
+  (interactive)
+  (when (derived-mode-p 'org-mode)
+    (save-excursion
+      (org-back-to-heading t)
+      (let ((heading (org-element-at-point)))
+        (when (eq (car heading) 'headline)
+          (org-element-property :raw-value heading))))))
+
+(defun my-unsquarebracketify-str (str)
+  "Remove all occurrences of '[' and ']' from the string STR."
+  (replace-regexp-in-string "\\[\\|\\]" "" str))
+
+(defvar orglog-file nil)
+(defun orglog ()
+  (interactive)
+  (if (eq nil orglog-file)
+      (user-error "Please set orglog-file")
+    (letrec ((bn (buffer-name))
+             (link-deets
+              (if (derived-mode-p 'org-mode)
+                  (let ((hn (my-get-current-org-headline)))
+                    (custom-id)
+                    (cons
+                     (format "%s - %s" bn
+                             ;; I don't think org-mode has a
+                             ;; way to have squarebrackets in
+                             ;; link text :(
+                             (my-unsquarebracketify-str hn))
+                     (caar org-stored-links)))
+                (progn
+                  (cons
+                   (format "%s::%d" bn (line-number-at-pos))
+                   (format "%s::%d" (buffer-file-name)
+                           (line-number-at-pos)))))))
+      (save-window-excursion
+        (find-file orglog-file)
+        (end-of-buffer)
+        (insert (format "- [%s] :: "
+                        (format-time-string "%Y-%m-%d %H:%M:%S"
+                                            (current-time))))
+        (insert (org-make-link-string (cdr link-deets)
+                                      (car link-deets)))
+        (insert "\n")
+        (save-buffer)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Using beamer with org-mode;
@@ -799,11 +854,9 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 
 (defun custom-id ()
   (interactive)
-  (if (org-entry-get (point) "CUSTOM_ID")
-      (error "Already has CUSTOM_ID")
-    (progn
-      (org-set-property "CUSTOM_ID" (get-random-uuid))
-      (call-interactively 'org-store-link))))
+  (if (not (org-entry-get (point) "CUSTOM_ID"))
+      (org-set-property "CUSTOM_ID" (get-random-uuid)))
+  (call-interactively 'org-store-link))
 
 (defun backlog-section (section)
   (interactive "sSection: ")
