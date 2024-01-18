@@ -16,6 +16,7 @@
     smex
     window-numbering
     workgroups
+    num3-mode
     rust-mode
     yaml-mode
     dash))
@@ -25,6 +26,7 @@
 
 (require 'markdown-mode)
 (require 'real-auto-save)
+(require 'num3-mode)
 
 (window-numbering-mode)
 
