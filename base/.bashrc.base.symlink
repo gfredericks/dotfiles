@@ -99,7 +99,7 @@ alias hed='head -n $(( $(tput lines) - 3 ))'
 alias tal='tail -n $(( $(tput lines) - 3 ))'
 
 mkcd(){ mkdir -p "$1"; cd "$1"; }
-tmp(){ local D="$HOME/tmp/$(date -u +"%Y-%m-%dT%H:%M:%SZ")"; mkdir "$D" && pushd "$D"; }
+tmp(){ local D="$HOME/tmp/$(date -u +"%Y-%m-%dT%H%M%S")"; mkdir "$D" && pushd "$D"; }
 tmpshm(){ pushd `mktemp -d --tmpdir=/dev/shm`; }
 
 # devdir should be defined somewhere else, as a script that takes a
