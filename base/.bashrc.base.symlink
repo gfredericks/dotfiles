@@ -99,7 +99,8 @@ alias hed='head -n $(( $(tput lines) - 3 ))'
 alias tal='tail -n $(( $(tput lines) - 3 ))'
 
 mkcd(){ mkdir -p "$1"; cd "$1"; }
-tmp(){ pushd `mktemp -d --tmpdir=/dev/shm`; }
+tmp(){ local D="$HOME/tmp/$(date -u +"%Y-%m-%dT%H:%M:%SZ")"; mkdir "$D" && pushd "$D"; }
+tmpshm(){ pushd `mktemp -d --tmpdir=/dev/shm`; }
 
 # devdir should be defined somewhere else, as a script that takes a
 # partial project name and prints the full path to a project that
