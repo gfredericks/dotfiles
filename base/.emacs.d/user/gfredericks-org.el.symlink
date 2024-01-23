@@ -535,9 +535,10 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
       (save-window-excursion
         (find-file orglog-file)
         (end-of-buffer)
-        (insert (format "- [%s] :: "
-                        (format-time-string "%Y-%m-%d %H:%M:%S"
-                                            (current-time))))
+        (if (not (eq (char-before) ?\n))
+            (insert "\n"))
+        (insert (format "- %s :: "
+                        (format-time-string "[%Y-%m-%d %a %H:%M]")))
         (insert (org-make-link-string (cdr link-deets)
                                       (car link-deets)))
         (insert "\n")
