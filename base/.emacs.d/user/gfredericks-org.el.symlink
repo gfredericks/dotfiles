@@ -518,7 +518,14 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
     (letrec ((bn (buffer-name))
              (link-deets
               (if (derived-mode-p 'org-mode)
-                  (let ((hn (my-get-current-org-headline)))
+                  (let ((hn (my-get-current-org-headline))
+                        ;; temporarily set this to empty, because the
+                        ;; org-store-link functionality won't put the
+                        ;; link at the beginning of the list if it's
+                        ;; already in the list, so it's impossible to
+                        ;; find, and (caar org-stored-links) will just
+                        ;; silently return something else
+                        (org-stored-links '()))
                     (custom-id)
                     (cons
                      (format "%s - %s" bn
