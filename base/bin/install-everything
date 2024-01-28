@@ -156,12 +156,13 @@ do
            libjpeg-dev zlib1g-dev
     BUILDDIR=$BUILDDIRBASE/python3
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tgz
-    echo 'd63e63e14e6d29e17490abbe6f7d17afb3db182dbd801229f14e55f4157c4ba3  Python-3.7.4.tgz' | \
+    VERSION=3.9.18
+    wget https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tgz
+    echo "504ce8cfd59addc04c22f590377c6be454ae7406cb1ebf6f5a350149225a9354  Python-$VERSION.tgz" | \
         sha256sum -c
-    tar xzf Python-3.7.4.tgz
-    cd Python-3.7.4
-    INSTALLDIR=$BUILDDIR/install/python-3.7.4
+    tar xzf Python-$VERSION.tgz
+    cd Python-$VERSION
+    INSTALLDIR=$BUILDDIR/install/python-$VERSION
     ./configure --prefix=$INSTALLDIR && make && make install
     rm -f ~/bin/python3.bin
     ln -s $INSTALLDIR/bin ~/bin/python3.bin
