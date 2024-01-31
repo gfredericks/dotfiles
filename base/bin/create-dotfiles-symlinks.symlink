@@ -35,7 +35,7 @@ while IFS= read -r profile; do
   done
 done < <(cat ~/.dotfiles-profiles)
 
-
+DEAD_LINK_COUNT=0
 for FILE in `find ~/bin -maxdepth 1 -type l`; do
     if [[ -d "$FILE" ]]; then
         for EX in $(find "$FILE"/ -maxdepth 1 -type f -executable) \
@@ -43,10 +43,20 @@ for FILE in `find ~/bin -maxdepth 1 -type l`; do
             NAME="$(basename "$EX")"
             EXPECTED="$(realpath "$EX")"
             LINKLOC="$HOME/bin/$NAME"
-            if [[ -e "$LINKLOC" ]]; then
-                ACTUAL="$(realpath "$LINKLOC")"
-                if [[ "$ACTUAL" != "$EXPECTED" ]]; then
-                    echo >&2 "Bad bin symlink at: $LINKLOC -- actual[$ACTUAL] expected[$EXPECTED]"
+            if [[ -L "$LINKLOC" ]]; then
+                if ! [[ -e "$LINKLOC" ]]; then
+                    echo "Correcting dead link"
+                    echo rm "$LINKLOC"
+                    echo ln -s "$EXPECTED" "$LINKLOC"
+                    if [[ -z "${DRYRUN:-}" ]]; then
+                        rm "$LINKLOC"
+                        ln -s "$EXPECTED" "$LINKLOC"
+                    fi
+                else
+                    ACTUAL="$(realpath "$LINKLOC")"
+                    if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+                        echo >&2 "Bad bin symlink at: $LINKLOC -- actual[$ACTUAL] expected[$EXPECTED]"
+                    fi
                 fi
             else
                 echo ln -s "$EXPECTED" "$LINKLOC"
@@ -55,7 +65,14 @@ for FILE in `find ~/bin -maxdepth 1 -type l`; do
                 fi
             fi
         done
+    elif ! [[ -e "$FILE" ]]; then
+        DEAD_LINK_COUNT=$((DEAD_LINK_COUNT+1))
+        EXIT_CODE=1
     fi
 done
+
+if [[ "$DEAD_LINK_COUNT" -gt 0 ]]; then
+    echo >&2 "Found $DEAD_LINK_COUNT dead links"
+fi
 
 exit $EXIT_CODE
