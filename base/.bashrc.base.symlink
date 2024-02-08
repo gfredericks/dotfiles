@@ -15,26 +15,7 @@ PROMPT_WD_SUBSTITUTIONS[src/main/java]=$'\u001b[34;1m»smj\u001b[0m'
 PROMPT_WD_SUBSTITUTIONS[src/test/java]=$'\u001b[34;1m»stj\u001b[0m'
 PROMPT_WD_SUBSTITUTIONS[gitignored]=$'\u001b[34;1m»gig\u001b[0m'
 
-cdl(){ cd $1; ls; }
-cdll(){ cd $1; ls -l; }
-cdlla(){ cd $1; ls -la; }
-alias lsl="ls -l"
-alias lsa="ls -a"
-alias lsla="ls -la"
-alias lslh="ls -lh"
-alias lslrt="ls -lrt"
-alias wcl="wc -l"
-alias rgrep="grep -r"
-alias gerp=grep
-alias today="date +%Y-%m-%d"
-alias jqu="jq --unbuffered"
-alias jqr="jq -r"
-alias k91="kill -9 %1"
 alias pyc="ping -c 1 yahoo.com"
-alias p3="python3"
-alias emc="emacsclient"
-alias pd="pushd"
-alias dp="popd"
 alias hey="echo what\'s up"
 bc(){
   local F=/dev/shm/.bc.63171c42-7694-4cc2-948b-9b00fc15c54f
@@ -43,76 +24,8 @@ bc(){
   "$(which bc)" -i $F
 }
 
-_escape_prompt_string(){
-    # Backticks have special meaning in PS1/PS2/PS3 apparently, and
-    # this (prepending a backslash) should suffice to address that
-    echo "${1//\`/\\\`}"
-}
-
-_find_root_of_git_dir(){
-  (
-    while [[ (! -e .git) && "$PWD" != / ]]; do
-        cd ..
-    done
-
-    if [[ "$PWD" != / ]]; then
-        echo "$PWD"
-    fi
-  )
-}
-gcd(){
-  ROOT_OF_GIT_DIR="$(_find_root_of_git_dir)"
-  if [[ -n "$ROOT_OF_GIT_DIR" ]]; then
-    cd "$ROOT_OF_GIT_DIR"
-  else
-    echo "Not in a git repo"\!
-    return 1
-  fi
-}
-
-# git shortcuts
-alias gs="git status"
-alias gl="git lg"
-alias gc="git commit"
-alias ga="git add"
-alias gco="git checkout"
-alias gd="git diff"
-alias gr="git reset"
-alias grh="git reset HEAD"
-alias gpp="git pull && git push"
-alias gpddraagp="git pull --rebase && git push"
-
-# Navigation
-function ..(){ for ((j=${1:-1},i=0;i<j;i++));do builtin cd ..;done;}
-alias ...='.. 2'
-alias ....='.. 3'
-alias .....='.. 4'
-alias ......='.. 5'
-alias .......='.. 6'
-alias cd-="cd -"
-
 # What does this even do?
 export LESS="-R"
-
-# https://twitter.com/petdance/status/964576338307936257
-alias hed='head -n $(( $(tput lines) - 3 ))'
-alias tal='tail -n $(( $(tput lines) - 3 ))'
-
-mkcd(){ mkdir -p "$1"; cd "$1"; }
-tmp(){
-    if [[ -z "$1" ]]; then
-        local D="$HOME/tmp/$(date -u +"%Y-%m-%dT%H%M%S")"
-    else
-        local D="$HOME/tmp/$(date -u +"%Y-%m-%d")-$1"
-        local INCR=1
-        while [[ -e "$D" ]]; do
-            D="$HOME/tmp/$(date -u +"%Y-%m-%d")-$1-$INCR"
-            INCR=$((INCR+1))
-        done
-    fi
-    mkdir "$D" && pushd "$D"
-}
-tmpshm(){ pushd `mktemp -d --tmpdir=/dev/shm`; }
 
 # devdir should be defined somewhere else, as a script that takes a
 # partial project name and prints the full path to a project that
@@ -133,56 +46,14 @@ d(){
   ( d "$1"; bash; )
 }
 
--cd(){
-  ( cd "$1"; bash; )
-}
-
-
-
 # Assemble ssh config from components
 cat ~/.ssh/config.* > ~/.ssh/config
 chmod 600 ~/.ssh/config
-
-# Showing the runtime of the last command; adapted from
-# http://jakemccrary.com/blog/2015/05/03/put-the-last-commands-run-time-in-your-bash-prompt/
-
-IN_PROMPT=1
-
-function timer_start {
-    if [ $IN_PROMPT -eq "1" ]; then
-        timer=${timer:-$SECONDS}
-    fi
-}
-
-function timer_stop {
-    the_seconds=$(($SECONDS - $timer))
-
-    __last_stopped_at=$SECONDS
-
-    # Hide results for <2sec to reduce noise
-    if [[ $the_seconds > 1 ]]; then
-        timer_show="`format-duration seconds $the_seconds`"
-    else
-        timer_show=""
-    fi
-
-    unset timer
-
-}
 
 function when-did-that-happen? {
   ___what=$(($SECONDS - $__last_stopped_at))
   ___elapsed=`format-duration seconds $___what`
   echo "That happened $___elapsed ago."
-}
-
-# Prompt
-parse_git_branch() {
-    git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
-}
-
-delete_ansi_codes() {
-    echo "$1" | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g"
 }
 
 HAS_DONE_WALCOM=0
@@ -195,6 +66,7 @@ if [[ -n "${INSIDE_EMACS:-}" ]] && [[ "$TERM" == dumb ]]; then
 fi
 
 . $(dirname $SELF)/fancy-prompt.sh
+. $(dirname $SELF)/conveniences.sh
 
 # thanks internet: https://unix.stackexchange.com/a/4220
 
