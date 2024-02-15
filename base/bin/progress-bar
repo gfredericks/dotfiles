@@ -1,63 +1,53 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env python3
 
-# Reads decreasing positive integers from stdin and prints estimates
-# about when it will reach zero. Exits on zero.
+import sys
+import time
 
-DECAY=0.9
-if ARGV.length == 1
-  $target = ARGV[0].to_i
-else
-  $target = nil
-end
+DECAY = 0.9
+target = None
 
-def update_rate(old_rate, new_rate)
-  if old_rate == nil
-    new_rate
-  else
-    DECAY * old_rate + (1 - DECAY) * new_rate
-  end
-end
+if len(sys.argv) == 2:
+    target = int(sys.argv[1])
 
-def duration_s secs
-  if secs < 60
-    "#{secs} seconds"
-  elsif secs < 3600
-    "#{secs / 60} minutes, #{duration_s(secs % 60)}"
-  else
-    "#{secs / 3600} hours, #{duration_s(secs % 3600)}"
-  end
-end
+def update_rate(old_rate, new_rate):
+    if old_rate is None:
+        return new_rate
+    else:
+        return DECAY * old_rate + (1 - DECAY) * new_rate
 
-def read_num
-  x = STDIN.gets.to_i
-  if $target != nil
-    x = $target - x
-  end
-  return x
-end
+def duration_s(secs):
+    if secs < 60:
+        return f"{secs} seconds"
+    elif secs < 3600:
+        return f"{secs // 60} minutes, {duration_s(secs % 60)}"
+    else:
+        return f"{secs // 3600} hours, {duration_s(secs % 3600)}"
 
-last_num = read_num
-last_t = Time.new.to_i
-rate = nil
+def read_num():
+    x = int(input())
+    if target is not None:
+        x = target - x
+    return x
 
-while last_num > 0
-  next_num = read_num
-  next_t = Time.new.to_i
-  delta = next_num - last_num
-  delta_t = last_t - next_t
-  per_sec = delta.to_f / delta_t
-  rate = update_rate(rate, per_sec)
-  remaining, eta =
-    if rate == 0
-      ["an eternity", "heat death"]
-    else
-      est_secs_left = (next_num / rate).to_i
-      eta = (Time.new + est_secs_left)
-      [duration_s(est_secs_left), eta.to_s]
-    end
-  puts "%10d | %40s | %s" % [next_num, remaining, eta]
-  last_num = next_num
-  last_t = next_t
-end
+last_num = read_num()
+last_t = int(time.time())
+rate = None
 
-puts "DONE!"
+while last_num > 0:
+    next_num = read_num()
+    next_t = int(time.time())
+    delta = next_num - last_num
+    delta_t = last_t - next_t
+    per_sec = delta / delta_t
+    rate = update_rate(rate, per_sec)
+    if rate == 0:
+        remaining, eta = "an eternity", "heat death"
+    else:
+        est_secs_left = int(next_num / rate)
+        eta = time.ctime(time.time() + est_secs_left)
+        remaining = duration_s(est_secs_left)
+    print(f"{next_num:10d} | {remaining:40} | {eta}")
+    last_num = next_num
+    last_t = next_t
+
+print("DONE!")
