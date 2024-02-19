@@ -551,6 +551,11 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
         (insert "\n")
         (save-buffer)))))
 
+(defun run-orglog-after-clock-in (&rest _)
+  (call-interactively 'orglog))
+
+(advice-add 'org-clock-in :after #'run-orglog-after-clock-in)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Using beamer with org-mode;
 ;; Pasted and modified from
