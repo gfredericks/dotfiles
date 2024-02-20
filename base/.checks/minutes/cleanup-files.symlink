@@ -3,7 +3,11 @@
 for d in ~/tmp ~/Downloads ~/trash; do
     if [[ -d "$d" ]]; then
         # the -mindepth 1 prevents it from deleting the top level
-        # directory
-        find "$d" -mindepth 1 -mtime +28 -exec rm -rf '{}' \;
+        # directory; the maxdepth means we only delete whole
+        # directories below that; when I ran without -maxdepth 1 I
+        # would get error messages due presumably to a race condition
+        # within find, and I'm not sure that selectively deleting
+        # contents is useful here anyhow
+        find "$d" -mindepth 1 -maxdepth 1 -mtime +28 -exec rm -rf '{}' \;
     fi
 done
