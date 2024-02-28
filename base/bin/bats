@@ -11,7 +11,7 @@ fi
 if [[ -f "$1" ]]; then
     bat "$1"
 elif [[ -d "$1" ]]; then
-    find "$1" -type f | xargs bat
+    find "$1" -type f -print0 | xargs -0 bat
 else
     echo >&2 "Not found: $1"
 fi
