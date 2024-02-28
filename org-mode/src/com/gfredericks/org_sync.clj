@@ -129,7 +129,7 @@
                                frequencies
                                (filter #(< 1 (val %))))]
         (throw (ex-info "Colliding IDs!"
-                        {:example-id-and-cardinality (first all-colliding)
+                        {:examples-id-and-cardinality (take 10 (shuffle all-colliding))
                          :total-colliding (count all-colliding)}))))
     (let [[retained-entries new-deleted-entries]
           (if deleted
