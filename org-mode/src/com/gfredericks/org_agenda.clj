@@ -908,6 +908,10 @@
                   (:staleness-days todo))
           (print-todo-line todo {})
           (println))
+        (when (seq backlog)
+          (println "== RANDOM BACKLOG ITEM ==")
+          (print-todo-line (rand-nth backlog) {})
+          (println))
         (->> backlog
              (group-by :backlog-section)
              (sort)
