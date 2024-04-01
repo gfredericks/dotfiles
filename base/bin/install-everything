@@ -227,7 +227,7 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/maven
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget http://apache.mirrors.tds.net/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+    wget https://archive.apache.org/dist/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
     echo '6e3e9c949ab4695a204f74038717aa7b2689b1be94875899ac1b3fe42800ff82  apache-maven-3.3.9-bin.tar.gz' | \
         sha256sum -c
     bsdtar xzf apache-maven-3.3.9-bin.tar.gz
