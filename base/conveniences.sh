@@ -1,6 +1,7 @@
 cdl(){ cd $1; ls; }
 cdll(){ cd $1; ls -l; }
 cdlla(){ cd $1; ls -la; }
+alias cdt1='cd "$(ls -t | head -n 1)"'
 alias lsl="ls -l"
 alias lsa="ls -a"
 alias lsla="ls -la"

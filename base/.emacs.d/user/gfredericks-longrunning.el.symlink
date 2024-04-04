@@ -113,14 +113,19 @@
 (defun remote-copy ()
   (interactive)
   (let ((text (buffer-substring (mark) (point))))
-    (condition-case nil
+    (condition-case err
         (let ((f (make-temp-file "clipboard-bridge")))
           (with-temp-file f (insert text))
           ;; the 0 makes this run in the background, which I guess is
           ;; good for latency?
+          (message "I made it 3 %s" f)
           (call-process copy-path f 0)
           (delete-file f))
-      (error nil))))
+      (error (message "consarnit: %s" err)))))
+
+;; NOCOMMIT: why on earth does the *terminal-uds-backfill-prod-3* buffer not be able
+;; to copy? is that the only one that's broken?
+;; (call-process copy-path "/tmp/clipboard-bridgeoEMi2y" 0)
 
 ;;
 ;; This is pretty hacky but it might actually *work*

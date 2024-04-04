@@ -721,7 +721,8 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (interactive)
   (let ((w (selected-window))
         (p (point))
-        (b nil))
+        (b nil)
+        (ws (window-start)))
     (beginning-of-line)
     (org-next-link)
     (org-open-at-point)
@@ -730,8 +731,12 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
     (select-window w)
     ;; why does doing (goto-char p) right here not work???
     ;; (goto-char p)
-    (org-save-all-org-buffers)
-    (run-with-timer 1 nil (lambda (w p) (goto-char p)) w p)))
+    ;; (org-save-all-org-buffers)
+    (run-with-timer 1 nil
+                    (lambda (w ws p)
+                      (set-window-start w ws)
+                      (goto-char p))
+                    w ws p)))
 
 (defun gfredericks-agenda-mode-org-set-effort
     ()
