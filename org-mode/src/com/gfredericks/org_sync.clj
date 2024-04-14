@@ -179,7 +179,7 @@
   [live-file archive-file deleted-file new-entries merge-opts]
   (let [read-file #(with-open [r (io/reader %)] (org/parse-file r))
         write-file (fn [f content]
-                     (log/info "Writing to %s" f)
+                     (log/infof "Writing to %s" f)
                      (with-atomic-write [w f]
                        (org/write-file w content)))
         {:keys [live archive deleted]} (merge (cond-> {:live    (read-file live-file)
