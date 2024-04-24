@@ -153,7 +153,9 @@ do
   then
       sudo apt-get install -y \
            libffi-dev libreadline-dev libsqlite3-dev libbz2-dev liblzma-dev \
-           libjpeg-dev zlib1g-dev
+           libjpeg-dev zlib1g-dev libssl-dev libncurses5-dev libtk8.6 \
+           libgdm-dev libdb4o-cil-dev libpcap-dev
+
     BUILDDIR=$BUILDDIRBASE/python3
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
     VERSION=3.9.18
