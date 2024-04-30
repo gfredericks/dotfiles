@@ -54,12 +54,14 @@ alias gpddraagp="git pull --rebase && git push"
 
 
 # Navigation
-function ..(){ for ((j=${1:-1},i=0;i<j;i++));do builtin cd ..;done;}
-alias ...='.. 2'
-alias ....='.. 3'
-alias .....='.. 4'
-alias ......='.. 5'
-alias .......='.. 6'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias ......='cd ../../../../..'
+alias .......='cd ../../../../../..'
+alias ........='cd ../../../../../../..'
+alias .........='cd ../../../../../../../..'
 alias cd-="cd -"
 
 
