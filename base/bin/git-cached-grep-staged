@@ -23,8 +23,28 @@ with os.popen('git write-tree') as stream:
     root_tree_id = stream.read().rstrip()
 
 pattern_hash = hashlib.md5((grep_pattern + "\n").encode('utf-8')).hexdigest()
+
 cache_file = ".git-cached-grep-staged-{}".format(pattern_hash)
+# Set this using:
+# git config --local gfredericks.git-cached-grep-staged-cache-dir some-absolute-or-relative-path
+configured_cache_dir = subprocess.run(
+    ["git", "config", "--local", "--get", "gfredericks.git-cached-grep-staged-cache-dir"],
+    capture_output=True
+).stdout.decode("UTF-8")
+if configured_cache_dir:
+    cache_file = f"{configured_cache_dir.strip()}/{cache_file}"
+
 cache_size = 1000
+# Set this using:
+# git config --local gfredericks.git-cached-grep-staged-cache-size 10000
+configured_cache_size = subprocess.run(
+    ["git", "config", "--local", "--get", "gfredericks.git-cached-grep-staged-cache-size"],
+    capture_output=True
+).stdout
+if configured_cache_size:
+    cache_size = int(configured_cache_size)
+
+
 
 CacheEntry = namedtuple('CacheEntry', ['match_count', 'last_access_ms'])
 

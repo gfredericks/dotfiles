@@ -2,6 +2,9 @@
 
 import sys
 import time
+import os
+
+DEBUG=os.getenv("DEBUG") == "1"
 
 DECAY = 0.9
 target = None
@@ -39,6 +42,7 @@ while last_num > 0:
     delta = next_num - last_num
     delta_t = last_t - next_t
     per_sec = delta / delta_t
+    old_rate = rate
     rate = update_rate(rate, per_sec)
     if rate == 0:
         remaining, eta = "an eternity", "heat death"
@@ -46,6 +50,8 @@ while last_num > 0:
         est_secs_left = int(next_num / rate)
         eta = time.ctime(time.time() + est_secs_left)
         remaining = duration_s(est_secs_left)
+    if DEBUG:
+        print(f"old_rate={old_rate}, recent_rate={per_sec}, new_rate={rate}")
     print(f"{next_num:10d} | {remaining:40} | {eta}")
     last_num = next_num
     last_t = next_t
