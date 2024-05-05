@@ -58,7 +58,7 @@ do
   # servers
   if [ "$1" == "all" -o "$1" == "emacs" ]
   then
-    sudo apt-get install -y libncurses-dev asciidoc docbook2x libgnutls28-dev autoconf
+    sudo apt-get install -y libncurses-dev asciidoc docbook2x libgnutls28-dev autoconf libjansson-dev
     # weird: https://emacs.stackexchange.com/questions/41778/emacs-26-1-configure-script-doesnt-like-the-gnutls-version-on-a-redhat-sytem
     sudo apt-get install -y pkg-config
     BUILDDIR=$BUILDDIRBASE/emacs
@@ -71,6 +71,7 @@ do
     ./autogen.sh
     ./configure \
         --without-x \
+        --with-json \
         --prefix=$BUILDDIR/install \
         --bindir=$BUILDDIR/bin
     make
