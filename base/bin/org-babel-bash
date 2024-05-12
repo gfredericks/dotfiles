@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 
-SIGNAL_FILE="$(mktemp)"
+set -Eeou pipefail
+
+SIGNAL_FILE="$(mktemp /tmp/obb-XXXXXXXX)"
+
+trap "rm $SIGNAL_FILE" EXIT
 
 (
     WD="$(mktemp -d)"
     cd $WD
-    ( "$@"; echo "Exited at $(inst) with status $?" > exit)> stdout 2>stderr &
+    ( set +e; "$@"; echo "Exited at $(inst) with status $?" > exit)> stdout 2>stderr &
     PID=$!
-    NEW_WD=/tmp/$PID
+    NEW_WD=/tmp/org-babel-bash-$PID
     if [[ -d "$NEW_WD" ]]; then
         X=1
         while [[ -d "$NEW_WD-$X" ]]; do
@@ -17,7 +21,7 @@ SIGNAL_FILE="$(mktemp)"
     fi
     mv "$WD" "$NEW_WD"
     echo "Running at $NEW_WD" > "$SIGNAL_FILE"
-    fg
+    # fg
 ) &
 
 # I believe this line always prints "fg: no job control"
@@ -27,7 +31,8 @@ SIGNAL_FILE="$(mktemp)"
 disown
 
 TIMES=10
-while [[ 0 == $(wc -c "$SIGNAL_FILE") ]]; do
+
+while [[ 0 == "$(wc -c < "$SIGNAL_FILE")" ]]; do
     if [[ "$TIMES" -eq 0 ]]; then
         echo >&2 "Error: background process failed to signal"
         break
@@ -37,5 +42,3 @@ while [[ 0 == $(wc -c "$SIGNAL_FILE") ]]; do
 done
 
 cat $SIGNAL_FILE
-
-rm $SIGNAL_FILE
