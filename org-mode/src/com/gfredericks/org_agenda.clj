@@ -816,14 +816,17 @@
                        (count backlog)))
       (println)
 
-      (when (seq deadlines)
-        (println "== DEADLINES ==")
-        (doseq [item deadlines
-                :let [warning-period (-> item :deadline (get :warning-period DEFAULT-WARNING-PERIOD))
-                      first-warning-day (-> item :deadline :base to-local-date (.minus warning-period))]
-                :when (compare/>= today-date first-warning-day)]
-          (print-todo-line item {}))
-        (println))
+      (let [deadlines (for [item deadlines
+                            :let [warning-period (-> item :deadline (get :warning-period DEFAULT-WARNING-PERIOD))
+                                  first-warning-day (-> item :deadline :base to-local-date (.minus warning-period))]
+                            :when (compare/>= today-date first-warning-day)]
+                        item)]
+        (when (seq deadlines)
+          (println "== DEADLINES ==")
+          (doseq [item deadlines]
+            (print-todo-line item {}))
+          (println)))
+
       (when (seq triage)
         (println "== TRIAGE ==")
         (doseq [item triage]
