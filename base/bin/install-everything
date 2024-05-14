@@ -93,10 +93,11 @@ do
     sudo apt-get install -y install-info
     BUILDDIR=$BUILDDIRBASE/git
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://github.com/git/git/archive/v2.27.0.zip
-    echo '4e1cae8547cb79f90d71d10bc2dfb8545b37f77b5c636213635a47cc5871dd35  v2.27.0.zip' | sha256sum -c
-    unzip v2.27.0.zip
-    cd git-2.27.0
+    VERSION=2.45.1
+    wget https://github.com/git/git/archive/v$VERSION.zip
+    echo "c001792fac56e74834d60285b07ad010af2802256d76f8f6c6e952a2afe6d10e  v$VERSION.zip" | sha256sum -c
+    unzip v$VERSION.zip
+    cd git-$VERSION
     INSTALLDIR=$BUILDDIR/install
     make configure
     ./configure --with-libpcre --prefix=$INSTALLDIR
