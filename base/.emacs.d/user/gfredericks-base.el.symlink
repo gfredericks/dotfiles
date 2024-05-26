@@ -93,6 +93,9 @@
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
+;; gonna try this out, seems cool
+(gfredericks-packages-install 'num3-mode)
+(global-num3-mode 1)
 
 (setq ido-enable-flex-matching t)
 (setq ido-everywhere t)
