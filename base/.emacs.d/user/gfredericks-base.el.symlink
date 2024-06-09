@@ -207,3 +207,61 @@
     (set-window-display-table (selected-window) display-table)))
 
 (add-hook 'window-configuration-change-hook 'my-change-window-divider)
+
+
+(defun my-truncate-ts-to-seconds
+    (input-string)
+  (let ((result input-string))
+    (while (> (length result) 10)
+      (setq result (substring result 0 -3)))
+    result))
+
+(defun my-find-timestamp-bounds ()
+  "Find the bounds of a timestamp (ISO-8601 or epoch) around point."
+  (let ((whitelist (string-to-list "0123456789-:T.Z")))
+    (save-excursion
+      (let (start end)
+        ;; Move backward to find the start
+        (while (and (not (bobp))
+                    (member (char-before) whitelist))
+          (backward-char))
+        (setq start (point))
+        ;; Move forward to find the end
+        (while (and (not (eobp))
+                    (member (char-after) whitelist))
+          (forward-char))
+        (setq end (point))
+        (cons start end)))))
+
+(defun analyze-timestamp (&optional local-is-chicago)
+  "Parse either an epoch integer or an ISO-8601 timestamp around point.
+   Prints info about it in the minibuffer:
+   - Chicago local time
+   - UTC time
+   - London time
+   - Epoch integer, in the lowest faithful resolution"
+  (interactive "P")
+  (let* (;;(bounds (bounds-of-thing-at-point 'symbol))
+         (bounds (my-find-timestamp-bounds))
+         (timestamp (buffer-substring-no-properties (car bounds) (cdr bounds)))
+         (_ (message "DEBUG: Handling %s via %s" timestamp bounds))
+         (epoch-time (if (string-match-p "^[0-9]+$" timestamp)
+                         ;; TODO: support millis/etc. better, I guess
+                         (string-to-number (my-truncate-ts-to-seconds timestamp))
+                       (ignore-errors
+                         (let ((adjusted-timestamp (if (and (not (string-suffix-p "Z" timestamp))
+                                                            (not local-is-chicago))
+                                                       (concat timestamp "Z")
+                                                     timestamp)))
+                           (float-time (date-to-time adjusted-timestamp))))))
+         (chicago-tz "America/Chicago")
+         (london-tz "Europe/London"))
+    (if epoch-time
+        (let ((utc-time (format-time-string "%Y-%m-%dT%H:%M:%SZ" (seconds-to-time epoch-time) t))
+              (chicago-time (format-time-string "%Y-%m-%dT%H:%M:%S[America/Chicago]" (seconds-to-time epoch-time)
+                                                (current-time-zone nil chicago-tz)))
+              (london-time (format-time-string "%Y-%m-%dT%H:%M:%S[Europe/London]" (seconds-to-time epoch-time)
+                                               (current-time-zone nil london-tz))))
+          (message "%s\n%s\n%s\n%d"
+                   utc-time chicago-time london-time (floor epoch-time)))
+      (message "Invalid timestamp format"))))
