@@ -67,12 +67,15 @@ for FILE in `find ~/bin -maxdepth 1 -type l`; do
         done
     elif ! [[ -e "$FILE" ]]; then
         DEAD_LINK_COUNT=$((DEAD_LINK_COUNT+1))
+        if [[ "$REMOVE_DEAD" == "1" ]]; then
+            rm "$FILE"
+        fi
         EXIT_CODE=1
     fi
 done
 
 if [[ "$DEAD_LINK_COUNT" -gt 0 ]]; then
-    echo >&2 "Found $DEAD_LINK_COUNT dead links"
+    echo >&2 "Found $DEAD_LINK_COUNT dead links; run again with REMOVE_DEAD=1 to remove them"
 fi
 
 exit $EXIT_CODE
