@@ -8,7 +8,7 @@ SELF=$(readlink -f $BASH_SOURCE)
 MYBIN=`dirname $SELF`/bin
 export PATH=~/bin:$MYBIN:$PATH
 export EDITOR=edit
-export BAT_THEME=ansi-dark
+export BAT_THEME=ansi
 
 declare -A PROMPT_WD_SUBSTITUTIONS
 PROMPT_WD_SUBSTITUTIONS[src/main/java]=$'\u001b[34;1m»smj\u001b[0m'
