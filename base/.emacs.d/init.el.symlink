@@ -25,3 +25,4 @@
 ;; I found this lying around on one of my computers;
 ;; is it useful??
 (put 'scroll-left 'disabled nil)
+(put 'upcase-region 'disabled nil)
