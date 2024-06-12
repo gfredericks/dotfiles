@@ -148,12 +148,16 @@
                                                new-entry))))
                                  retained-entries-by-id
                                  new-entries)
-          new-live-file-contents (->> (vals merged-entries)
-                                      (remove archive?)
+          annotated-entries (->> (vals merged-entries)
+                                 (map (juxt identity archive?)))
+          new-live-file-contents (->> annotated-entries
+                                      (remove second)
+                                      (map first)
                                       (sort-by sort-key)
                                       (wrap-in-live-file-prelude time-zone category))
-          new-archive-file-contents (->> (vals merged-entries)
-                                         (filter archive?)
+          new-archive-file-contents (->> annotated-entries
+                                         (filter second)
+                                         (map first)
                                          (sort-by sort-key)
                                          (wrap-in-archive-file-prelude time-zone category))]
       (cond->
