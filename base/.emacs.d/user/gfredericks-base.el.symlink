@@ -208,7 +208,6 @@
 
 (add-hook 'window-configuration-change-hook 'my-change-window-divider)
 
-
 (defun my-truncate-ts-to-seconds
     (input-string)
   (let ((result input-string))
@@ -265,3 +264,17 @@
           (message "%s\n%s\n%s\n%d"
                    utc-time chicago-time london-time (floor epoch-time)))
       (message "Invalid timestamp format"))))
+
+(defun gfredericks-goto-line (input)
+  "Move to a specific line or a relative number of lines based on INPUT.
+If INPUT starts with '+' or '-', move relative to the current line.
+Otherwise, go to the absolute line number specified by INPUT."
+  (interactive "sGoto line (or relative line with + or -): ")
+  (let* ((current-line (line-number-at-pos))
+         (target-line (if (string-match-p "^[+-]" input)
+                          (+ current-line (string-to-number input))
+                       (string-to-number input))))
+    (goto-char (point-min))
+    (forward-line (1- target-line))))
+
+(global-set-key (kbd "M-g M-g") 'gfredericks-goto-line)
