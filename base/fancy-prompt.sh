@@ -133,6 +133,12 @@ __prompt_command() {
         PROMPT_COMPONENTS["$k"]="$v"
     done
 
+    # Python venv
+    if [[ -n "$VIRTUAL_ENV" ]]; then
+        PATH_TO_ENV="$(realpath --relative-to="$(pwd)" "$VIRTUAL_ENV")"
+        PROMPT_COMPONENTS["7-venv"]=$'\u001b[34;1mvenv:\u001b[0m'"$PATH_TO_ENV"
+    fi
+
     local EXTRA_PROMPT_COMPONENTS_DIR="$HOME/tmp/.prompt-components"
     if [[ -d $EXTRA_PROMPT_COMPONENTS_DIR ]]; then
         {
