@@ -133,7 +133,7 @@
      (print res)
      (flush))")
 
-(defun parse-deps-from-body
+(defun gfredericks-parse-deps-from-body
     (body)
   (if (string= "{:deps" (substring body 0 6))
       (letrec ((lines (split-string body "\n"))
@@ -144,16 +144,26 @@
               (apply #'concat body-lines)))
     (cons nil body)))
 
+(defun gfredericks-prepend-variables-to-body (body params)
+  (dolist (param params)
+    (when (eq (car param) :var)
+      (setq body (concat (format "(def %s %s)\n"
+                                 (car (cdr param))
+                                 (prin1-to-string (cdr (cdr param))))
+                         body))))
+  body)
+
 (defun org-babel-execute:clojure (body params)
   "Execute a block of Clojure code with Babel."
-  (letrec ((deps+body (parse-deps-from-body body)))
+  (letrec ((deps+body (gfredericks-parse-deps-from-body body)))
     (letrec ((deps (car deps+body))
              (body (cdr deps+body))
+             (body-with-vars (gfredericks-prepend-variables-to-body body params))
              (result-type (alist-get :result-type params))
              (input (if (eq result-type 'output)
-                        body
+                        body-with-vars
                       (if (eq result-type 'value)
-                          (format clojure-print-value-template body)
+                          (format clojure-print-value-template body-with-vars)
                         (error "bad result-type for eval-clojure"))))
              (in-file (make-temp-file "org-babel-clojure-"))
              (out-file (make-temp-file "org-babel-clojure-")))
