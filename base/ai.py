@@ -1,19 +1,27 @@
-from openai import AzureOpenAI
+import openai
 import os
 import re
 from typing import Iterator
+import json
 import subprocess
 import sys
 import shutil
 
 
-
 def mkclient():
-    return AzureOpenAI(
-        api_key=os.getenv("OPENAI_API_KEY"),
-        api_version='2023-07-01-preview',
-        azure_endpoint=os.getenv("OPENAI_API_ENDPOINT")
-    )
+    config=json.loads(os.getenv("OPENAI_CFG"))
+    if config['cls'] == 'AzureOpenAi':
+        return openai.AzureOpenAi(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            api_version=config['api_version'],
+            azure_endpoint=config['azure_endpoint'],
+        )
+    elif config['cls'] == 'OpenAI':
+        return openai.OpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            organization=config['organization'],
+            project=config['project']
+        )
 
 WHITESPACE=re.compile('[ \n]')
 
