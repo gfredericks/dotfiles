@@ -103,3 +103,12 @@ function make-completion-wrapper () {
 # file, and then here we check that the file was recently modified
 ( crontab -l | grep run-checks >/dev/null ) \
   || echo "ERROR: run-checks missing from crontab"\!
+
+AI_PY="$(dirname "$SELF")"/ai.py
+ai(){
+  prompt=("$@")
+  (
+    # TODO: decide where to do the `pip3 install openai` part
+    python3 "$AI_PY" chat "${prompt[@]}"
+  )
+}
