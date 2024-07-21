@@ -92,19 +92,24 @@ def reformat(chunks: Iterator[str]) -> Iterator[str]:
     yield '\n'
 
 def main():
-    if sys.argv[1] == "img":
+    cmd = sys.argv[1]
+    if cmd in ("img", "imgurl"):
         prompt = ' '.join(sys.argv[2:])
         resp = mkclient().images.generate(
             model="dall-e-3",
             prompt=prompt,
             n=1,
-            # size="1024x1024"
+            size="1024x1024"
         )
         data = resp.data[0]
         url = data.url
-        print(data.revised_prompt)
-        # subprocess.run(["open-url-in-browser-from-remote", url])
-    elif sys.argv[1] == "chat":
+        if cmd == "img":
+            subprocess.run(["open-url-in-browser-from-remote", url])
+        elif cmd == "imgurl":
+            print(url)
+        else:
+            raise Exception("unreachable")
+    elif cmd == "chat":
         question = ' '.join(sys.argv[2:])
         stream = mkclient().chat.completions.create(
             # model="gpt-3.5-turbo",

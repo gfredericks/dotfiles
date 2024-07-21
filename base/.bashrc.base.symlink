@@ -112,3 +112,10 @@ ai(){
     python3 "$AI_PY" chat "${prompt[@]}"
   )
 }
+aiimg(){
+  prompt=("$@")
+  (
+    # TODO: decide where to do the `pip3 install openai` part
+    python3 "$AI_PY" img "${prompt[@]}"
+  )
+}
