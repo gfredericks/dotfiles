@@ -10,8 +10,8 @@ import shutil
 
 def mkclient():
     config=json.loads(os.getenv("OPENAI_CFG"))
-    if config['cls'] == 'AzureOpenAi':
-        return openai.AzureOpenAi(
+    if config['cls'] == 'AzureOpenAI':
+        return openai.AzureOpenAI(
             api_key=os.getenv("OPENAI_API_KEY"),
             api_version=config['api_version'],
             azure_endpoint=config['azure_endpoint'],
