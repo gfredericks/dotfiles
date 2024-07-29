@@ -104,18 +104,16 @@ function make-completion-wrapper () {
 ( crontab -l | grep run-checks >/dev/null ) \
   || echo "ERROR: run-checks missing from crontab"\!
 
-AI_PY="$(dirname "$SELF")"/ai.py
+GFREDERICKS_AI_PY_DIR="$(dirname "$SELF")"/ai
 ai(){
   prompt=("$@")
   (
-    # TODO: decide where to do the `pip3 install openai` part
-    python3 "$AI_PY" chat "${prompt[@]}"
+    "$GFREDERICKS_AI_PY_DIR"/go.sh chat "${prompt[@]}"
   )
 }
 aiimg(){
   prompt=("$@")
   (
-    # TODO: decide where to do the `pip3 install openai` part
-    python3 "$AI_PY" img "${prompt[@]}"
+    "$GFREDERICKS_AI_PY_DIR"/go.sh img "${prompt[@]}"
   )
 }
