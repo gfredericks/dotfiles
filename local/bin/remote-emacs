@@ -10,6 +10,7 @@ I3_WORKSPACE=${3:-1}
 
 python3 - $THE_PORT "$BROWSER_COMMAND" "$I3_WORKSPACE" &> $LOG <<EOF &
 
+import base64
 import re
 import socketserver
 import sys
@@ -40,6 +41,7 @@ if is_wsl():
     log("WSL DETECTED")
     def open_url(url):
         log(f"Opening {url!r}")
+        url = f"https://me.gfredericks.com/redirect?b64={base64.b64encode(url.encode('UTF-8')).decode('UTF-8')}"
         call(["cmd.exe", "/c", "start", browser_command, url])
 else:
     def open_url(url):
