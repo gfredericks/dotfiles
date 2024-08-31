@@ -213,188 +213,202 @@
       header-pattern
       (re-pattern (format (str #"(\*+) (?:(%s) )?(?:(\[#[A-Z0-9]+\]) )?(.*)")
                           TODO-state-pattern))]
-  (defn parse-section-for-agenda
+  (defn parse-section-for-agenda*
     [{::org/keys           [header prelude sections line-number]
       ::keys [tags-with-ancestors props-with-ancestors ancestor-headers filewide-category]
       :as                  section}
      file-str
      today]
-    (try
-      (when (not-any? #(re-matches #"(?i)archive" %) (apply concat tags-with-ancestors))
-        (let [get-timestamp (fn [finder allow-repeater? include-header?]
-                              (let [ret (some->> (cond->> prelude include-header? (cons header))
-                                                 (keep finder)
-                                                 (first))]
-                                (if (and (:repeater ret)
-                                         (not allow-repeater?))
-                                  (throw (ex-info "Sorry man can't have a repeater there" {}))
-                                  ret)))
-              logbook-timestamps (->> prelude
-                                      (drop-while #(not (re-matches #" +:LOGBOOK: *" %)))
-                                      (next)
-                                      (take-while #(not (re-matches #" +:END: *" %)))
-                                      (keep (fn [line]
-                                              (if-let [[_ odt] (re-matches #" *- Note taken on (\[.*?\]) \\\\ *" line)]
-                                                (parse-org-datetime odt)))))
-              max-repeater-date (.plusDays today 60)
-              [_ stars todo priority-cookie rest] (re-matches header-pattern header)
-              raw-header header
-              header (remove-tags rest)
-              effort (when-let [s (-> props-with-ancestors first (get "Effort"))]
-                       (when-let [[_ hours minutes] (re-matches #"(\d+):(\d+)" s)]
-                         (Duration/ofMinutes (+ (Long/parseLong minutes)
-                                                (* 60 (Long/parseLong hours))))))
-              scheduled (get-timestamp scheduled-finder true false)
-              deadline  (get-timestamp deadline-finder true false)
-              tags (reduce into #{} tags-with-ancestors)
-              properties (first props-with-ancestors)
-              agenda-notes (->> prelude
-                                (drop-while #(not (re-matches #"\s*:AGENDA_NOTES:\s*" %)))
-                                (next)
-                                (take-while #(not (re-matches #"\s*:END:\s*" %)))
-                                ((fn [lines]
-                                   (when (seq lines)
-                                     (dedent lines)))))
-              followup-note (->> prelude
-                                 (keep #(re-matches #"\s*FOLLOWUP_NOTE:(?: (.+))?" %))
-                                 (map second)
-                                 ;; logbook items go in reverse chronological order,
-                                 ;; so if that's where we're putting them then first
-                                 ;; is the correct choice
-                                 (first))
-              clock-logs (->> prelude
-                              ;; this isn't the exact logic used by
-                              ;; org-mode I'm sure, but it's a good
-                              ;; enough hack for now
-                              (drop-while #(not (re-matches #"\s*:LOGBOOK:\s*" %)))
-                              (clojure.core/rest)
+    (when (not-any? #(re-matches #"(?i)archive" %) (apply concat tags-with-ancestors))
+      (let [get-timestamp (fn [finder allow-repeater? include-header?]
+                            (let [ret (some->> (cond->> prelude include-header? (cons header))
+                                               (keep finder)
+                                               (first))]
+                              (if (and (:repeater ret)
+                                       (not allow-repeater?))
+                                (throw (ex-info "Sorry man can't have a repeater there" {}))
+                                ret)))
+            logbook-timestamps (->> prelude
+                                    (drop-while #(not (re-matches #" +:LOGBOOK: *" %)))
+                                    (next)
+                                    (take-while #(not (re-matches #" +:END: *" %)))
+                                    (keep (fn [line]
+                                            (if-let [[_ odt] (re-matches #" *- Note taken on (\[.*?\]) \\\\ *" line)]
+                                              (parse-org-datetime odt)))))
+            max-repeater-date (.plusDays today 60)
+            [_ stars todo priority-cookie rest] (re-matches header-pattern header)
+            raw-header header
+            header (remove-tags rest)
+            effort (when-let [s (-> props-with-ancestors first (get "Effort"))]
+                     (when-let [[_ hours minutes] (re-matches #"(\d+):(\d+)" s)]
+                       (Duration/ofMinutes (+ (Long/parseLong minutes)
+                                              (* 60 (Long/parseLong hours))))))
+            scheduled (get-timestamp scheduled-finder true false)
+            deadline  (get-timestamp deadline-finder true false)
+            tags (reduce into #{} tags-with-ancestors)
+            properties (first props-with-ancestors)
+            agenda-notes (->> prelude
+                              (drop-while #(not (re-matches #"\s*:AGENDA_NOTES:\s*" %)))
+                              (next)
                               (take-while #(not (re-matches #"\s*:END:\s*" %)))
-                              (keep #(re-matches #"\s*CLOCK:\s+(\[.*?\])(?:--(\[.*?\]) =>\s+\d+:\d+)?" %))
-                              (map (fn [[_ start end]]
-                                     [(parse-org-datetime start)
-                                      (some-> end parse-org-datetime)])))
-              created-at (:base (get-timestamp created-at-finder false false))
-              scheduled-repeater? (:repeater scheduled)
-              deadline-repeater? (:repeater deadline)
-              base (with-meta
-                     {:todo               (if (contains? DONE-states todo) nil todo)
-                      :done               (if (contains? DONE-states todo) todo)
-                      :raw-header         raw-header
-                      :header             header
-                      :ancestor-headers   ancestor-headers
-                      :scheduled          (:base scheduled)
-                      :created-at         created-at
-                      :deadline           deadline
-                      :agenda-timestamp   (:base (get-timestamp agenda-timestamp-finder false true))
-                      :closed-at          (:base (get-timestamp closed-finder false false))
+                              ((fn [lines]
+                                 (when (seq lines)
+                                   (dedent lines)))))
+            followup-note (->> prelude
+                               (keep #(re-matches #"\s*FOLLOWUP_NOTE:(?: (.+))?" %))
+                               (map second)
+                               ;; logbook items go in reverse chronological order,
+                               ;; so if that's where we're putting them then first
+                               ;; is the correct choice
+                               (first))
+            clock-logs (->> prelude
+                            ;; this isn't the exact logic used by
+                            ;; org-mode I'm sure, but it's a good
+                            ;; enough hack for now
+                            (drop-while #(not (re-matches #"\s*:LOGBOOK:\s*" %)))
+                            (clojure.core/rest)
+                            (take-while #(not (re-matches #"\s*:END:\s*" %)))
+                            (keep #(re-matches #"\s*CLOCK:\s+(\[.*?\])(?:--(\[.*?\]) =>\s+\d+:\d+)?" %))
+                            (map (fn [[_ start end]]
+                                   [(parse-org-datetime start)
+                                    (some-> end parse-org-datetime)])))
+            created-at (:base (get-timestamp created-at-finder false false))
+            scheduled-repeater? (:repeater scheduled)
+            deadline-repeater? (:repeater deadline)
+            base (with-meta
+                   {:todo               (if (contains? DONE-states todo) nil todo)
+                    :done               (if (contains? DONE-states todo) todo)
+                    :raw-header         raw-header
+                    :header             header
+                    :ancestor-headers   ancestor-headers
+                    :scheduled          (:base scheduled)
+                    :created-at         created-at
+                    :deadline           deadline
+                    :agenda-timestamp   (:base (get-timestamp agenda-timestamp-finder false true))
+                    :closed-at          (:base (get-timestamp closed-finder false false))
 
-                      :last-repeat        (some-> props-with-ancestors
-                                                  first
-                                                  (get "LAST_REPEAT")
-                                                  parse-org-datetime)
-                      :category           (-> props-with-ancestors
-                                              first
-                                              (get "CATEGORY")
-                                              (or filewide-category))
-                      :file               file-str
-                      :line-number        line-number
-                      :priority-cookie    priority-cookie
-                      :blocked-by         (get properties "BLOCKED_BY")
-                      :clock-logs         clock-logs
-                      :clocked-in?        (->> clock-logs
-                                               (some #(nil? (second %)))
-                                               (boolean))
-                      :agenda-notes       agenda-notes
-                      :followup-note      followup-note
-                      :parent-is-ordered? (-> props-with-ancestors second (get "ORDERED") (= "t"))
-                      :backlog-section     (or (get properties "BACKLOG_SECTION")
-                                               ;; legacy name
-                                               (get properties "AGENDA_SECTION")
-                                               (if (contains? tags "backlog")
-                                                 "legacy_backlog_tag"))
-                      :properties         properties
-                      :tags               tags
-                      :own-tags           (set (first tags-with-ancestors))
-                      :effort             effort
-                      :repeat?            (or scheduled-repeater? deadline-repeater?)}
-                     {:raw-section section})
-              base (assoc base :updated-at (updated-at base logbook-timestamps))
-              date-range (->> prelude
-                              (keep (fn [line]
-                                      (re-find agenda-date-range-pattern line)))
-                              (first))
-              mkerror (fn [err]
-                        (merge
-                         {:todo "TODO"
-                          :raw-header (str "* TODO [#A] " err)
-                          :header err
-                          :ancestor-headers []
-                          :priority-cookie "[#A]"}
-                         (select-keys base [:file :line-number])))
-              errors (remove nil?
-                             [(when-let [scheduled-dow (get properties "SCHEDULED_DOW")]
-                                (when (not= scheduled-dow
-                                            (some-> (:base scheduled)
-                                                    (to-local-date)
-                                                    (.getDayOfWeek)
-                                                    (str)))
-                                  (mkerror (str "Bad SCHEDULED_DOW: " (:header base)))))])]
-          (when (< 1 (count (filter identity [date-range scheduled-repeater? deadline-repeater?])))
-            (throw (ex-info "Can't have more than one of [date-range scheduled-repeater? deadline-repeater?]"
-                            {})))
-          (concat errors
-                  (cond date-range
-                        (let [[_ d1 d2] date-range
-                              d1 (LocalDate/parse d1)
-                              d2 (LocalDate/parse d2)
-                              all-dates (->> (iterate #(.plusDays % 1) d1)
-                                             (take-while #(compare/<= % d2)))]
-                          (->> all-dates
-                               (map-indexed (fn [idx date]
-                                              (-> base
-                                                  (assoc :agenda-timestamp date)
-                                                  (update :header #(format "DAY %d/%d: %s"
-                                                                           (inc idx)
-                                                                           (count all-dates)
-                                                                           %)))))))
-
-                        scheduled-repeater?
-                        (->> (apply-repeater (:repeater scheduled) (:base scheduled) today max-repeater-date)
-                             (map-indexed (fn [idx scheduled]
+                    :last-repeat        (some-> props-with-ancestors
+                                                first
+                                                (get "LAST_REPEAT")
+                                                parse-org-datetime)
+                    ;; properties in general aren't inherited, but the
+                    ;; org-mode docs explicitly say: "If you would
+                    ;; like to have a special category for a single
+                    ;; entry or a (sub)tree, give the entry a
+                    ;; ‘CATEGORY’ property with the special category
+                    ;; you want to apply as the value." I haven't
+                    ;; verified that this is how it actually behaves,
+                    ;; but this namespace doesn't actually use the
+                    ;; category in any critical way
+                    :category           (as-> props-with-ancestors <>
+                                          (some #(get % "CATEGORY") <>)
+                                          (or <> filewide-category))
+                    :file               file-str
+                    :line-number        line-number
+                    :priority-cookie    priority-cookie
+                    :blocked-by         (some-> (get properties "BLOCKED_BY")
+                                                (string/split #","))
+                    :clock-logs         clock-logs
+                    :clocked-in?        (->> clock-logs
+                                             (some #(nil? (second %)))
+                                             (boolean))
+                    :agenda-notes       agenda-notes
+                    :followup-note      followup-note
+                    :parent-is-ordered? (-> props-with-ancestors second (get "ORDERED") (= "t"))
+                    :backlog-section     (or (get properties "BACKLOG_SECTION")
+                                             ;; legacy name
+                                             (get properties "AGENDA_SECTION")
+                                             (if (contains? tags "backlog")
+                                               "legacy_backlog_tag"))
+                    :properties         properties
+                    :tags               tags
+                    :own-tags           (set (first tags-with-ancestors))
+                    :own-properties     (first props-with-ancestors)
+                    :effort             effort
+                    :repeat?            (or scheduled-repeater? deadline-repeater?)}
+                   {:raw-section section})
+            base (assoc base :updated-at (updated-at base logbook-timestamps))
+            date-range (->> prelude
+                            (keep (fn [line]
+                                    (re-find agenda-date-range-pattern line)))
+                            (first))
+            mkerror (fn [err]
+                      (merge
+                       {:todo "TODO"
+                        :raw-header (str "* TODO [#A] " err)
+                        :header err
+                        :ancestor-headers []
+                        :priority-cookie "[#A]"}
+                       (select-keys base [:file :line-number])))
+            errors (remove nil?
+                           [(when-let [scheduled-dow (get properties "SCHEDULED_DOW")]
+                              (when (not= scheduled-dow
+                                          (some-> (:base scheduled)
+                                                  (to-local-date)
+                                                  (.getDayOfWeek)
+                                                  (str)))
+                                (mkerror (str "Bad SCHEDULED_DOW: " (:header base)))))])]
+        (when (< 1 (count (filter identity [date-range scheduled-repeater? deadline-repeater?])))
+          (throw (ex-info "Can't have more than one of [date-range scheduled-repeater? deadline-repeater?]"
+                          {})))
+        (concat errors
+                (cond date-range
+                      (let [[_ d1 d2] date-range
+                            d1 (LocalDate/parse d1)
+                            d2 (LocalDate/parse d2)
+                            all-dates (->> (iterate #(.plusDays % 1) d1)
+                                           (take-while #(compare/<= % d2)))]
+                        (->> all-dates
+                             (map-indexed (fn [idx date]
                                             (-> base
-                                                (assoc :scheduled scheduled)
-                                                (cond-> (pos? idx)
-                                                  (assoc :last-repeat nil
-                                                         :agenda-timestamp nil
-                                                         :generated-repeat? true))))))
+                                                (assoc :agenda-timestamp date)
+                                                (update :header #(format "DAY %d/%d: %s"
+                                                                         (inc idx)
+                                                                         (count all-dates)
+                                                                         %)))))))
 
-                        deadline-repeater?
-                        (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
-                             (map-indexed (fn [idx new-deadline]
-                                            (-> base
-                                                (assoc :deadline (assoc deadline :base new-deadline))
-                                                (cond-> (pos? idx)
-                                                  (assoc :last-repeat nil
-                                                         :agenda-timestamp nil
-                                                         :generated-repeat? true))))))
+                      scheduled-repeater?
+                      (->> (apply-repeater (:repeater scheduled) (:base scheduled) today max-repeater-date)
+                           (map-indexed (fn [idx scheduled]
+                                          (-> base
+                                              (assoc :scheduled scheduled)
+                                              (cond-> (pos? idx)
+                                                (assoc :last-repeat nil
+                                                       :agenda-timestamp nil
+                                                       :generated-repeat? true))))))
 
-                        :else [base]))))
-      (catch Exception e
-        (let [f (format "/tmp/agenda-err-%02d.org" (mod (hash section) 100))
-              header (format "AGENDA ERROR[%s]: %s" f (.getMessage e))]
-          (with-open [w (io/writer f)
-                      pw (java.io.PrintWriter. w)]
-            (.write w (format "* TODO [#A] %s\n" header))
-            (.write w (format "  FILE: %s\n" file-str))
-            (.write w (format "  LINE: %d\n" line-number))
-            (binding [*out* pw] (print-stack-trace e)))
-          [{:todo "TODO"
-            :raw-header (str "* TODO [#A] " header)
-            :header header
-            :ancestor-headers []
-            :priority-cookie "[#A]"
-            :file f
-            :line-number 1}])))))
+                      deadline-repeater?
+                      (->> (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)
+                           (map-indexed (fn [idx new-deadline]
+                                          (-> base
+                                              (assoc :deadline (assoc deadline :base new-deadline))
+                                              (cond-> (pos? idx)
+                                                (assoc :last-repeat nil
+                                                       :agenda-timestamp nil
+                                                       :generated-repeat? true))))))
+
+                      :else [base]))))))
+
+(defn parse-section-for-agenda
+  [section file-str today]
+  (try
+    (parse-section-for-agenda* section file-str today)
+    (catch Exception e
+      (let [f (format "/tmp/agenda-err-%02d.org" (mod (hash section) 100))
+            header (format "AGENDA ERROR[%s]: %s" f (.getMessage e))]
+        (with-open [w (io/writer f)
+                    pw (java.io.PrintWriter. w)]
+          (.write w (format "* TODO [#A] %s\n" header))
+          (.write w (format "  FILE: %s\n" file-str))
+          (.write w (format "  LINE: %d\n" (:line-number section)))
+          (binding [*out* pw] (print-stack-trace e)))
+        [{:todo "TODO"
+          :raw-header (str "* TODO [#A] " header)
+          :header header
+          :ancestor-headers []
+          :priority-cookie "[#A]"
+          :file f
+          :line-number 1}]))))
 
 (defn priority
   "Returns a long, where a higher number corresponds to higher priority."
@@ -539,8 +553,9 @@
                                  :priority-cookie
                                  (re-find #"\d")))
                (remove #(let [{:keys [blocked-by]} %]
-                          (and blocked-by
-                               (contains? blocking-ids blocked-by))))
+                          (some (fn [id]
+                                  (contains? blocking-ids id))
+                                blocked-by)))
                (keep (fn [{:keys [todo header deadline backlog-section] :as item}]
                        (cond-> (when-not (org-blocked? item)
                                  (if backlog-section
@@ -1134,6 +1149,9 @@
                          (count all)
                          (- (System/currentTimeMillis) start))
               (recur by-file today))))
+        (catch Exception e
+          (log/error e "Exception in watch-abstract")
+          (throw e))
         (finally
           (close-watcher watcher))))))
 
