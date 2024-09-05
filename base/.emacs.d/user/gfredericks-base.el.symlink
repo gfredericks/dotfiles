@@ -261,8 +261,11 @@
                                                 (current-time-zone nil chicago-tz)))
               (london-time (format-time-string "%Y-%m-%dT%H:%M:%S[Europe/London]" (seconds-to-time epoch-time)
                                                (current-time-zone nil london-tz))))
-          (message "%s\n%s\n%s\n%d"
-                   utc-time chicago-time london-time (floor epoch-time)))
+          ;; Running this asynchronously because otherwise I don't see
+          ;; it in the minibuffer for some reason
+          (run-at-time "100 millisec" nil 'message
+                       "%s %s %s %d"
+                       utc-time chicago-time london-time (floor epoch-time)))
       (message "Invalid timestamp format"))))
 
 (defun gfredericks-goto-line (input)
