@@ -122,10 +122,10 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/nodejs
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    VERSION=12.14.0
+    VERSION=16.20.2
     # VERSION=20.15.0  # Probably can't install this without upgrading past 18.04
     wget https://nodejs.org/dist/v${VERSION}/node-v${VERSION}-linux-x64.tar.xz
-    echo '82ae74ee0a204de7ebf7767eaa8e382518d9b49668dcbb5bd7fd003154445d1f  node-v'$VERSION'-linux-x64.tar.xz' | \
+    echo '874463523f26ed528634580247f403d200ba17a31adf2de98a7b124c6eb33d87  node-v'$VERSION'-linux-x64.tar.xz' | \
         sha256sum -c
     bsdtar xJf node-v${VERSION}-linux-x64.tar.xz
     rm -f ~/bin/nodejs.bin
