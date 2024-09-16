@@ -90,6 +90,8 @@
             (make-local-variable 'scroll-margin)
             (setq scroll-margin 3)))
 (setq display-line-numbers-type 'relative)
+(global-set-key (kbd "C-M-s") 'scroll-up-line)
+(global-set-key (kbd "C-M-l") 'scroll-down-line)
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
