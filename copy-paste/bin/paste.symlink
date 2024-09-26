@@ -2,6 +2,8 @@
 
 if [[ "$GFR_REMOTE_CLIPBOARD" == "1" ]]; then
     echo paste | nc localhost `cat ~/.remote-emacs-clipboard-browser-port`
+elif [[ -n "$WSLENV" ]]; then
+    powershell.exe Get-Clipboard
 elif [ ! -z "$DISPLAY" ]; then
     xclip -o -selection clipboard
 elif [ -f ~/.xclip-display-fallback ]; then
