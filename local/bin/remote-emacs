@@ -40,16 +40,18 @@ i3_workspace=sys.argv[3]
 if is_wsl():
     log("WSL DETECTED")
     def open_url(url):
-        log(f"Opening {url!r}")
         url = f"https://me.gfredericks.com/redirect?b64={base64.b64encode(url.encode('UTF-8')).decode('UTF-8')}"
         call(["cmd.exe", "/c", "start", browser_command, url])
+    def notify(msg):
+        call(["powershell.exe", "-Command",
+              f"Import-Module BurntToast; New-BurntToastNotification -Text {msg!r}"])
 else:
+    def notify(msg):
+        call(["notify-send",msg])
     def open_url(url):
         url = _shell_escape(url)
-        call(["notify-send","remote open"])
         call(["i3-msg","workspace",i3_workspace])
         call(["i3-msg","exec",browser_command,url])
-
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
@@ -58,7 +60,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         s = sock.recv(5)
         try:
             if(s == b'copy '):
-                call(["notify-send","remote copy"])
+                notify("remote copy")
                 p = Popen(["/usr/bin/env", "bash", "-c", "base64 -d | copy"],stdin=PIPE)
                 last_was_newline=False
                 while True:
@@ -75,19 +77,20 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                         p.stdin.write(s.encode("UTF-8"))
                 p.communicate()
             elif(s == b'paste'):
-                call(["notify-send","remote paste"])
+                notify("remote paste")
                 call("paste", stdout=sock.fileno())
             elif(s == b'note '):
                 s = s[5:-1] + sock.recv(4096)
                 if("\n" in s):
                     title = s.split("\n")[0]
-                    call(["notify-send","remote note: {}".format(title)])
+                    notify("remote note: {}".format(title))
                 else:
                     sock.sendall(b"ERROR: EXPECTED SINGLE LINE")
             elif(s == b'open '):
                 s = s.decode("UTF-8")[5:-1] + sock.recv(4096).decode("UTF-8")
                 if("\n" in s):
                     url = s.split("\n")[0]
+                    notify("remote open")
                     open_url(url)
                 else:
                     sock.sendall(b"ERROR: EXPECTED URL+NEWLINE")
