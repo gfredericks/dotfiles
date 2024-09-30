@@ -158,7 +158,9 @@ do
       sudo apt-get install -y \
            libffi-dev libreadline-dev libsqlite3-dev libbz2-dev liblzma-dev \
            libjpeg-dev zlib1g-dev libssl-dev libncurses5-dev libtk8.6 \
-           libgdm-dev libdb4o-cil-dev libpcap-dev
+           libgdm-dev libpcap-dev
+      # I think this is only used for WSL, not available in ubuntu 24.04
+      sudo apt-get install -y libdb4o-cil-dev || true
 
     BUILDDIR=$BUILDDIRBASE/python3
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
