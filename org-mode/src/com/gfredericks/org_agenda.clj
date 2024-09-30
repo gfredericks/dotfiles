@@ -476,6 +476,15 @@
     (let [file-str (str file)
           all-items (->> (all-sections file)
                          (mapcat #(parse-section-for-agenda % file-str today)))
+          ambiguous-line-numbers (->> all-items
+                                      (map (juxt :header :line-number))
+                                      (distinct)
+                                      (group-by first)
+                                      (vals)
+                                      (remove #(= 1 (count %)))
+                                      (apply concat)
+                                      (map second)
+                                      (set))
           calendar-events (->> all-items
                                (filter calendar-event?))
           ;; maybe up here we can precalculate each sibling that is
@@ -494,25 +503,28 @@
                      (filter :todo)
                      (map (fn [todo]
                             (let [search (conj (:ancestor-headers todo) (:raw-header todo))]
-                              (assoc todo
-                                     :descendent-TODOs?
-                                     (->> all-items
-                                          (filter :todo)
-                                          (some (fn [todo]
-                                                  (= search (take (count search)
-                                                                  (:ancestor-headers todo)))))
-                                          (boolean))
-                                     :shadowed-by-sibling?
-                                     ;; figure out if its parent has "ORDERED" set and
-                                     ;; a prior sibling has "TODO"
+                              (-> todo
+                                  (assoc :descendent-TODOs?
+                                         (->> all-items
+                                              (filter :todo)
+                                              (some (fn [todo]
+                                                      (= search (take (count search)
+                                                                      (:ancestor-headers todo)))))
+                                              (boolean))
+                                         :shadowed-by-sibling?
+                                         ;; figure out if its parent has "ORDERED" set and
+                                         ;; a prior sibling has "TODO"
 
-                                     ;; actually we need to figure out if this applies
-                                     ;; to any of its ancestors also...
-                                     (->> shadowed-siblings
-                                          (some (fn [headers]
-                                                  (= headers (take (count headers)
-                                                                   search))))
-                                          (boolean)))))))]
+                                         ;; actually we need to figure out if this applies
+                                         ;; to any of its ancestors also...
+                                         (->> shadowed-siblings
+                                              (some (fn [headers]
+                                                      (= headers (take (count headers)
+                                                                       search))))
+                                              (boolean)))
+                                  (cond-> (and (ambiguous-line-numbers (:line-number todo))
+                                               (nil? (get-in todo [:properties "CUSTOM_ID"])))
+                                    (assoc :notification "ambiguous link!")))))))]
       {:todos   todos
        :todones (->> all-items
                      (filter :done))
@@ -690,7 +702,7 @@
   [agenda cfg]
   (let [{:keys [today-date]} agenda
         format-todo (fn [{:keys [done todo priority-cookie header] :as item}]
-                      (format "%s %s%s%s"
+                      (format "%s %s%s%s%s"
                               (->> [(if (not= "t" (get (:properties item) "DO_NOT_RENDER_AS_TODO"))
                                       (cond-> (or done (red-bold todo))
                                         (= "[#C]" priority-cookie)
@@ -700,6 +712,9 @@
                                    (string/join " "))
                               (if-let [prefix (:custom-prefix item)]
                                 (str prefix " ")
+                                "")
+                              (if-let [notification (:notification item)]
+                                (str notification " ")
                                 "")
                               (if (:repeat? item)
                                 (blue "(r) ")
