@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
 
-if [[ "$GFR_REMOTE_CLIPBOARD" == "1" ]]; then
+set -Eeou pipefail
+
+if [[ "${GFR_REMOTE_CLIPBOARD:-}" == "1" ]]; then
     base64 | \
-           cat <(echo "copy ") - <(echo) | \
-           nc localhost `cat ~/.remote-emacs-clipboard-browser-port`
+        cat <(echo "copy ") - <(echo) | \
+        nc localhost `cat ~/.remote-emacs-clipboard-browser-port`
+elif [[ -n "${WSLENV:-}" ]]; then
+    cd ~/tmp
+    FILE="clipboard-$RANDOM$RANDOM"
+    trap "rm $FILE" EXIT
+    cat > "$FILE"
+    # Just piping to `powershell.exe Set-Clipboard` doesn't seem to
+    # work, but this indirection through a file does
+    powershell.exe "Get-Content $FILE | Set-Clipboard"
+elif [ ! -z "${DISPLAY:-}" ]; then
+    xclip -selection clipboard
+elif [ -f ~/.xclip-display-fallback ]; then
+    xclip -selection clipboard -display `cat ~/.xclip-display-fallback`
 else
-    if [ ! -z "$DISPLAY" ]; then
-      xclip -selection clipboard
-    else
-      if [ -f ~/.xclip-display-fallback ]; then
-        xclip -selection clipboard -display `cat ~/.xclip-display-fallback`
-      else
-        echo 'No DISPLAY or ~/.xclip-display-fallback set!' >&2
-        exit 1
-      fi
-    fi
+    echo 'No DISPLAY or ~/.xclip-display-fallback set!' >&2
+    exit 1
 fi

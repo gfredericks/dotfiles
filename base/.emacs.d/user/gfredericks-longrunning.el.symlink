@@ -78,71 +78,74 @@
   (restore-last-deleted-frame-wconfigs)
   (switch-to-last-workgroup))
 
-;;
-;; Utilities for automatically setting up workgroups and stuff
-;;
 
-(defun start-terminal-with-command (buffer-name initial-command)
-  (let* ((orig-buffer (current-buffer))
-         (proc (get-buffer-process (term "/bin/bash"))))
-    (rename-buffer buffer-name)
-    (term-send-string proc (concat initial-command "\n"))
-    (switch-to-buffer orig-buffer)))
+(defun gfredericks-setup-longrunning ()
 
-;; get the PATH right so I can call external executables
-(defun get-terminal-path ()
-  (with-temp-buffer
-    (let ((buff (current-buffer)))
-      (shell-command "/usr/bin/env bash -i -c 'echo $PATH' 2>/dev/null" buff)
-      (buffer-string))))
+  ;;
+  ;; Utilities for automatically setting up workgroups and stuff
+  ;;
 
-(setenv "PATH" (get-terminal-path))
+  (defun start-terminal-with-command (buffer-name initial-command)
+    (let* ((orig-buffer (current-buffer))
+           (proc (get-buffer-process (term "/bin/bash"))))
+      (rename-buffer buffer-name)
+      (term-send-string proc (concat initial-command "\n"))
+      (switch-to-buffer orig-buffer)))
 
-;;
-;; remote xclip integration (see also the executables: `copy`, `paste`, and `remote-emacs`)
-;;
+  ;; get the PATH right so I can call external executables
+  (defun get-terminal-path ()
+    (with-temp-buffer
+      (let ((buff (current-buffer)))
+        (shell-command "/usr/bin/env bash -i -c 'echo $PATH' 2>/dev/null" buff)
+        (buffer-string))))
 
-(setenv "GFR_REMOTE_CLIPBOARD" "1")
+  (setenv "PATH" (get-terminal-path))
 
-(defun remote-paste ()
-  (interactive)
-  (insert (shell-command-to-string "paste")))
+  ;;
+  ;; remote xclip integration (see also the executables: `copy`, `paste`, and `remote-emacs`)
+  ;;
 
-(defvar copy-path (string-trim-right (shell-command-to-string "which copy")))
+  (setenv "GFR_REMOTE_CLIPBOARD" "1")
 
-(defun remote-copy ()
-  (interactive)
-  (let ((text (buffer-substring (mark) (point))))
-    (condition-case err
-        (let ((f (make-temp-file "clipboard-bridge")))
-          (with-temp-file f (insert text))
-          ;; the 0 makes this run in the background, which I guess is
-          ;; good for latency?
-          (message "I made it 3 %s" f)
-          (call-process copy-path f 0)
-          (delete-file f))
-      (error (message "consarnit: %s" err)))))
+  (defun remote-paste ()
+    (interactive)
+    (insert (shell-command-to-string "paste")))
 
-;;
-;; This is pretty hacky but it might actually *work*
-;;
-(defvar browse-path
-  (string-trim-right
-   (shell-command-to-string "which open-url-in-browser-from-remote")))
+  (defvar copy-path (string-trim-right (shell-command-to-string "which copy")))
 
-(defun call-to-open-url-in-browser-from-remote
-    (url &rest args)
-  (call-process browse-path nil nil nil url))
+  (defun remote-copy ()
+    (interactive)
+    (let ((text (buffer-substring (mark) (point))))
+      (condition-case err
+          (let ((f (make-temp-file "clipboard-bridge")))
+            (with-temp-file f (insert text))
+            ;; the 0 makes this run in the background, which I guess is
+            ;; good for latency?
+            (message "I made it 3 %s" f)
+            (call-process copy-path f 0)
+            (delete-file f))
+        (error (message "consarnit: %s" err)))))
 
-(setq browse-url-browser-function 'call-to-open-url-in-browser-from-remote)
+  ;;
+  ;; This is pretty hacky but it might actually *work*
+  ;;
+  (defvar browse-path
+    (string-trim-right
+     (shell-command-to-string "which open-url-in-browser-from-remote")))
 
-(defun call-browse-url-noninteractively
-    ()
-  (interactive)
-  (browse-url (browse-url-url-at-point)))
+  (defun call-to-open-url-in-browser-from-remote
+      (url &rest args)
+    (call-process browse-path nil nil nil url))
 
-;; matches the org-mode binding
-(global-set-key (kbd "C-c C-o") 'call-browse-url-noninteractively)
+  (setq browse-url-browser-function 'call-to-open-url-in-browser-from-remote)
 
-(global-set-key "\C-crc" 'remote-copy)
-(global-set-key "\C-crp" 'remote-paste)
+  (defun call-browse-url-noninteractively
+      ()
+    (interactive)
+    (browse-url (browse-url-url-at-point)))
+
+  ;; matches the org-mode binding
+  (global-set-key (kbd "C-c C-o") 'call-browse-url-noninteractively)
+
+  (global-set-key "\C-crc" 'remote-copy)
+  (global-set-key "\C-crp" 'remote-paste))
