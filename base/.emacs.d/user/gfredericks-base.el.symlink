@@ -19,7 +19,8 @@
     num3-mode
     rust-mode
     yaml-mode
-    dash))
+    dash
+    lsp-mode))
 
 (dolist (package-name gfredericks-base-packages)
   (gfredericks-packages-install package-name))
