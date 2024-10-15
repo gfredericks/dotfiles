@@ -10,3 +10,4 @@ gitignored
 /_
 .git-cached-grep-staged-*
 *~
+/.conda
