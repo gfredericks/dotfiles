@@ -340,6 +340,18 @@
        "* TODO This one is blocked by another task that is blocked"
        "  :PROPERTIES:"
        "  :BLOCKED_BY: 1d55b951-41d1-4876-bde8-603f086adb1e"
+       "  :END:"
+       "* TODO This one blocks two different items"
+       "  :PROPERTIES:"
+       "  :CUSTOM_ID: 39c604ec-206b-4c6b-9453-074e5ba85a12"
+       "  :END:"
+       "* TODO This one is blocked by two items"
+       "  :PROPERTIES:"
+       "  :BLOCKED_BY: 39c604ec-206b-4c6b-9453-074e5ba85a12,1d55b951-41d1-4876-bde8-603f086adb1e"
+       "  :END:"
+       "* TODO This one is blocked by one done item and another undone item"
+       "  :PROPERTIES:"
+       "  :BLOCKED_BY: 5ae318cc-ce9e-41cd-93bf-958d6432d29d,39c604ec-206b-4c6b-9453-074e5ba85a12"
        "  :END:")
       "file-2.org"
       (lines
@@ -349,8 +361,11 @@
        "  :END:")}
      now
      (fn [agenda]
-       (is (re-find #"The first one is blocked by this one" agenda))
+       (is (re-find #"\[blocks 1 item\] .*The first one is blocked by this one" agenda))
        (is (re-find #"This blocker is in a different file" agenda))
        (is (not (re-find #"This one is blocked" agenda)))
        (is (re-find #"This one DOES show up because its blocker is DONE" agenda))
-       (is (re-find #"This one DOES show up because its blocker does not exist" agenda))))))
+       (is (re-find #"This one DOES show up because its blocker does not exist" agenda))
+       (is (re-find #"\[blocks 2 items\] .*This one blocks two different items" agenda))
+       (is (not (re-find #"This one is blocked by two items" agenda)))
+       (is (not (re-find #"This one is blocked by one done item and another undone item" agenda)))))))

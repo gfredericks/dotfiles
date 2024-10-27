@@ -558,16 +558,26 @@
                           (keep (fn [todo]
                                   (get-in todo [:properties "CUSTOM_ID"])))
                           (set))
-        m (->> deets-by-file
-               vals
-               (mapcat :todos)
-               (remove #(some->> %
-                                 :priority-cookie
-                                 (re-find #"\d")))
+        base-todos (->> deets-by-file
+                        vals
+                        (mapcat :todos)
+                        (remove #(some->> %
+                                          :priority-cookie
+                                          (re-find #"\d"))))
+        active-blocking (->> base-todos
+                             (mapcat :blocked-by)
+                             (filter blocking-ids)
+                             (frequencies))
+        m (->> base-todos
                (remove #(let [{:keys [blocked-by]} %]
                           (some (fn [id]
                                   (contains? blocking-ids id))
                                 blocked-by)))
+               (map (fn [todo]
+                      (let [items-blocked (active-blocking (get-in todo [:properties "CUSTOM_ID"]))]
+                        (cond-> todo
+                          items-blocked
+                          (assoc :items-blocked items-blocked)))))
                (keep (fn [{:keys [todo header deadline backlog-section] :as item}]
                        (cond-> (when-not (org-blocked? item)
                                  (if backlog-section
@@ -701,8 +711,8 @@
 (defn write-to-agenda-file
   [agenda cfg]
   (let [{:keys [today-date]} agenda
-        format-todo (fn [{:keys [done todo priority-cookie header] :as item}]
-                      (format "%s %s%s%s%s"
+        format-todo (fn [{:keys [done todo priority-cookie header items-blocked] :as item}]
+                      (format "%s %s%s%s%s%s"
                               (->> [(if (not= "t" (get (:properties item) "DO_NOT_RENDER_AS_TODO"))
                                       (cond-> (or done (red-bold todo))
                                         (= "[#C]" priority-cookie)
@@ -710,6 +720,10 @@
                                     priority-cookie]
                                    (remove nil?)
                                    (string/join " "))
+                              (case items-blocked
+                                nil ""
+                                1 "[blocks 1 item] "
+                                (format "[blocks %d items] " items-blocked))
                               (if-let [prefix (:custom-prefix item)]
                                 (str prefix " ")
                                 "")
