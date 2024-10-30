@@ -916,3 +916,23 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
    nil
    nil
    "FOLLOWUP_NOTE: "))
+
+;; Decorate the TODO state change functionality so that we
+;; preserve the previous SCHEDULED value
+
+(defun gfredericks-hide-org-timestamp
+    (s)
+  (let* ((s (replace-regexp-in-string "<" "&lt;" s))
+         (s (replace-regexp-in-string ">" "&gt;" s))
+         (s (replace-regexp-in-string "\\[" "&#x5b;" s))
+         (s (replace-regexp-in-string "\\]" "&#x5d;" s)))
+    s))
+
+(defun gfredericks-store-last-scheduled (&rest args)
+  (let ((scheduled (org-entry-get nil "SCHEDULED")))
+    (when scheduled
+      ;; using the hide function here so emacs doesn't recognize it as
+      ;; a timestamp for other purposes (especially doesn't change it)
+      (org-entry-put nil "LAST_SCHEDULED" (gfredericks-hide-org-timestamp scheduled)))))
+
+(advice-add 'org-auto-repeat-maybe :before #'gfredericks-store-last-scheduled)

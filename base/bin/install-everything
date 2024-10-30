@@ -47,7 +47,8 @@ do
       # - net-tools has netstat, used by remote-emacs
       sudo apt-get install -y tree htop texlive-latex-extra \
            python3-pygments xclip rlwrap xautolock moreutils \
-           lilypond entr flameshot net-tools zstd sshfs ncal
+           lilypond entr flameshot net-tools zstd sshfs ncal \
+           inotify-tools
   fi
 
   ###
