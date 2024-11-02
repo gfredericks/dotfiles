@@ -348,9 +348,11 @@
                                                   (.getDayOfWeek)
                                                   (str)))
                                 (mkerror (str "Bad SCHEDULED_DOW: " (:header base)))))])]
-        (when (< 1 (count (filter identity [date-range scheduled-repeater? deadline-repeater?])))
-          (throw (ex-info "Can't have more than one of [date-range scheduled-repeater? deadline-repeater?]"
-                          {})))
+        ;; I don't think this is actually a problem, so I'm going to
+        ;; leave it commented and see if anything bad happens.
+        #_(when (< 1 (count (filter identity [date-range scheduled-repeater? deadline-repeater?])))
+            (throw (ex-info "Can't have more than one of [date-range scheduled-repeater? deadline-repeater?]"
+                            {})))
         (concat errors
                 (cond date-range
                       (let [[_ d1 d2] date-range
