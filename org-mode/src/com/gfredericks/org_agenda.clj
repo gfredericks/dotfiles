@@ -884,7 +884,7 @@
                         item)]
         (when (seq deadlines)
           (println "== DEADLINES ==")
-          (doseq [item deadlines]
+          (doseq [item (sort-by (comp :base :deadline) deadlines)]
             (print-todo-line item {}))
           (println)))
 
