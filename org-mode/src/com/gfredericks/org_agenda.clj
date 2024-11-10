@@ -369,6 +369,21 @@
                                                                          (count all-dates)
                                                                          %)))))))
 
+                      ;; There's some way to make this less
+                      ;; repetitive; I can't tell if it's worth it
+                      (and scheduled-repeater? deadline-repeater?)
+                      (map-indexed (fn [idx [scheduled new-deadline]]
+                                     (-> base
+                                         (assoc :scheduled scheduled)
+                                         (assoc :deadline (assoc deadline :base new-deadline))
+                                         (cond-> (pos? idx)
+                                           (assoc :last-repeat nil
+                                                  :agenda-timestamp nil
+                                                  :generated-repeat? true))))
+                                   (map vector
+                                        (apply-repeater (:repeater scheduled) (:base scheduled) today max-repeater-date)
+                                        (apply-repeater (:repeater deadline) (:base deadline) today max-repeater-date)))
+
                       scheduled-repeater?
                       (->> (apply-repeater (:repeater scheduled) (:base scheduled) today max-repeater-date)
                            (map-indexed (fn [idx scheduled]
