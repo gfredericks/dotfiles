@@ -88,7 +88,7 @@ __prompt_command() {
         PROMPT_COMPONENTS["3-git-branch"]="$V"
     fi
 
-    local JOBS=`jobs -p | wc -l`
+    local JOBS="$(jobs -p -r | wc -l)"
     if [ $JOBS -gt "0" ]; then
         if [ $JOBS -eq "1" ]; then
             PROMPT_COMPONENTS["2-jobs"]="1 job"
