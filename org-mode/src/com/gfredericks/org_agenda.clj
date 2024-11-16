@@ -201,8 +201,8 @@
            (map to-local-date)
            (apply compare/max)))))
 
-(let [scheduled-finder         (timestamp-finder "\\s*(?: DEADLINE: .*?)?SCHEDULED: %s(?: DEADLINE: .*)?")
-      deadline-finder          (timestamp-finder "\\s*(?: SCHEDULED: .*?)?DEADLINE: %s(?: SCHEDULED: .*)?")
+(let [scheduled-finder         (timestamp-finder "\\s*(?: CLOSED: .*?)?(?: DEADLINE: .*?)?SCHEDULED: %s(?: DEADLINE: .*)?")
+      deadline-finder          (timestamp-finder "\\s*(?: CLOSED: .*?)?(?: SCHEDULED: .*?)?DEADLINE: %s(?: SCHEDULED: .*)?")
       closed-finder            (timestamp-finder "\\s*CLOSED: %s.*")
       created-at-finder        (timestamp-finder "\\s*Created at %s")
       agenda-timestamp-finder  (timestamp-finder ".*(?<!(?:SCHEDULED|DEADLINE): )(?=<)%s(?<=>).*")
