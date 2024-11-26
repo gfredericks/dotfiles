@@ -223,9 +223,13 @@ do
                          17 \
                          ~/.install-everything/jdk-tarballs/openjdk-17.0.2_linux-x64_bin.tar.gz \
                          0022753d0cceecacdd3a795dd4cea2bd7ffdf9dc06e22ffd1be98411742fbb44)"
+      JAVA_21_BIN="$(install_java \
+                         21 \
+                         ~/.install-everything/jdk-tarballs/openjdk-21.0.2_linux-x64_bin.tar.gz \
+                         a2def047a73941e01a73739f92755f86b895811afb1f91243db214cff5bdac3f)"
 
       rm -f ~/bin/jdk.bin
-      ln -s $JAVA_17_BIN ~/bin/jdk.bin
+      ln -s $JAVA_21_BIN ~/bin/jdk.bin
   fi
 
   ###
@@ -252,10 +256,10 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/gradle
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    VERSION=7.3
+    VERSION=8.11.1
     wget https://services.gradle.org/distributions/gradle-$VERSION-bin.zip
-    echo "de8f52ad49bdc759164f72439a3bf56ddb1589c4cde802d3cec7d6ad0e0ee410  gradle-$VERSION-bin.zip" | \
-        sha256sum -c
+    SHA256=f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6
+    echo "$SHA256  gradle-$VERSION-bin.zip" | sha256sum -c
     unzip gradle-$VERSION-bin.zip
     rm -f ~/bin/gradle
     ln -s $BUILDDIR/gradle-$VERSION/bin/gradle ~/bin/gradle
