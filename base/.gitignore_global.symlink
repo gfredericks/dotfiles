@@ -11,3 +11,4 @@ gitignored
 .git-cached-grep-staged-*
 *~
 /.conda*
+/.devdir-deprioritize
