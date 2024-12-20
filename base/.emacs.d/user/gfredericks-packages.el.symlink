@@ -21,3 +21,5 @@
       (package-refresh-contents)
       (setq gfredericks-packages-is-refreshed t))
     (package-install package-name)))
+
+(gfredericks-packages-install 'gnu-elpa-keyring-update)
