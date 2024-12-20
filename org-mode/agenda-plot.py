@@ -22,9 +22,9 @@ def date_2_agenda_size(date):
         filename = date.strftime(f"{BACKUPS_DIR}/agenda.%Y-%m-%d.org")
     with open(filename) as f:
         contents = f.read()
-    right_now = re.search("Things to do right now: (\d+)", contents)[1]
+    frontlog = re.search("(?:Things to do right now|Items in the frontlog): (\d+)", contents)[1]
     backlog = re.search("Items in the backlog: (\d+)", contents)[1]
-    return int(right_now) + int(backlog)
+    return int(frontlog) + int(backlog)
 
 freshenings = {}
 
