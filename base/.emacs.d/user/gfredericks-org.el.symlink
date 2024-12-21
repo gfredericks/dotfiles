@@ -786,11 +786,12 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
     ()
   (interactive)
   (beginning-of-buffer)
-  (re-search-forward "Total calendar time:")
-  (setq current-prefix-arg 1)
-  (call-interactively 'recenter-top-bottom)
-  (re-search-forward "^ -->")
-  (beginning-of-line))
+  (re-search-forward "== CALENDAR ==")
+  ;; (setq current-prefix-arg 1)
+  ;; (call-interactively 'recenter-top-bottom)
+  ;; (re-search-forward "^ -->")
+  ;; (beginning-of-line)
+  )
 
 (defun gfredericks-agenda-mode-find-backlog
     ()

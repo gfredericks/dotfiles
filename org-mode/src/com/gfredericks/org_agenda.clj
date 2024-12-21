@@ -672,7 +672,7 @@
                               (if (= "t" (get (:properties item) "AGENDA_NO_LINK"))
                                 header
                                 (make-org-link item header))))
-        print-todo-line (fn [{:keys [effort deadline properties] :as item}
+        print-todo-line (fn [{:keys [effort deadline properties backlog-priority] :as item}
                              {:keys [omit-effort?]}]
                           (println (format "-%s %s%s%s%s"
                                            (if omit-effort?
@@ -683,8 +683,8 @@
                                                     (if (= "t" (get properties "EFFORT_EXEMPT"))
                                                       "    "
                                                       "?:??"))))
-                                           (if (= 1 (priority item))
-                                             "  "
+                                           (if backlog-priority
+                                             (format "P%04d " backlog-priority)
                                              "")
                                            (if-let [lt (:later-today-time item)]
                                              (format "(not until %s) " lt)
@@ -812,39 +812,27 @@
             (print-todo-line item {}))
           (println)))
 
-      (let [frontlog (->> frontlog
-                          (map (fn [[cat items]] [cat (filter :todo items)]))
-                          (remove (fn [[cat items]] (empty? items)))
-                          (into {}))
-            only-default? (= [::default-category] (keys frontlog))
+      (let [only-todos (->> frontlog
+                            (map (fn [[cat items]] [cat (filter :todo items)]))
+                            (remove (fn [[cat items]] (empty? items)))
+                            (into {}))
+            only-default? (= [::default-category] (keys only-todos))
             category-sort-key (:category-sort-key cfg identity)]
-        (doseq [[category todos] (sort-by (comp category-sort-key key) frontlog)]
+        (doseq [[category todos] (sort-by (comp category-sort-key key) only-todos)]
           (when-not only-default?
-            (printf "== %s ==\n" (string/upper-case (name category))))
+            (printf "== %s ==\n" (string/upper-case (name category)))
+            (let [all (get frontlog category)
+                  completed-prefix (take-while :done all)
+                  fraction (/ (count completed-prefix) (count all))]
+              (printf "(prefix completed %d/%d = %.1f%%)\n"
+                      (count completed-prefix)
+                      (count all)
+                      (* 100.0 fraction))))
           (run! #(print-todo-line % {}) todos)
           (println)))
 
-      #_ ;; NOCOMMIT what to do with this?
-      (let [{:keys [todos calendar-events]} today
-            {past false today true} (group-by #(boolean (or (= today-date
-                                                               (-> %
-                                                                   :scheduled
-                                                                   (as-> <>
-                                                                       (cond-> <>
-                                                                         (vector? <>)
-                                                                         first))
-                                                                   to-local-date))
-                                                            (:repeat? %)))
-                                              todos)]
-        (when (seq past)
-          (println "== PRIOR DAYS ==")
-          (run! #(print-todo-line % {}) past))
-        (println "== TODAY ==")
-        (println "Today's todos")
-        (let [{repeating true one-off false} (group-by (comp boolean :repeat?) today)]
-          (run! #(print-todo-line % {}) one-off)
-          (run! #(print-todo-line % {}) repeating))
-        (print-calendar calendar-events))
+      (println "== CALENDAR ==")
+      (print-calendar (:calendar-events agenda))
 
       (when (seq backlog)
         (println "\n\n--------------------------------------------------------------------------------")
@@ -869,7 +857,7 @@
           (->> backlog
                (remove :effort)
                (sort-by sort-key)
-               (run! #(print-todo-line % {}))))))))
+               (run! #(print-todo-line % {:omit-effort? true}))))))))
 
 (defn add-free-time
   [calendar-events date now]
@@ -961,6 +949,7 @@
      :frontlog       frontlog
      :today-date     today
      :now            now
+     :calendar-events calendar-events
      :stalest-backlog-item (if-let [todos (->> backlog
                                                (remove :descendent-TODOs?)
                                                (remove :shadowed-by-sibling?)
