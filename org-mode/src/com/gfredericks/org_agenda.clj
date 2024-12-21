@@ -816,23 +816,26 @@
                             (map (fn [[cat items]] [cat (filter :todo items)]))
                             (remove (fn [[cat items]] (empty? items)))
                             (into {}))
-            only-default? (= [::default-category] (keys only-todos))
             category-sort-key (:category-sort-key cfg identity)]
         (doseq [[category todos] (sort-by (comp category-sort-key key) only-todos)]
-          (when-not only-default?
-            (printf "== %s ==\n" (string/upper-case (name category)))
-            (let [all (get frontlog category)
-                  completed-prefix (take-while :done all)
-                  fraction (/ (count completed-prefix) (count all))]
-              (printf "(prefix completed %d/%d = %.1f%%)\n"
-                      (count completed-prefix)
-                      (count all)
-                      (* 100.0 fraction))))
+          (printf "== %s ==\n"
+                  (case category
+                    ::default-category "TODOs"
+                    (string/upper-case (name category))))
+          (let [all (get frontlog category)
+                completed-prefix (take-while :done all)
+                fraction (/ (count completed-prefix) (count all))]
+            (printf "(prefix completed %d/%d = %.1f%%)\n"
+                    (count completed-prefix)
+                    (count all)
+                    (* 100.0 fraction)))
           (run! #(print-todo-line % {}) todos)
           (println)))
 
       (println "== CALENDAR ==")
-      (print-calendar (:calendar-events agenda))
+      (-> agenda
+          :calendar-events
+          (print-calendar))
 
       (when (seq backlog)
         (println "\n\n--------------------------------------------------------------------------------")
@@ -949,7 +952,7 @@
      :frontlog       frontlog
      :today-date     today
      :now            now
-     :calendar-events calendar-events
+     :calendar-events (add-free-time calendar-events today now)
      :stalest-backlog-item (if-let [todos (->> backlog
                                                (remove :descendent-TODOs?)
                                                (remove :shadowed-by-sibling?)

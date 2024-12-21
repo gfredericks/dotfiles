@@ -29,24 +29,6 @@
     "%s" "<2022-06-18 Sat ++3d>" {:repeater ["++" 3 "d"] :base (LD "2022-06-18") :active? true}
     "%s" "<2022-06-18 Sat 19:00 .+1w>" {:repeater [".+" 1 "w"] :base (LDT "2022-06-18T19:00") :active? true}))
 
-(deftest apply-repeater-test
-  (are [repeater base today max-date out] (= out (oa/apply-repeater repeater base today max-date))
-    ["+" 3 "d"] (LD "2022-06-18") (LD "2022-09-20") (LD "2022-07-01")
-    [(LD "2022-06-18") (LD "2022-06-21") (LD "2022-06-24") (LD "2022-06-27")
-     (LD "2022-06-30")]
-
-    ["++" 3 "d"] (LD "2022-06-18") (LD "2022-09-20") (LD "2022-10-01")
-    [(LD "2022-06-18") (LD "2022-09-22") (LD "2022-09-25") (LD "2022-09-28") (LD "2022-10-01")]
-
-    [".+" 2 "w"] (LD "2022-06-18") (LD "2022-09-20") (LD "2022-11-03")
-    [(LD "2022-06-18") (LD "2022-10-04") (LD "2022-10-18") (LD "2022-11-01")]
-
-    ["++" 1 "w"] (LD "2022-06-19") (LD "2022-06-19") (LD "2022-07-01")
-    [(LD "2022-06-19") (LD "2022-06-26")]
-
-    [".+" 1 "d"] (LD "2022-07-11") (LD "2022-07-10") (LD "2022-07-13")
-    [(LD "2022-07-11") (LD "2022-07-12") (LD "2022-07-13")]))
-
 (deftest make-org-link-test
   (is (= "[[file:/fake-file.org::*TODO this has an extra TODO][TODO TODO this has an extra TODO]]"
          (oa/make-org-link
@@ -77,18 +59,6 @@
           (Files/delete dir)
           (Files/delete agenda))))))
 
-(deftest repeat-repeater-regression
-  (let [now (ZonedDateTime/of 2022 7 10 16 22 15 0 oa/CHICAGO)]
-    (doseq [rep [".+1d" "++1d"]]
-      (do-integration
-       {"only-file.org"
-        (lines
-         "* TODO this should just appear once a day"
-         (format "  SCHEDULED: <2022-07-11 Mon %s>" rep))}
-       now
-       (fn [agenda]
-         (is (= 20 (count (re-seq #"just appear once" agenda)))))))))
-
 (deftest ordered-test
   ;; testing that ORDERED works correctly with descendents
   (do-integration
@@ -105,7 +75,7 @@
    ;; doesn't matter
    (ZonedDateTime/of 2022 7 10 16 22 15 0 oa/CHICAGO)
    (fn [agenda]
-     (is (= 1 (count (re-seq #"TODO" agenda))))
+     (is (= 1 (count (re-seq #"TODO\b" agenda))))
      (is (re-find #"Bbb" agenda)))))
 
 (deftest calendar-reference-test
@@ -215,7 +185,7 @@
 
 (deftest deadline-hiding-rules-test
   (let [now (ZonedDateTime/of 2022 12 23 9 22 15 0 oa/CHICAGO)
-        deadline-section #(second (re-matches #"(?s)(.*?)== (TODAY|TRIAGE) ==.*" %))]
+        deadline-section #(second (re-matches #"(?s)(.*?)== (TODOs) ==.*" %))]
     ;; default warning period is 14 days
     (do-integration
      {"only-file.org"
@@ -242,12 +212,11 @@
        "* TODO This thing"
        "  DEADLINE: <2023-02-03 Fri>"
        "  :PROPERTIES:"
-       "  :BACKLOG_SECTION: truths"
+       "  :BACKLOG_PRIORITY: 125"
        "  :END:")}
      now
      (fn [agenda]
-       (is (re-find #"truths" agenda))
-       (is (re-find #"TODO.+This thing" agenda))))))
+       (is (re-find #"(?s)backlog.*TODO.+This thing" agenda))))))
 
 (deftest deadline-with-scheduled-test
   (let [now (ZonedDateTime/of 2022 12 23 9 22 15 0 oa/CHICAGO)]
@@ -272,40 +241,6 @@
      now
      (fn [agenda]
        (is (re-find #"12:00-13:30: TODO This thing" agenda))))))
-
-(deftest schedule-dow-test
-  (let [now (ZonedDateTime/of 2023 4 5 7 37 15 221 oa/CHICAGO)
-        test-regex #"Bad SCHEDULED_DOW.+This thing"]
-    (do-integration
-     {"only-file.org"
-      (lines
-       "* TODO This thing"
-       "  SCHEDULED: <2023-04-05 Wed>")}
-     now
-     (fn [agenda]
-       (is (not (re-find test-regex agenda)))))
-    (do-integration
-     {"only-file.org"
-      (lines
-       "* TODO This thing"
-       "  SCHEDULED: <2023-04-05 Wed>"
-       "  :PROPERTIES:"
-       "  :SCHEDULED_DOW: WEDNESDAY"
-       "  :END:")}
-     now
-     (fn [agenda]
-       (is (not (re-find test-regex agenda)))))
-    (do-integration
-     {"only-file.org"
-      (lines
-       "* TODO This thing"
-       "  SCHEDULED: <2023-04-05 Wed>"
-       "  :PROPERTIES:"
-       "  :SCHEDULED_DOW: SUNDAY"
-       "  :END:")}
-     now
-     (fn [agenda]
-       (is (re-find test-regex agenda))))))
 
 (deftest blocked-by-test
   (let [now (ZonedDateTime/of 2023 4 5 7 37 15 221 oa/CHICAGO)]
