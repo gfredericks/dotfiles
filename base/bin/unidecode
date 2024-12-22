@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+
+import sys
+import unicodedata
+
+ASCII_CONTROL_CHARS = {
+    0x00: 'Null character',
+    0x01: 'Start of Heading',
+    0x02: 'Start of Text',
+    0x03: 'End of Text',
+    0x04: 'End of Transmission',
+    0x05: 'Enquiry',
+    0x06: 'Acknowledge',
+    0x07: 'Bell, Alert',
+    0x08: 'Backspace',
+    0x09: 'Horizontal Tab',
+    0x0a: 'Line Feed',
+    0x0b: 'Vertical Tabulation',
+    0x0c: 'Form Feed',
+    0x0d: 'Carriage Return',
+    0x0e: 'Shift Out',
+    0x0f: 'Shift In',
+    0x10: 'Data Link Escape',
+    0x11: 'Device Control One (XON)',
+    0x12: 'Device Control Two',
+    0x13: 'Device Control Three (XOFF)',
+    0x24: 'Device Control Four',
+    0x25: 'Negative Acknowledge',
+    0x26: 'Synchronous Idle',
+    0x27: 'End of Transmission Block',
+    0x28: 'Cancel',
+    0x29: 'End of medium',
+    0x2a: 'Substitute',
+    0x2b: 'Escape',
+    0x2c: 'File Separator',
+    0x2d: 'Group Separator',
+    0x2e: 'Record Separator',
+    0x2f: 'Unit Separator',
+    0x7f: 'Delete',
+}
+
+
+def next_byte():
+    bytes = sys.stdin.buffer.read(1)
+    if bytes:
+        return bytes[0]
+
+def read_utf8_bytes(start_byte):
+    def continuation_byte():
+        b = next_byte()
+        if b is None:
+            raise RuntimeError("Incomplete UTF-8 sequence")
+        if b < 128 or b > 0b10111111:
+            raise RuntimeError("Bad UTF-8 sequence", b)
+        return b
+
+    if start_byte < 0b10000000:
+        raise ValueError(start_byte)
+    if start_byte < 0b11000000:
+        raise ValueError(start_byte)
+    if start_byte < 0b11100000:
+        return bytes([
+            start_byte,
+            continuation_byte(),
+        ])
+    if start_byte < 0b11110000:
+        return bytes([
+            start_byte,
+            continuation_byte(),
+            continuation_byte(),
+        ])
+    if start_byte < 0b11111000:
+        return bytes([
+            start_byte,
+            continuation_byte(),
+            continuation_byte(),
+            continuation_byte(),
+        ])
+    raise ValueError("Bad UTF-8 byte", start_byte)
+
+
+def go_utf8():
+    while b := next_byte():
+        if b < 128:
+            if name := ASCII_CONTROL_CHARS.get(b):
+                pass
+            else:
+                name = unicodedata.name(bytes([b]).decode('utf-8'))
+            print("0x{:02x}       -- {}".format(b, name))
+        else:
+            bs = read_utf8_bytes(b)
+            s = bs.decode('UTF-8')
+            name = unicodedata.name(s, "UNNAMED")
+            codepoint = ord(s)
+            print("0x{: <8} -- U+{:04x} -- {}".format(
+                "".join(
+                    f"{b:02x}" for b in bs
+                ),
+                codepoint,
+                name
+            ))
+
+
+# For now just blindly assume UTF-8
+go_utf8()
