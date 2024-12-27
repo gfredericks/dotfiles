@@ -174,6 +174,19 @@
            (map to-local-date)
            (apply compare/max)))))
 
+(let [header-pattern
+      (re-pattern (format (str #"(\*+) (?:(%s) )?(?:(\[#[A-Z0-9]+\]) )?(.*)")
+                          TODO-state-pattern))]
+  (defn parse-header
+    [header]
+    (if-let [[_ stars todo priority-cookie rest] (re-matches header-pattern header)]
+      {:stars stars
+       :todo todo
+       :priority-cookie priority-cookie
+       :rest rest}
+      (throw (ex-info "Bad header" {:header header})))))
+
+
 (let [scheduled-finder         (timestamp-finder "\\s*(?: CLOSED: .*?)?(?: DEADLINE: .*?)?SCHEDULED: %s(?: DEADLINE: .*)?")
       deadline-finder          (timestamp-finder "\\s*(?: CLOSED: .*?)?(?: SCHEDULED: .*?)?DEADLINE: %s(?: SCHEDULED: .*)?")
       closed-finder            (timestamp-finder "\\s*CLOSED: %s.*")
@@ -183,9 +196,7 @@
       agenda-date-range-pattern
       #"<(\d{4}-\d\d-\d\d)(?: \w\w\w)?>--<(\d{4}-\d\d-\d\d)(?: \w\w\w)?>"
 
-      header-pattern
-      (re-pattern (format (str #"(\*+) (?:(%s) )?(?:(\[#[A-Z0-9]+\]) )?(.*)")
-                          TODO-state-pattern))]
+]
   (defn parse-section-for-agenda*
     [{::org/keys           [header prelude sections line-number]
       ::keys [tags-with-ancestors props-with-ancestors ancestor-headers filewide-category]
@@ -209,7 +220,7 @@
                                             (if-let [[_ odt] (re-matches #" *- Note taken on (\[.*?\]) \\\\ *" line)]
                                               (parse-org-datetime odt)))))
             max-repeater-date (.plusDays today 60)
-            [_ stars todo priority-cookie rest] (re-matches header-pattern header)
+            {:keys [stars todo priority-cookie rest]} (parse-header header)
             raw-header header
             header (remove-tags rest)
             effort (when-let [s (-> props-with-ancestors first (get "Effort"))]
@@ -253,6 +264,13 @@
                     :done               (if (contains? DONE-states todo) todo)
                     :raw-header         raw-header
                     :header             header
+                    :agenda-header      (if (contains? properties "DISPLAY_PARENT_HEADER")
+                                          (if-let [ah (last ancestor-headers)]
+                                            (format "%s ~ %s"
+                                                    header
+                                                    (-> ah parse-header :rest remove-tags))
+                                            header)
+                                          header)
                     :ancestor-headers   ancestor-headers
                     :scheduled          (:base scheduled)
                     :created-at         created-at
@@ -647,7 +665,7 @@
 (defn write-to-agenda-file
   [agenda cfg]
   (let [{:keys [today-date]} agenda
-        format-todo (fn [{:keys [done todo priority-cookie header items-blocked] :as item}]
+        format-todo (fn [{:keys [done todo priority-cookie agenda-header items-blocked] :as item}]
                       (format "%s %s%s%s%s%s"
                               (->> [(if (not= "t" (get (:properties item) "DO_NOT_RENDER_AS_TODO"))
                                       (cond-> (or done (red-bold todo))
@@ -670,8 +688,8 @@
                                 (blue "(r) ")
                                 "")
                               (if (= "t" (get (:properties item) "AGENDA_NO_LINK"))
-                                header
-                                (make-org-link item header))))
+                                agenda-header
+                                (make-org-link item agenda-header))))
         print-todo-line (fn [{:keys [effort deadline properties backlog-priority] :as item}
                              {:keys [omit-effort?]}]
                           (println (format "-%s %s%s%s%s"
