@@ -772,8 +772,9 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (interactive "nMin Days: \nnDay Range: \nsEffort: \n")
   (org-set-property "Effort" effort)
   (org-entry-delete nil "BACKLOG_SECTION")
-  (let ((date (random-day-in-the-future min-days day-range)))
-    (org-set-property "SCHEDULED" date)))
+  (org-entry-delete nil "AGENDA_SECTION")
+  (org-entry-delete nil "BACKLOG_PRIORITY")
+  (org-schedule nil (format "+%dd" (+ min-days (mod (random) day-range)))))
 
 (defun gfredericks-agenda-mode-find-today
     ()
