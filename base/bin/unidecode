@@ -3,6 +3,7 @@
 import sys
 import unicodedata
 
+# I have no idea why these aren't included in unicodedata
 ASCII_CONTROL_CHARS = {
     0x00: 'Null character',
     0x01: 'Start of Heading',
@@ -24,18 +25,18 @@ ASCII_CONTROL_CHARS = {
     0x11: 'Device Control One (XON)',
     0x12: 'Device Control Two',
     0x13: 'Device Control Three (XOFF)',
-    0x24: 'Device Control Four',
-    0x25: 'Negative Acknowledge',
-    0x26: 'Synchronous Idle',
-    0x27: 'End of Transmission Block',
-    0x28: 'Cancel',
-    0x29: 'End of medium',
-    0x2a: 'Substitute',
-    0x2b: 'Escape',
-    0x2c: 'File Separator',
-    0x2d: 'Group Separator',
-    0x2e: 'Record Separator',
-    0x2f: 'Unit Separator',
+    0x14: 'Device Control Four',
+    0x15: 'Negative Acknowledge',
+    0x16: 'Synchronous Idle',
+    0x17: 'End of Transmission Block',
+    0x18: 'Cancel',
+    0x19: 'End of medium',
+    0x1a: 'Substitute',
+    0x1b: 'Escape',
+    0x1c: 'File Separator',
+    0x1d: 'Group Separator',
+    0x1e: 'Record Separator',
+    0x1f: 'Unit Separator',
     0x7f: 'Delete',
 }
 
@@ -86,17 +87,17 @@ def go_utf8():
                 pass
             else:
                 name = unicodedata.name(bytes([b]).decode('utf-8'))
-            print("0x{:02x}       -- {}".format(b, name))
+            print("{:02x}          -- U+{:04x}  -- {}".format(b, b, name))
         else:
             bs = read_utf8_bytes(b)
             s = bs.decode('UTF-8')
             name = unicodedata.name(s, "UNNAMED")
             codepoint = ord(s)
-            print("0x{: <8} -- U+{:04x} -- {}".format(
-                "".join(
-                    f"{b:02x}" for b in bs
-                ),
-                codepoint,
+            bytes_hex = ' '.join(f"{b:02x}" for b in bs)
+            codepoint_hex = f'{codepoint:04x}'
+            print("{: <11} -- U+{: <5} -- {}".format(
+                bytes_hex,
+                codepoint_hex,
                 name
             ))
 
