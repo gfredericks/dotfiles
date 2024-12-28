@@ -87,7 +87,7 @@ def go_utf8():
                 pass
             else:
                 name = unicodedata.name(bytes([b]).decode('utf-8'))
-            print("{:02x}          -- U+{:04x}  -- {}".format(b, b, name))
+            print("{:02x}          ┃ U+{:04x}  ┃ {}".format(b, b, name))
         else:
             bs = read_utf8_bytes(b)
             s = bs.decode('UTF-8')
@@ -95,7 +95,7 @@ def go_utf8():
             codepoint = ord(s)
             bytes_hex = ' '.join(f"{b:02x}" for b in bs)
             codepoint_hex = f'{codepoint:04x}'
-            print("{: <11} -- U+{: <5} -- {}".format(
+            print("{: <11} ┃ U+{: <5} ┃ {}".format(
                 bytes_hex,
                 codepoint_hex,
                 name
