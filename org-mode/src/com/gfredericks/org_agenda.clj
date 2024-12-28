@@ -28,8 +28,13 @@
 (defn red [s] (colorize s "31"))
 (defn blue [s] (colorize s "34"))
 (defn red-bold [s] (colorize s "31;1"))
+(defn blue-bold [s] (colorize s "34;1"))
 (defn yellow-italic [s] (colorize s "33;3"))
 (defn green [s] (colorize s "32;1"))
+
+(defn header
+  [s]
+  (format "═════════✦ %s ✦═════════" (blue-bold s)))
 
 (def CHICAGO (ZoneId/of "America/Chicago"))
 (def DEFAULT-WARNING-PERIOD
@@ -80,7 +85,8 @@
 (defn format-effort
   [^Duration duration]
   (let [tot-minutes (.toMinutes duration)]
-    (format "%d:%02d" (quot tot-minutes 60) (mod tot-minutes 60))))
+    (yellow-italic
+     (format "%d:%02d" (quot tot-minutes 60) (mod tot-minutes 60)))))
 
 (defn all-org-files
   [dir]
@@ -664,7 +670,7 @@
 
 (defn write-to-agenda-file
   [agenda cfg]
-  (let [{:keys [today-date]} agenda
+  (let [{:keys [today-date deadlines triage frontlog past backlog futurelog]} agenda
         format-todo (fn [{:keys [done todo priority-cookie agenda-header items-blocked] :as item}]
                       (format "%s %s%s%s%s%s"
                               (->> [(if (not= "t" (get (:properties item) "DO_NOT_RENDER_AS_TODO"))
@@ -691,8 +697,8 @@
                                 agenda-header
                                 (make-org-link item agenda-header))))
         print-todo-line (fn [{:keys [effort deadline properties backlog-priority] :as item}
-                             {:keys [omit-effort?]}]
-                          (println (format "-%s %s%s%s%s"
+                             {:keys [omit-effort? show-scheduled-date?]}]
+                          (println (format "-%s%s %s%s%s%s"
                                            (if omit-effort?
                                              ""
                                              (str " "
@@ -700,7 +706,10 @@
                                                     (format-effort effort)
                                                     (if (= "t" (get properties "EFFORT_EXEMPT"))
                                                       "    "
-                                                      "?:??"))))
+                                                      (yellow-italic "?:??")))))
+                                           (if show-scheduled-date?
+                                             (format " %s" (scheduled-date item))
+                                             "")
                                            (if backlog-priority
                                              (format "P%04d " backlog-priority)
                                              "")
@@ -751,6 +760,26 @@
                                     fn))
                           (when (= "t" (get properties "DEBUG"))
                             (clojure.pprint/pprint item)))
+        print-todos-with-sections (fn [todos-by-section show-progress? show-scheduled-date?]
+                                    (let [category-sort-key (:category-sort-key cfg identity)]
+                                      (doseq [[category todos] (sort-by (comp category-sort-key key) todos-by-section)]
+                                        (println (header
+                                                  (case category
+                                                    ::default-category "TODOs"
+                                                    (string/upper-case (name category)))))
+                                        (when show-progress?
+                                          (let [all (get frontlog category)
+                                                completed-prefix (take-while :done all)
+                                                fraction (/ (count completed-prefix) (count all))]
+                                            (printf "(prefix completed %d/%d = %.1f%%)\n"
+                                                    (count completed-prefix)
+                                                    (count all)
+                                                    (* 100.0 fraction))))
+                                        (run! #(print-todo-line %
+                                                                {:show-scheduled-date?
+                                                                 show-scheduled-date?})
+                                              todos)
+                                        (println))))
         print-calendar (fn [items]
                          (->> items
                               (map (juxt timetable-slot identity))
@@ -789,8 +818,7 @@
                                                 (if (:free-time? item)
                                                   ""
                                                   (format "(%s)"
-                                                          (make-org-link item "link")))))))))
-        {:keys [deadlines triage frontlog past backlog]} agenda]
+                                                          (make-org-link item "link")))))))))]
     (with-atomic-write-with-postamble-to cfg
       (when-let [preamble (:preamble cfg)]
         (let [preamble-string (cond (string? preamble)
@@ -825,7 +853,7 @@
                             :when (compare/>= today-date first-warning-day)]
                         item)]
         (when (seq deadlines)
-          (println "== DEADLINES ==")
+          (println (header "DEADLINES"))
           (doseq [item (sort-by (comp :base :deadline) deadlines)]
             (print-todo-line item {}))
           (println)))
@@ -833,24 +861,10 @@
       (let [only-todos (->> frontlog
                             (map (fn [[cat items]] [cat (filter :todo items)]))
                             (remove (fn [[cat items]] (empty? items)))
-                            (into {}))
-            category-sort-key (:category-sort-key cfg identity)]
-        (doseq [[category todos] (sort-by (comp category-sort-key key) only-todos)]
-          (printf "== %s ==\n"
-                  (case category
-                    ::default-category "TODOs"
-                    (string/upper-case (name category))))
-          (let [all (get frontlog category)
-                completed-prefix (take-while :done all)
-                fraction (/ (count completed-prefix) (count all))]
-            (printf "(prefix completed %d/%d = %.1f%%)\n"
-                    (count completed-prefix)
-                    (count all)
-                    (* 100.0 fraction)))
-          (run! #(print-todo-line % {}) todos)
-          (println)))
+                            (into {}))]
+        (print-todos-with-sections only-todos true false))
 
-      (println "== CALENDAR ==")
+      (println (header "CALENDAR"))
       (-> agenda
           :calendar-events
           (print-calendar))
@@ -860,25 +874,33 @@
         (println "|                                   backlog                                    |")
         (println "--------------------------------------------------------------------------------")
         (when-let [todo (:stalest-backlog-item agenda)]
-          (printf "== STALEST BACKLOG ITEM (%d days) ==\n"
-                  (:staleness-days todo))
+          (println (header
+                    (format "STALEST BACKLOG ITEM (%d days)"
+                            (:staleness-days todo))))
           (print-todo-line todo {})
           (println))
-        (println "== RANDOM BACKLOG ITEM ==")
+        (println (header "RANDOM BACKLOG ITEM"))
         (print-todo-line (rand-nth backlog) {})
         (let [sort-key (juxt (comp - :backlog-priority)
                              :file
                              :line-number)]
-          (println "\n== ESTIMATED ==")
+          (println)
+          (println (header "ESTIMATED"))
           (->> backlog
                (filter :effort)
                (sort-by sort-key)
                (run! #(print-todo-line % {})))
-          (println "\n== UNESTIMATED==")
+          (println)
+          (println (header "UNESTIMATED"))
           (->> backlog
                (remove :effort)
                (sort-by sort-key)
-               (run! #(print-todo-line % {:omit-effort? true}))))))))
+               (run! #(print-todo-line % {:omit-effort? true})))))
+
+      (println "\n\n--------------------------------------------------------------------------------")
+      (println "|                                   future                                     |")
+      (println "--------------------------------------------------------------------------------")
+      (print-todos-with-sections futurelog false true))))
 
 (defn add-free-time
   [calendar-events date now]
@@ -953,21 +975,33 @@
         {:keys [deadlines todos past-log backlog calendar-events]} (synthesize-agenda deets-by-file today)
         category-fn (:category-fn cfg (constantly ::default-category))
         custom-prefix (:custom-prefix cfg (constantly nil))
+        scheduled-in-the-future? #(if-let [d (scheduled-date %)]
+                                    (compare/< today d))
+        futurelog (->> todos
+                       (filter scheduled-in-the-future?)
+                       (group-by category-fn)
+                       (map (fn [[cat todos]]
+                              [cat (sort-by (juxt scheduled-date
+                                                  :file
+                                                  :line-number)
+                                            todos)]))
+                       (into {}))
         frontlog (->> todos
-                      (remove #(if-let [d (scheduled-date %)]
-                                 (compare/< today d)))
+                      (remove scheduled-in-the-future?)
                       (concat past-log)
                       (group-by category-fn)
                       (map (fn [[cat todos]]
                              [cat (sort-by (juxt (comp not some? :deadline)
                                                  scheduled-date
                                                  :file
-                                                 :line-number) todos)]))
+                                                 :line-number)
+                                           todos)]))
                       (into {}))
         sort-key (juxt (comp - priority) :created-at :file :line-number)]
     {:deadlines      (sort-by sort-key deadlines)
      :backlog        (remove :generated-repeat? (sort-by sort-key backlog))
      :frontlog       frontlog
+     :futurelog      futurelog
      :today-date     today
      :now            now
      :calendar-events (add-free-time calendar-events today now)

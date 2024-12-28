@@ -776,22 +776,14 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (org-entry-delete nil "BACKLOG_PRIORITY")
   (org-schedule nil (format "+%dd" (+ min-days (mod (random) day-range)))))
 
-(defun gfredericks-agenda-mode-find-today
-    ()
-  (interactive)
-  (beginning-of-buffer)
-  (re-search-forward "^== TODAY")
-  (setq current-prefix-arg 1)
-  (call-interactively 'recenter-top-bottom))
-
 
 (defun gfredericks-agenda-mode-find-calendar
     ()
   (interactive)
   (beginning-of-buffer)
-  (re-search-forward "== CALENDAR ==")
-  ;; (setq current-prefix-arg 1)
-  ;; (call-interactively 'recenter-top-bottom)
+  (re-search-forward "✦ CALENDAR ✦")
+  (setq current-prefix-arg 1)
+  (call-interactively 'recenter-top-bottom)
   ;; (re-search-forward "^ -->")
   ;; (beginning-of-line)
   )
@@ -855,8 +847,6 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
       (kbd "C-c C-x e") 'gfredericks-agenda-mode-org-set-effort)
     (define-key km
       (kbd "RET") 'gfredericks-agenda-switch-to)
-    (define-key km
-      (kbd "t") 'gfredericks-agenda-mode-find-today)
     (define-key km
       (kbd "c") 'gfredericks-agenda-mode-find-calendar)
     (define-key km
