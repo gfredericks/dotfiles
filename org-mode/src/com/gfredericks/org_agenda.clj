@@ -691,8 +691,8 @@
                                 (str notification " ")
                                 "")
                               (if (:repeat? item)
-                                (blue "(r) ")
-                                "")
+                                (blue "® ")
+                                "  ")
                               (if (= "t" (get (:properties item) "AGENDA_NO_LINK"))
                                 agenda-header
                                 (make-org-link item agenda-header))))
