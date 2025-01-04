@@ -1,6 +1,7 @@
 (ns com.gfredericks.org-agenda-test
   (:require
    [clojure.java.io :as io]
+   [clojure.string :as string]
    [clojure.test :refer [are deftest is]]
    [com.gfredericks.org-agenda :as oa])
   (:import
@@ -52,7 +53,12 @@
         (oa/do-once {:directory (str dir)
                      :agenda-file (str agenda)}
                     now)
-        (agenda-validator (slurp (str agenda)))
+        (-> agenda
+            str
+            slurp
+            ;; remove ansi tags
+            (string/replace #"\x1b\[.*?m" "")
+            (agenda-validator))
         (finally
           (doseq [filename (keys filenames->contents)]
             (Files/delete (.resolve dir filename)))
@@ -185,7 +191,7 @@
 
 (deftest deadline-hiding-rules-test
   (let [now (ZonedDateTime/of 2022 12 23 9 22 15 0 oa/CHICAGO)
-        deadline-section #(second (re-matches #"(?s)(.*?)== (TODOs) ==.*" %))]
+        deadline-section #(second (re-matches #"(?s)(.*?)══✦ TODOs ✦══.*" %))]
     ;; default warning period is 14 days
     (do-integration
      {"only-file.org"
