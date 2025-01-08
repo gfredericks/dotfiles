@@ -635,8 +635,6 @@
        (with-open [w# (io/writer tmp-file#)
                    pw# (java.io.PrintWriter. w#)]
          (binding [*out* pw#]
-           (println (format "Written at %s" (java.time.Instant/now)))
-           (println)
            ~@body)
          (clojure.java.shell/sh "mv" (str tmp-file#) (str out-file#)))
        (finally
@@ -651,6 +649,7 @@
        (print "\n\n")
        (println (apply str (repeat 80 \;)))
        (println ";; Postamble\n")
+       (println (format ";; Written at %s\n" (java.time.Instant/now)))
        (println ";; Local Variables:")
        (println ";; eval: (gfredericks-agenda-mode 1)")
        (if-let [rf# (:refresh-file cfg#)]
