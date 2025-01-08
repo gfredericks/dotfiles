@@ -768,14 +768,15 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
           (goto-char p))
       (message "Nothing there"))))
 
-(defun schedule-random (min-days day-range effort)
-  (interactive "nMin Days: \nnDay Range: \nsEffort: \n")
-  (org-set-property "Effort" effort)
+(defun schedule-random (min-days day-range)
+  (interactive "nMin Days: \nnDay Range: \n")
+  (if (not (org-entry-get nil "Effort"))
+      (let ((effort (read-string "Effort: ")))
+        (org-set-property "Effort" effort)))
   (org-entry-delete nil "BACKLOG_SECTION")
   (org-entry-delete nil "AGENDA_SECTION")
   (org-entry-delete nil "BACKLOG_PRIORITY")
   (org-schedule nil (format "+%dd" (+ min-days (mod (random) day-range)))))
-
 
 (defun gfredericks-agenda-mode-find-triage
     ()
@@ -929,6 +930,21 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
    nil
    nil
    "FOLLOWUP_NOTE: "))
+
+(defun display-parent-header ()
+  (interactive)
+  (org-set-property "DISPLAY_PARENT_HEADER" "t"))
+
+(defun timebox
+    (duration)
+  (interactive "sDuration: \n")
+  (org-insert-heading-respect-content)
+  (org-demote-subtree)
+  (insert "TODO Work on this for " duration)
+  (custom-id)
+  (org-set-property "Effort" duration)
+  (display-parent-header))
+
 
 ;; Decorate the TODO state change functionality so that we
 ;; preserve the previous SCHEDULED value
