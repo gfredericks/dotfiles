@@ -227,9 +227,13 @@ do
                          21 \
                          ~/.install-everything/jdk-tarballs/openjdk-21.0.2_linux-x64_bin.tar.gz \
                          a2def047a73941e01a73739f92755f86b895811afb1f91243db214cff5bdac3f)"
+      JAVA_23_BIN="$(install_java \
+                         21 \
+                         ~/.install-everything/jdk-tarballs/openjdk-23.0.1_linux-x64_bin.tar.gz \
+                         dc9b6adc1550afd95e30e131c1c38044925cb656923f92f6dbf0fbd8c1405629)"
 
       rm -f ~/bin/jdk.bin
-      ln -s $JAVA_21_BIN ~/bin/jdk.bin
+      ln -s $JAVA_23_BIN ~/bin/jdk.bin
   fi
 
   ###
