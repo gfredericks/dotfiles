@@ -107,7 +107,7 @@ bind -m emacs-standard '"\C-z": vi-editing-mode'
 
 if (( BASH_VERSINFO[0] < 4 )); then
   # CTRL-T - Paste the selected file path into the command line
-  bind -m emacs-standard '"\C-t": " \C-b\C-k \C-u`__fzf_select__`\e\C-e\er\C-a\C-y\C-h\C-e\e \C-y\ey\C-x\C-x\C-f"'
+  bind -m emacs-standard '"\e\C-t": " \C-b\C-k \C-u`__fzf_select__`\e\C-e\er\C-a\C-y\C-h\C-e\e \C-y\ey\C-x\C-x\C-f"'
   bind -m vi-command '"\C-t": "\C-z\C-t\C-z"'
   bind -m vi-insert '"\C-t": "\C-z\C-t\C-z"'
 
@@ -117,7 +117,7 @@ if (( BASH_VERSINFO[0] < 4 )); then
   bind -m vi-insert '"\C-r": "\C-z\C-r\C-z"'
 else
   # CTRL-T - Paste the selected file path into the command line
-  bind -m emacs-standard -x '"\C-t": fzf-file-widget'
+  bind -m emacs-standard -x '"\e\C-t": fzf-file-widget'
   bind -m vi-command -x '"\C-t": fzf-file-widget'
   bind -m vi-insert -x '"\C-t": fzf-file-widget'
 
