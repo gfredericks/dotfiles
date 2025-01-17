@@ -5,7 +5,7 @@ then
 fi
 
 SELF=$(readlink -f $BASH_SOURCE)
-MYBIN=`dirname $SELF`/bin
+MYBIN="$(dirname $SELF)/bin"
 export PATH=~/bin:$MYBIN:$PATH
 export EDITOR=edit
 export BAT_THEME=ansi
@@ -117,3 +117,7 @@ aiimg(){
     "$GFREDERICKS_AI_PY_DIR"/go.sh img "${prompt[@]}"
   )
 }
+
+if which fzf >/dev/null; then
+    . "$(dirname "$SELF")/fzf-key-bindings.bash"
+fi

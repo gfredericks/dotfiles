@@ -1,0 +1,18 @@
+#!/bin/bash
+clear
+cols=$(tput cols)
+rows=$(tput lines)
+for ((i=0; i<rows; i++)); do
+    for ((j=0; j<cols; j++)); do
+        if (( RANDOM % 2 )); then
+            printf "█"
+        else
+            printf " "
+        fi
+    done
+    if [[ $i -lt $((rows - 1)) ]]; then
+        printf "\n"
+    fi
+done
+
+sleep 999999999

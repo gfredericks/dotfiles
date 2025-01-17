@@ -383,6 +383,30 @@ do
   fi
 
   ###
+  ### fzf
+  ###
+
+  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "fzf" ]
+  then
+      sudo apt install fzf
+      KEYBINDINGS_FILE=/usr/share/doc/fzf/examples/key-bindings.bash
+      EXPECTED_HASH=32a92304092b912ab559586110f005b1
+      # from version 0.44.1
+      if [[ -f "$KEYBINDINGS_FILE" ]]; then
+          if echo "$EXPECTED_HASH  $KEYBINDINGS_FILE" | md5sum -c; then
+              true
+          else
+              echo >&2 "Unexpected file at $KEYBINDINGS_FILE"
+              exit 7
+          fi
+      else
+          echo >&2 "What the heck is going on?"
+          exit 11
+      fi
+  fi
+
+
+  ###
   ### extra stuff!
   ###
 
