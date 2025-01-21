@@ -227,9 +227,13 @@ do
                          21 \
                          ~/.install-everything/jdk-tarballs/openjdk-21.0.2_linux-x64_bin.tar.gz \
                          a2def047a73941e01a73739f92755f86b895811afb1f91243db214cff5bdac3f)"
+      JAVA_23_BIN="$(install_java \
+                         21 \
+                         ~/.install-everything/jdk-tarballs/openjdk-23.0.1_linux-x64_bin.tar.gz \
+                         dc9b6adc1550afd95e30e131c1c38044925cb656923f92f6dbf0fbd8c1405629)"
 
       rm -f ~/bin/jdk.bin
-      ln -s $JAVA_21_BIN ~/bin/jdk.bin
+      ln -s $JAVA_23_BIN ~/bin/jdk.bin
   fi
 
   ###
@@ -240,12 +244,13 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/maven
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://archive.apache.org/dist/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
-    echo '6e3e9c949ab4695a204f74038717aa7b2689b1be94875899ac1b3fe42800ff82  apache-maven-3.3.9-bin.tar.gz' | \
+    VERSION=3.6.3
+    wget https://archive.apache.org/dist/maven/maven-3/$VERSION/binaries/apache-maven-$VERSION-bin.tar.gz
+    echo "26ad91d751b3a9a53087aefa743f4e16a17741d3915b219cf74112bf87a438c5  apache-maven-$VERSION-bin.tar.gz" | \
         sha256sum -c
-    bsdtar xzf apache-maven-3.3.9-bin.tar.gz
+    bsdtar xzf apache-maven-$VERSION-bin.tar.gz
     rm -f ~/bin/mvn
-    ln -s $BUILDDIR/apache-maven-3.3.9/bin/mvn ~/bin/mvn
+    ln -s $BUILDDIR/apache-maven-$VERSION/bin/mvn ~/bin/mvn
   fi
 
   ###
