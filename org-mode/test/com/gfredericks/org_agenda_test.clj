@@ -5,7 +5,7 @@
    [clojure.test :refer [are deftest is]]
    [com.gfredericks.org-agenda :as oa])
   (:import
-   (java.time LocalDate LocalDateTime ZonedDateTime)
+   (java.time Duration LocalDate LocalDateTime ZonedDateTime)
    (java.nio.file Files)))
 
 (defn lines
@@ -51,7 +51,8 @@
         (doseq [[filename contents] filenames->contents]
           (spit (str dir "/" filename) contents))
         (oa/do-once {:directory (str dir)
-                     :agenda-file (str agenda)}
+                     :agenda-file (str agenda)
+                     :frontlog-effort-proportion (constantly 1/3)}
                     now)
         (-> agenda
             str
@@ -191,7 +192,7 @@
 
 (deftest deadline-hiding-rules-test
   (let [now (ZonedDateTime/of 2022 12 23 9 22 15 0 oa/CHICAGO)
-        deadline-section #(second (re-matches #"(?s)(.*?)══✦ TODOs ✦══.*" %))]
+        deadline-section #(second (re-matches #"(?s)(.*?)══✦ FREE ✦══.*" %))]
     ;; default warning period is 14 days
     (do-integration
      {"only-file.org"
@@ -200,8 +201,7 @@
        "  DEADLINE: <2023-02-03 Fri>")}
      now
      (fn [agenda]
-       (is (not (re-find #"days.+This thing" (deadline-section agenda))))
-       ))
+       (is (not (re-find #"days.+This thing" (deadline-section agenda))))))
     ;; can set a custom warning period
     (do-integration
      {"only-file.org"
@@ -310,3 +310,42 @@
        (is (re-find #"\[blocks 2 items\] .*This one blocks two different items" agenda))
        (is (not (re-find #"This one is blocked by two items" agenda)))
        (is (not (re-find #"This one is blocked by one done item and another undone item" agenda)))))))
+
+(defn subsequence?
+  [xs ys]
+  (cond (empty? xs)
+        true
+
+        (empty? ys)
+        false
+
+        :else
+        (let [[x & xs'] xs
+              [y & ys'] ys]
+          (if (= x y)
+            (recur xs' ys')
+            (recur xs ys')))))
+
+(deftest split-frontlog-by-effort-test
+  (let [todos (for [[id minutes] [[:a 7]
+                                  [:b 3]
+                                  [:c 10]
+                                  [:d 1]
+                                  [:e 5]]]
+                {:id id, :effort (Duration/ofMinutes minutes)})]
+    (are [proportion chosen-ids]
+        (let [[today later] (oa/split-frontlog-by-effort todos proportion)]
+          (and (= chosen-ids (map :id today))
+               (= (set (map :id todos))
+                  (set (map :id (concat today later))))
+               (subsequence? (map :id today)
+                             (map :id todos))
+               (subsequence? (map :id later)
+                             (map :id todos))))
+      0 []
+      1/5 [:b :d]
+      1/4 [:b :d]
+      1/3 [:a :d]
+      2/5 [:a :b]
+      1/2 [:a :b :d]
+      2/3 [:a :b :d :e])))
