@@ -119,5 +119,12 @@ aiimg(){
 }
 
 if which fzf >/dev/null; then
-    . "$(dirname "$SELF")/fzf-key-bindings.bash"
+    FZF_KEYBINDINGS_FILE=/usr/share/doc/fzf/examples/key-bindings.bash
+    FZF_HASH="$(md5sum "$FZF_KEYBINDINGS_FILE" | awk '{print $1}')"
+    FZF_MODIFIED_FILE="$(dirname "$SELF")"/fzf-key-bindings/$FZF_HASH.bash
+    if [[ -f "$FZF_MODIFIED_FILE" ]]; then
+        . "$FZF_MODIFIED_FILE"
+    else
+        echo >&2 "Error: $FZF_MODIFIED_FILE does not exist"
+    fi
 fi
