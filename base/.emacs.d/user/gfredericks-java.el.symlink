@@ -1,0 +1,19 @@
+(provide 'gfredericks-java)
+
+(require 'gfredericks-packages)
+
+(gfredericks-packages-install 'lsp-java)
+(require 'lsp-java)
+(add-hook 'java-mode-hook #'lsp)
+
+;; I think you have to run something like this, maybe interactively
+;; (lsp-install-server 'jdtls)
+
+(setq lsp-java-configuration-runtimes
+      '[(:name "JavaSE-23"
+						   :path (expand-file-name "~/.install-everything/jdk-23/")
+						   :default t)])
+
+(setq lsp-java-vmargs
+      '("-XX:+UseParallelGC" "-XX:GCTimeRatio=4" "-XX:AdaptiveSizePolicyWeight=90"
+        "-Dsun.zip.disableMemoryMapping=true" "-Xmx8G" "-Xms100m"))
