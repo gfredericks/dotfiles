@@ -37,6 +37,12 @@
   [s]
   (format "═════════✦ %s ✦═════════" (blue-bold s)))
 
+(defn done-header
+  [s]
+  (str (green "════════ ❇ ")
+       (blue-bold s)
+       (green " ❇ ════════")))
+
 (def CHICAGO (ZoneId/of "America/Chicago"))
 (def DEFAULT-WARNING-PERIOD
   "same as org-deadline-warning-days"
@@ -764,21 +770,21 @@
                           (when (= "t" (get properties "DEBUG"))
                             (clojure.pprint/pprint item)))
         print-todos-with-header (fn [todos header-text show-scheduled-date?]
-                                  (println (header header-text))
-                                  (when (and (seq todos) (every? :effort todos))
-                                    (let [^Duration total (->> todos
-                                                               (map :effort)
-                                                               (reduce #(.plus ^Duration %1 ^Duration %2)))]
-                                      (printf "(Total effort: %d:%02d)\n"
-                                              (.toHours total)
-                                              (mod (.toMinutes total) 60))))
-                                  (if (empty? todos)
-                                    (println (green-bold "            ❇"))
-                                    (run! #(print-todo-line %
-                                                            {:show-scheduled-date?
-                                                             show-scheduled-date?})
-                                          todos))
-
+                                  (if (seq todos)
+                                    (do
+                                      (println (header header-text))
+                                      (when (every? :effort todos)
+                                        (let [^Duration total (->> todos
+                                                                   (map :effort)
+                                                                   (reduce #(.plus ^Duration %1 ^Duration %2)))]
+                                          (printf "(Total effort: %d:%02d)\n"
+                                                  (.toHours total)
+                                                  (mod (.toMinutes total) 60))))
+                                      (run! #(print-todo-line %
+                                                              {:show-scheduled-date?
+                                                               show-scheduled-date?})
+                                            todos))
+                                    (println (done-header header-text)))
                                   (println))
         print-calendar (fn [items]
                          (->> items
