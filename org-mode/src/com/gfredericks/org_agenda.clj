@@ -236,14 +236,17 @@
             {:keys [stars todo priority-cookie rest]} (parse-header header)
             raw-header header
             header (remove-tags rest)
-            effort (when-let [s (-> props-with-ancestors first (get "Effort"))]
+            properties (first props-with-ancestors)
+            effort (when-let [s (get properties "Effort")]
                      (when-let [[_ hours minutes] (re-matches #"(\d+):(\d+)" s)]
                        (Duration/ofMinutes (+ (Long/parseLong minutes)
                                               (* 60 (Long/parseLong hours))))))
+            agenda-frontlog-section (->> props-with-ancestors
+                                         (keep #(get % "AGENDA_FRONTLOG_SECTION"))
+                                         (first))
             scheduled (get-timestamp scheduled-finder true false)
             deadline  (get-timestamp deadline-finder true false)
             tags (reduce into #{} tags-with-ancestors)
-            properties (first props-with-ancestors)
             agenda-notes (->> prelude
                               (drop-while #(not (re-matches #"\s*:AGENDA_NOTES:\s*" %)))
                               (next)
@@ -316,6 +319,7 @@
                     :clocked-in?        (->> clock-logs
                                              (some #(nil? (second %)))
                                              (boolean))
+                    :agenda-frontlog-section agenda-frontlog-section
                     :agenda-notes       agenda-notes
                     :followup-note      followup-note
                     :parent-is-ordered? (-> props-with-ancestors second (get "ORDERED") (= "t"))
@@ -866,8 +870,7 @@
           (println)))
 
       (let [{:keys [triage]} agenda
-            grouped (group-by #(get-in % [:properties "AGENDA_FRONTLOG_SECTION"])
-                              triage)]
+            grouped (group-by :agenda-frontlog-section triage)]
         (doseq [[title todos] (concat
                                (for [[section todos] grouped
                                      :when (not (nil? section))]
