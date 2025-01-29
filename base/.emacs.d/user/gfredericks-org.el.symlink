@@ -787,6 +787,15 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (call-interactively 'recenter-top-bottom)
   (beginning-of-line))
 
+(defun gfredericks-agenda-mode-find-today
+    ()
+  (interactive)
+  (beginning-of-buffer)
+  (re-search-forward "✦ TODAY ✦")
+  (setq current-prefix-arg 1)
+  (call-interactively 'recenter-top-bottom)
+  (beginning-of-line))
+
 (defun gfredericks-agenda-mode-find-calendar
     ()
   (interactive)
@@ -864,7 +873,9 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
     (define-key km
       (kbd "f") 'gfredericks-agenda-mode-find-future)
     (define-key km
-      (kbd "t") 'gfredericks-agenda-mode-find-triage)
+      (kbd "t") 'gfredericks-agenda-mode-find-today)
+    (define-key km
+      (kbd "r") 'gfredericks-agenda-mode-find-triage)
     (define-key km
       (kbd "p") 'gfredericks-agenda-mode-find-past)
     (define-key km
