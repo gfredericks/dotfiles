@@ -1044,8 +1044,8 @@
                                       :file
                                       :line-number)))
         frontlog (->> todos
-                      (remove scheduled-in-the-future?)
                       (concat past-log)
+                      (remove scheduled-in-the-future?)
                       (sort-by (juxt (comp not some? :deadline)
                                      scheduled-date
                                      :file
