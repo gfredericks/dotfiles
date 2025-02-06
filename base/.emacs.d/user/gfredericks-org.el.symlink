@@ -699,7 +699,14 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (beginning-of-buffer))
 
 (define-key org-mode-map "\C-c\C-a" nil)
+(add-hook 'term-mode-hook
+          (lambda ()
+            (define-key term-mode-map "\C-c\C-a" nil)))
 (global-set-key "\C-c\C-a" 'gfredericks-goto-agenda)
+
+;; one time my emacs got in a weird state where C-c C-a
+;; stopped working in term-raw mode, and this fixed it
+;; (define-key term-raw-map "\C-c\C-a" nil)
 
 (defun gfredericks-agenda-mode-refresh
     ()
