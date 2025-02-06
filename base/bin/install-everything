@@ -123,10 +123,9 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/nodejs
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    VERSION=16.20.2
-    # VERSION=20.15.0  # Probably can't install this without upgrading past 18.04
+    VERSION=23.7.0
     wget https://nodejs.org/dist/v${VERSION}/node-v${VERSION}-linux-x64.tar.xz
-    echo '874463523f26ed528634580247f403d200ba17a31adf2de98a7b124c6eb33d87  node-v'$VERSION'-linux-x64.tar.xz' | \
+    echo "4d9482dc62f9b82279055637f2a92c7e8297d78be8d68e110ac3aae2e56d0ebc  node-v$VERSION-linux-x64.tar.xz" | \
         sha256sum -c
     bsdtar xJf node-v${VERSION}-linux-x64.tar.xz
     rm -f ~/bin/nodejs.bin
@@ -312,11 +311,13 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/clojure
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://download.clojure.org/install/linux-install-1.11.1.1119.sh
-    echo 'a395b63decedce98f0cb41d36c543dbef57b9f2638213e111f2e5a88335e695d  linux-install-1.11.1.1119.sh' | \
+    VERSION=1.12.0.1501
+    SCRIPT=linux-install-$VERSION.sh
+    wget https://download.clojure.org/install/$SCRIPT
+    echo "65257085958376a3c89755a6108d67163882c75af709fe8c8918222ca5730aef  $SCRIPT" | \
         sha256sum -c
-    chmod +x linux-install-1.11.1.1119.sh
-    ./linux-install-1.11.1.1119.sh -p $BUILDDIR
+    chmod +x $SCRIPT
+    ./$SCRIPT -p $BUILDDIR
     cd -
     BIN=$BUILDDIR/bin
     rm -f ~/bin/clojure.bin

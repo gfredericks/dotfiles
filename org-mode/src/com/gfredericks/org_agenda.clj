@@ -39,9 +39,7 @@
 
 (defn done-header
   [s]
-  (str (green "════════ ❇ ")
-       (blue-bold s)
-       (green " ❇ ════════")))
+  (green (header s)))
 
 (def CHICAGO (ZoneId/of "America/Chicago"))
 (def DEFAULT-WARNING-PERIOD
@@ -870,12 +868,16 @@
           (println)))
 
       (let [{:keys [triage]} agenda
-            grouped (group-by :agenda-frontlog-section triage)]
+            grouped (group-by :agenda-frontlog-section triage)
+            free-grouped (group-by :agenda-frontlog-section (:frontlog-free agenda))
+            free-ungrouped (get free-grouped nil)]
         (doseq [[title todos] (concat
-                               (for [[section todos] grouped
+                               (for [[section todos] (merge-with concat
+                                                                 grouped
+                                                                 (dissoc free-grouped nil))
                                      :when (not (nil? section))]
                                  [section todos])
-                               [["FREE" (:frontlog-free agenda)]
+                               [["FREE" free-ungrouped]
                                 ["TODAY" (:frontlog-today agenda)]
                                 ["LATER" (:frontlog-later agenda)]
                                 ["TRIAGE" (get grouped nil)]])
