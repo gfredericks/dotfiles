@@ -6,8 +6,8 @@
 (require 'lsp-java)
 (add-hook 'java-mode-hook #'lsp)
 
-;; I think you have to run something like this, maybe interactively
-;; (lsp-install-server 'jdtls)
+;; I think you have to run something like this
+;; (call-interactively 'lsp-install-server 'jdtls)
 
 (setq lsp-java-configuration-runtimes
       '[(:name "JavaSE-23"
