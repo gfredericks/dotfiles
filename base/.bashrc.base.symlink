@@ -31,11 +31,7 @@ export LESS="-R"
 # partial project name and prints the full path to a project that
 # is its best guess for that partial name
 d(){
-  if [ $# -eq 0 ]; then
-    echo '`d` is not a thing'
-    return 1
-  fi
-  CDTO="$(devdir "$1")"
+  CDTO="$(devdir "$@")"
   if [[ -z "$CDTO" ]]; then
     return 1
   fi
