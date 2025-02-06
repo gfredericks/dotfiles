@@ -164,8 +164,9 @@
 (setq scroll-step            1
       scroll-conservatively  10000)
 
-(add-hook 'java-mode-hook (lambda ()
-          (setq c-basic-offset 2)))
+(defvar gfredericks-c-basic-offset 2)
+
+(add-hook 'java-mode-hook (lambda () (setq c-basic-offset gfredericks-c-basic-offset)))
 
 ;; keep directories clean
 (let ((auto-save-dir "~/.emacs.d/auto-save/"))
