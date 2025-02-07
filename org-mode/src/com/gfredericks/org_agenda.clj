@@ -1019,7 +1019,9 @@
                    (map :effort)
                    (map (fn [^Duration effort] (.toMillis effort)))
                    (reduce +))
-        target (Math/ceil (* total effort-proportion))]
+        target (Math/ceil (* total effort-proportion))
+        high-priority? #(or (:deadline %)
+                            (= "[#A]" (:priority-cookie %)))]
     (loop [today []
            remaining-budget target
            later todos]
@@ -1031,7 +1033,8 @@
           (recur (conj today selected)
                  (- remaining-budget (.toMillis ^Duration (:effort selected)))
                  later)
-          [today later])))))
+          (let [[high-prio low-prio] (split-with high-priority? later)]
+            [(concat today high-prio) low-prio]))))))
 
 (defn calculate-agenda
   [deets-by-file cfg now]
@@ -1049,6 +1052,12 @@
                       (concat past-log)
                       (remove scheduled-in-the-future?)
                       (sort-by (juxt (comp not some? :deadline)
+                                     ;; sort [#A] items to the top,
+                                     ;; just under deadlines; that
+                                     ;; is the entire function of
+                                     ;; [#A] in this context
+                                     (comp #(case % "[#A]" 0 1)
+                                           :priority-cookie)
                                      scheduled-date
                                      :file
                                      :line-number)))
