@@ -93,6 +93,9 @@
 (setq display-line-numbers-type 'relative)
 (global-set-key (kbd "C-M-s") 'scroll-up-line)
 (global-set-key (kbd "C-M-l") 'scroll-down-line)
+;; This is bound to term-show-output by default in term-mode, so I
+;; have to explicitly override it
+(define-key term-mode-map (kbd "C-M-l") 'scroll-down-line)
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
