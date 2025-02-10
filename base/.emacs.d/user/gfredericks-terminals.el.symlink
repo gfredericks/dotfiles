@@ -82,7 +82,6 @@
   (define-key term-raw-map binding
     (lookup-key (current-global-map) binding)))
 
-(setq term-load-hook ())
 (add-hook 'term-load-hook
   (lambda ()
     (expose-global-binding-in-term (kbd "C-c C-g"))
