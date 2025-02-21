@@ -39,7 +39,9 @@
 
 (defn done-header
   [s]
-  (green (header s)))
+  (str (green "═════════✦ ")
+       (blue-bold s)
+       (green " ✦═════════")))
 
 (def CHICAGO (ZoneId/of "America/Chicago"))
 (def DEFAULT-WARNING-PERIOD
