@@ -164,9 +164,9 @@ do
 
     BUILDDIR=$BUILDDIRBASE/python3
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    VERSION=3.11.4
+    VERSION=3.13.1
     wget https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tgz
-    echo "85c37a265e5c9dd9f75b35f954e31fbfc10383162417285e30ad25cc073a0d63  Python-$VERSION.tgz" | \
+    echo "1513925a9f255ef0793dbf2f78bb4533c9f184bdd0ad19763fd7f47a400a7c55  Python-$VERSION.tgz" | \
         sha256sum -c
     tar xzf Python-$VERSION.tgz
     cd Python-$VERSION
