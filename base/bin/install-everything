@@ -130,7 +130,7 @@ do
     bsdtar xJf node-v${VERSION}-linux-x64.tar.xz
     rm -f ~/bin/nodejs.bin
     ln -s $BUILDDIR/node-v${VERSION}-linux-x64/bin ~/bin/nodejs.bin
-    ~/bin/nodejs.bin/npm install -g katex
+    ~/bin/nodejs.bin/npm install -g katex @mermaid-js/mermaid-cli
   fi
 
   ###
