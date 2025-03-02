@@ -784,10 +784,11 @@
                                           (printf "(Total effort: %d:%02d)\n"
                                                   (.toHours total)
                                                   (mod (.toMinutes total) 60))))
-                                      (run! #(print-todo-line %
-                                                              {:show-scheduled-date?
-                                                               show-scheduled-date?})
-                                            todos))
+                                      (let [omit-effort? (not-any? :effort todos)]
+                                        (run! #(print-todo-line %
+                                                                {:show-scheduled-date? show-scheduled-date?
+                                                                 :omit-effort? omit-effort?})
+                                              todos)))
                                     (println (done-header header-text)))
                                   (println))
         print-calendar (fn [items]
