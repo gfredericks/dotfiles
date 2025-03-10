@@ -48,7 +48,7 @@ do
       sudo apt-get install -y tree htop texlive-latex-extra \
            python3-pygments xclip rlwrap xautolock moreutils \
            lilypond entr flameshot net-tools zstd sshfs ncal \
-           inotify-tools
+           inotify-tools jq
   fi
 
   ###
@@ -130,7 +130,7 @@ do
     bsdtar xJf node-v${VERSION}-linux-x64.tar.xz
     rm -f ~/bin/nodejs.bin
     ln -s $BUILDDIR/node-v${VERSION}-linux-x64/bin ~/bin/nodejs.bin
-    ~/bin/nodejs.bin/npm install -g katex
+    ~/bin/nodejs.bin/npm install -g katex @mermaid-js/mermaid-cli
   fi
 
   ###
@@ -164,9 +164,9 @@ do
 
     BUILDDIR=$BUILDDIRBASE/python3
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    VERSION=3.11.4
+    VERSION=3.13.1
     wget https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tgz
-    echo "85c37a265e5c9dd9f75b35f954e31fbfc10383162417285e30ad25cc073a0d63  Python-$VERSION.tgz" | \
+    echo "1513925a9f255ef0793dbf2f78bb4533c9f184bdd0ad19763fd7f47a400a7c55  Python-$VERSION.tgz" | \
         sha256sum -c
     tar xzf Python-$VERSION.tgz
     cd Python-$VERSION
@@ -270,45 +270,12 @@ do
   fi
 
   ###
-  ### jq
-  ###
-
-  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "jq" ]
-  then
-    BUILDDIR=$BUILDDIRBASE/jq
-    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
-    echo 'af986793a515d500ab2d35f8d2aecd656e764504b789b66d7e1a0b727a124c44  jq-linux64' | \
-        sha256sum -c
-    EX=$BUILDDIR/jq-linux64
-    chmod +x $EX
-    rm -f ~/bin/jq
-    ln -s $EX ~/bin/jq
-  fi
-
-  ###
-  ### lein
-  ###
-
-  if [ "$1" == "all" -o "$1" == "server" -o "$1" == "lein" ]
-  then
-    BUILDDIR=$BUILDDIRBASE/lein
-    rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
-    wget https://raw.githubusercontent.com/technomancy/leiningen/2.9.1/bin/lein
-    echo '32acacc8354627724d27231bed8fa190d7df0356972e2fd44ca144c084ad4fc7  lein' | \
-        sha256sum -c
-    EX=$BUILDDIR/lein
-    chmod +x $EX
-    rm -f ~/bin/lein
-    ln -s $EX ~/bin/lein
-  fi
-
-  ###
   ### Clojure
   ###
 
   if [ "$1" == "all" -o "$1" == "server" -o "$1" == "clojure" ]
   then
+    sudo apt-get install leiningen
     BUILDDIR=$BUILDDIRBASE/clojure
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
     VERSION=1.12.0.1501
@@ -354,9 +321,9 @@ do
     REPODIR=$BUILDDIR/repo
     INSTALLDIR=$BUILDDIR/install
     mkdir $INSTALLDIR
-    git clone --depth=1 -b v0.15.4 --recursive git@github.com:sharkdp/bat.git $REPODIR
+    git clone --depth=1 -b v0.25.0 --recursive git@github.com:sharkdp/bat.git $REPODIR
     cd $REPODIR
-    [ "$(git rev-parse HEAD)" == "9e65ecd03e60336bd54dea12fbc4354c4fb8d8b0" ]
+    [ "$(git rev-parse HEAD)" == "25f4f96ea3afb6fe44552f3b38ed8b1540ffa1b3" ]
     cargo install --root $INSTALLDIR --locked bat
     rm -rf $REPODIR
     ln -s $INSTALLDIR/bin/bat ~/bin/bat
