@@ -1,18 +1,24 @@
-#!/bin/bash
-clear
-cols=$(tput cols)
-rows=$(tput lines)
-for ((i=0; i<rows; i++)); do
-    for ((j=0; j<cols; j++)); do
-        if (( RANDOM % 2 )); then
-            printf "█"
-        else
-            printf " "
-        fi
-    done
-    if [[ $i -lt $((rows - 1)) ]]; then
-        printf "\n"
-    fi
-done
+#!/usr/bin/env python3
 
-sleep 999999999
+import os
+import random
+import time
+
+def main():
+    # Get terminal size
+    rows, cols = os.popen('stty size', 'r').read().split()
+    rows, cols = int(rows), int(cols)
+
+    for i in range(rows):
+        for j in range(cols):
+            if random.randint(0, 1):
+                print("█", end="")
+            else:
+                print(" ", end="")
+        if i < rows - 1:
+            print("")
+
+if __name__ == "__main__":
+    main()
+    # Keep the script running for a long time
+    time.sleep(999999999)
