@@ -1,0 +1,13 @@
+(provide 'gfredericks-ai)
+
+(defun ai ()
+  "Switch to a terminal buffer named *aichat*. If it doesn't exist,
+  create a new term-mode buffer and run the `aichat` program."
+  (interactive)
+  (let ((aichat-buffer "*aichat*"))
+    (if (get-buffer aichat-buffer)
+        (switch-to-buffer aichat-buffer)
+      (progn
+        (let ((term-program "aichat"))
+          (term term-program)
+          (rename-buffer aichat-buffer))))))
