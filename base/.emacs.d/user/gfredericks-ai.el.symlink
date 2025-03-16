@@ -1,5 +1,7 @@
 (provide 'gfredericks-ai)
 
+(require 'gfredericks-longrunning)
+
 (defun ai ()
   "Switch to a terminal buffer named *aichat*. If it doesn't exist,
   create a new term-mode buffer and run the `aichat` program."
@@ -8,6 +10,4 @@
     (if (get-buffer aichat-buffer)
         (switch-to-buffer aichat-buffer)
       (progn
-        (let ((term-program "aichat"))
-          (term term-program)
-          (rename-buffer aichat-buffer))))))
+        (start-terminal-with-command aichat-buffer "aichat -r default")))))
