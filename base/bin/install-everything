@@ -310,12 +310,31 @@ do
   fi
 
   ###
+  ### rust
+  ###
+
+  if [ "$1" == "all" -o "$1" == "rust" ]
+  then
+      BUILDDIR=$BUILDDIRBASE/rust
+      rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
+      VERSION=1.28.1
+      SHA256=a3339fb004c3d0bb9862ba0bce001861fe5cbde9c10d16591eb3f39ee6cd3e7f
+      URL=https://static.rust-lang.org/rustup/archive/$VERSION/x86_64-unknown-linux-gnu/rustup-init
+      wget "$URL"
+      echo "$SHA256  ./rustup-init" | sha256sum -c
+      chmod +x ./rustup-init
+      ./rustup-init -q -y
+      # Do we need to do any path things? it looks like rustup is
+      # modifying the bashrc, which is not my favorite thing, but
+      # maybe it will be fine
+  fi
+
+  ###
   ### bat
   ###
 
   if [ "$1" == "all" -o "$1" == "bat" ]
   then
-    sudo apt-get install -y cargo
     BUILDDIR=$BUILDDIRBASE/bat
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
     REPODIR=$BUILDDIR/repo
@@ -328,6 +347,23 @@ do
     rm -rf $REPODIR
     ln -s $INSTALLDIR/bin/bat ~/bin/bat
   fi
+
+  ###
+  ### aichat
+  ###
+
+  if [ "$1" == "all" -o "$1" == "aichat" ]
+  then
+    BUILDDIR=$BUILDDIRBASE/aichat
+    rm -rf $BUILDDIR
+    git clone git@github.com:sigoden/aichat.git $BUILDDIR
+    cd $BUILDDIR
+    git checkout 12246c6d27edde1d6ea8aa684248e33890caef86
+    cargo build --release  # requires the rust section to have run already
+    rm -f ~/bin/aichat
+    ln -s $BUILDDIR/target/release/aichat ~/bin/aichat
+  fi
+
 
   ###
   ### i3lock-color
