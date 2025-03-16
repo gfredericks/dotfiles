@@ -28,6 +28,7 @@
 (require 'markdown-mode)
 (require 'real-auto-save)
 (require 'num3-mode)
+(require 'term)
 
 (window-numbering-mode)
 
