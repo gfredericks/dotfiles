@@ -28,7 +28,6 @@
 (require 'markdown-mode)
 (require 'real-auto-save)
 (require 'num3-mode)
-(require 'term)
 
 (window-numbering-mode)
 
@@ -96,8 +95,6 @@
 (global-set-key (kbd "C-M-l") 'scroll-down-line)
 ;; This is bound to term-show-output by default in term-mode, so I
 ;; have to explicitly override it
-(define-key term-mode-map (kbd "C-M-l") 'scroll-down-line)
-
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 ;; gonna try this out, seems cool

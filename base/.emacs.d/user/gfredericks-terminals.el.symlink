@@ -88,7 +88,7 @@
     (expose-global-binding-in-term (kbd "C-c s"))
     (expose-global-binding-in-term (kbd "C-c a"))
     (define-key term-raw-map (kbd "C-x") 'nil)
-
+    (define-key term-mode-map (kbd "C-M-l") 'scroll-down-line)
     ;; (add-hook 'window-size-change-functions
     ;;           'window-size-change-function-for-bug-32720)
     ))
