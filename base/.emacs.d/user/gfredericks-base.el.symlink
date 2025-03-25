@@ -28,7 +28,6 @@
 (require 'markdown-mode)
 (require 'real-auto-save)
 (require 'num3-mode)
-(require 'term)
 
 (window-numbering-mode)
 
@@ -96,8 +95,6 @@
 (global-set-key (kbd "C-M-l") 'scroll-down-line)
 ;; This is bound to term-show-output by default in term-mode, so I
 ;; have to explicitly override it
-(define-key term-mode-map (kbd "C-M-l") 'scroll-down-line)
-
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 ;; gonna try this out, seems cool
@@ -246,7 +243,8 @@
    - Chicago local time
    - UTC time
    - London time
-   - Epoch integer, in the lowest faithful resolution"
+   - Epoch integer, in the lowest faithful resolution
+   Additionally, it puts the UTC form on the kill ring."
   (interactive "P")
   (let* (;;(bounds (bounds-of-thing-at-point 'symbol))
          (bounds (my-find-timestamp-bounds))
@@ -269,6 +267,8 @@
                                                 (current-time-zone nil chicago-tz)))
               (london-time (format-time-string "%Y-%m-%dT%H:%M:%S[Europe/London]" (seconds-to-time epoch-time)
                                                (current-time-zone nil london-tz))))
+          ;; Put UTC time on the kill ring
+          (kill-new utc-time)
           ;; Running this asynchronously because otherwise I don't see
           ;; it in the minibuffer for some reason
           (run-at-time "100 millisec" nil 'message
