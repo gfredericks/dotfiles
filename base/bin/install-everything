@@ -396,7 +396,7 @@ do
 
       FZF_KEYBINDINGS_FILE=/usr/share/doc/fzf/examples/key-bindings.bash
       FZF_HASH="$(md5sum "$FZF_KEYBINDINGS_FILE" | awk '{print $1}')"
-      FZF_MODIFIED_FILE="$(dirname "$SELF")"/fzf-key-bindings/$FZF_HASH.bash
+      FZF_MODIFIED_FILE="$(dirname "${BASH_SOURCE[0]}")"/../fzf-key-bindings/$FZF_HASH.bash
       if ! [[ -f "$FZF_MODIFIED_FILE" ]]; then
           # Modifying the keybindings file is just a matter of
           # finding the `bind -m emacs-standard` lines that define `\C-t`,
