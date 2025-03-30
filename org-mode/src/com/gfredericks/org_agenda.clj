@@ -609,8 +609,8 @@
                                 ;; than this, org-mode seems to not
                                 ;; have a way to put square brackets
                                 ;; in link text
-                                (string/replace "[" "&#x5b;")
-                                (string/replace "]" "&#x5d;"))]
+                                (string/replace "[" "〚")
+                                (string/replace "]" "〛"))]
       (when (nil? header)
         (throw (ex-info "Bad item" {:item item})))
       (if-let [id (get (:properties item) "CUSTOM_ID")]

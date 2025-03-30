@@ -36,7 +36,7 @@
           {:header "TODO this has an extra TODO"
            :file "/fake-file.org"}
           "TODO TODO this has an extra TODO")))
-  (is (= "[[file:/fake-file.org::*TODO this headline has \\[brackets\\]][TODO this headline has &#x5b;brackets&#x5d;]]"
+  (is (= "[[file:/fake-file.org::*TODO this headline has \\[brackets\\]][TODO this headline has 〚brackets〛]]"
          (oa/make-org-link
           {:header "TODO this headline has [brackets]"
            :file "/fake-file.org"}
