@@ -5,6 +5,7 @@ import numpy as np
 import re
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.ticker as ticker
 import requests
 import datetime
 import os, sys
@@ -78,6 +79,8 @@ locator = mdates.MonthLocator()
 formatter = mdates.DateFormatter('%Y-%m-%d')
 ax.xaxis.set_major_locator(locator)
 ax.xaxis.set_major_formatter(formatter)
+
+ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=6))
 
 plt.savefig(sys.argv[1], format="png")
 
