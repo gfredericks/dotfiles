@@ -25,6 +25,7 @@
 (defn bold [s] (colorize s "1"))
 (defn bold-underline [s] (colorize s "1;4"))
 (defn bold-italic [s] (colorize s "1;3"))
+(defn italic [s] (colorize s "90;3"))
 (defn red [s] (colorize s "31"))
 (defn blue [s] (colorize s "34"))
 (defn red-bold [s] (colorize s "31;1"))
@@ -330,6 +331,8 @@
                                                     (get properties "AGENDA_SECTION")
                                                     (contains? tags "backlog"))
                                               100)))
+                    :inactionable-before (some-> (get properties "INACTIONABLE_BEFORE")
+                                                 (LocalTime/parse))
                     :properties         properties
                     :tags               tags
                     :own-tags           (set (first tags-with-ancestors))
@@ -684,10 +687,13 @@
   {:pre [(map? agenda)]}
   (let [{:keys [today-date deadlines past backlog futurelog]} agenda
 
-        format-todo (fn [{:keys [done todo priority-cookie agenda-header items-blocked] :as item}]
+        format-todo (fn [{:keys [done todo priority-cookie agenda-header items-blocked inactionable?] :as item}]
                       (format "%s %s%s%s%s%s"
                               (->> [(if (not= "t" (get (:properties item) "DO_NOT_RENDER_AS_TODO"))
-                                      (cond-> (or done (red-bold todo))
+                                      (cond-> (or done
+                                                  (if inactionable?
+                                                    (italic todo)
+                                                    (red-bold todo)))
                                         (= "[#C]" priority-cookie)
                                         (->> .toLowerCase (format "(%s)"))))
                                     priority-cookie]
@@ -773,9 +779,20 @@
                                     fn))
                           (when (= "t" (get properties "DEBUG"))
                             (clojure.pprint/pprint item)))
-        print-todos-with-header (fn [todos header-text show-scheduled-date?]
+        print-todos-with-header (fn [todos header-text opts]
                                   (if (seq todos)
-                                    (do
+                                    (let [todos (if (:render-inactionability? opts)
+                                                  (->> todos
+                                                       (map-indexed
+                                                        (fn [idx todo]
+                                                          (if (and (:inactionable-before todo)
+                                                                   (compare/< (.toLocalTime (:now agenda))
+                                                                              (:inactionable-before todo)))
+                                                            [true idx (assoc todo :inactionable? true)]
+                                                            [false idx todo])))
+                                                       (sort)
+                                                       (map last))
+                                                  todos)]
                                       (println (header header-text))
                                       (when (every? :effort todos)
                                         (let [^Duration total (->> todos
@@ -786,8 +803,7 @@
                                                   (mod (.toMinutes total) 60))))
                                       (let [omit-effort? (not-any? :effort todos)]
                                         (run! #(print-todo-line %
-                                                                {:show-scheduled-date? show-scheduled-date?
-                                                                 :omit-effort? omit-effort?})
+                                                                (assoc opts :omit-effort?  omit-effort?))
                                               todos)))
                                     (println (done-header header-text)))
                                   (println))
@@ -874,18 +890,20 @@
             grouped (group-by :agenda-frontlog-section triage)
             free-grouped (group-by :agenda-frontlog-section (:frontlog-free agenda))
             free-ungrouped (get free-grouped nil)]
-        (doseq [[title todos] (concat
-                               (for [[section todos] (merge-with concat
-                                                                 grouped
-                                                                 (dissoc free-grouped nil))
-                                     :when (not (nil? section))]
-                                 [section todos])
-                               [["FREE" free-ungrouped]
-                                ["TODAY" (:frontlog-today agenda)]
-                                ["LATER" (:frontlog-later agenda)]
-                                ["TRIAGE" (get grouped nil)]])
+        (doseq [[title todos render-inactionability?]
+                (concat
+                 (for [[section todos] (merge-with concat
+                                                   grouped
+                                                   (dissoc free-grouped nil))
+                       :when (not (nil? section))]
+                   [section todos true])
+                 [["FREE" free-ungrouped true]
+                  ["TODAY" (:frontlog-today agenda) true]
+                  ["LATER" (:frontlog-later agenda) false]
+                  ["TRIAGE" (get grouped nil) false]])
                 :let [todos (filter :todo todos)]]
-          (print-todos-with-header todos title false)))
+          (print-todos-with-header todos title {:show-scheduled-date? false
+                                                :render-inactionability? render-inactionability?})))
 
 
       (println (header "CALENDAR"))
@@ -927,8 +945,8 @@
       (let [[estimated unestimated] ((juxt filter remove)
                                      :effort
                                      futurelog)]
-        (print-todos-with-header estimated "ENFORCED" true)
-        (print-todos-with-header unestimated "FREE" true)))))
+        (print-todos-with-header estimated "ENFORCED" {:show-scheduled-date? true})
+        (print-todos-with-header unestimated "FREE" {:show-scheduled-date? true})))))
 
 (defn add-free-time
   [calendar-events date now]
