@@ -12,3 +12,5 @@ gitignored
 *~
 /.conda*
 /.devdir-deprioritize
+.cursorignore
+.cursorrules
