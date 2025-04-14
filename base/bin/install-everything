@@ -299,7 +299,7 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/dynamic-colors
     rm -rf $BUILDDIR
-    git clone git@github.com:gfredericks/dynamic-colors.git $BUILDDIR
+    git clone https://github.com/gfredericks/dynamic-colors.git $BUILDDIR
     cd $BUILDDIR
     git checkout 876a6798c2860f37363d9023de16c7e6b7b995fd
     BIN=$BUILDDIR/bin
@@ -340,7 +340,7 @@ do
     REPODIR=$BUILDDIR/repo
     INSTALLDIR=$BUILDDIR/install
     mkdir $INSTALLDIR
-    git clone --depth=1 -b v0.25.0 --recursive git@github.com:sharkdp/bat.git $REPODIR
+    git clone --depth=1 -b v0.25.0 --recursive https://github.com/sharkdp/bat.git $REPODIR
     cd $REPODIR
     [ "$(git rev-parse HEAD)" == "25f4f96ea3afb6fe44552f3b38ed8b1540ffa1b3" ]
     cargo install --root $INSTALLDIR --locked bat
@@ -356,7 +356,7 @@ do
   then
     BUILDDIR=$BUILDDIRBASE/aichat
     rm -rf $BUILDDIR
-    git clone git@github.com:sigoden/aichat.git $BUILDDIR
+    git clone https://github.com/sigoden/aichat.git $BUILDDIR
     cd $BUILDDIR
     git checkout 12246c6d27edde1d6ea8aa684248e33890caef86
     cargo build --release  # requires the rust section to have run already
@@ -379,7 +379,7 @@ do
     BUILDDIR=$BUILDDIRBASE/i3lock-color
     rm -rf $BUILDDIR && mkdir -p $BUILDDIR && cd $BUILDDIR
     REPODIR=$BUILDDIR/repo
-    git clone git@github.com:Raymo111/i3lock-color.git "$REPODIR"
+    git clone https://github.com/Raymo111/i3lock-color.git "$REPODIR"
     cd "$REPODIR"
     git checkout 380a10a90f0dee57f40105a0ac097ba52e8278da
     ./build.sh
