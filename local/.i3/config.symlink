@@ -38,6 +38,7 @@ bindsym $mod+Return exec env -u SESSION_MANAGER SHLVL=0 xterm #gnome-terminal
 bindsym $mod+Shift+Return exec env -u SESSION_MANAGER SHLVL=0 xterm -title "floating xterm"
 for_window [title="floating xterm"] floating enable
 for_window [class="floating"] floating enable
+for_window [urgent="latest"] focus
 
 # kill focused window
 bindsym $mod+Shift+q kill
