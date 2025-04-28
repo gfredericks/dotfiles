@@ -2,6 +2,11 @@
 
 set -Eeou pipefail
 
+F=$(mktemp /dev/shm/clipboard-XXXXXXXXX)
+trap "rm $F" EXIT
+cat > $F
+exec <$F
+
 if [[ "${GFR_REMOTE_CLIPBOARD:-}" == "1" ]]; then
     base64 | \
         cat <(echo "copy ") - <(echo) | \
