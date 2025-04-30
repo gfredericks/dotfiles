@@ -65,9 +65,10 @@ alias .........='cd ../../../../../../../..'
 alias cd-="cd -"
 
 
-# https://twitter.com/petdance/status/964576338307936257
-alias hed='head -n $(( $(tput lines) - 3 ))'
-alias tal='tail -n $(( $(tput lines) - 3 ))'
+alias head1='head -n $(( $(tput lines) - 3 ))'
+alias tail1='tail -n $(( $(tput lines) - 3 ))'
+alias head2='head -n $(( $(tput lines) / 2 ))'
+alias tail2='tail -n $(( $(tput lines) / 2 ))'
 
 mkcd(){ mkdir -p "$1"; cd "$1"; }
 tmp(){
