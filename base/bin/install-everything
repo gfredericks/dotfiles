@@ -416,7 +416,7 @@ do
     sudo apt-get install -y imagemagick graphviz curl \
          texlive{,-base,-latex-recommended,-latex-extra,-full} \
          bsdgames inkscape xterm xdotool sshfs inotify-tools \
-         autorandr
+         autorandr gnome-screenshot
   fi
 
   shift
