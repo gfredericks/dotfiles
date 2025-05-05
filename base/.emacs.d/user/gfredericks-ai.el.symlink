@@ -2,12 +2,37 @@
 
 (require 'gfredericks-longrunning)
 
-(defun ai ()
-  "Switch to a terminal buffer named *aichat*. If it doesn't exist,
-  create a new term-mode buffer and run the `aichat` program."
-  (interactive)
-  (let ((aichat-buffer "*aichat*"))
-    (if (get-buffer aichat-buffer)
-        (switch-to-buffer aichat-buffer)
-      (progn
-        (start-terminal-with-command aichat-buffer "aichat -r default")))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; gptel
+
+;; Thanks Bruce Hauman!
+
+(gfredericks-packages-install 'gptel)
+
+(require 'gptel)
+
+(setq gptel-api-key (getenv "OPENAI_API_KEY"))
+
+(gptel-make-anthropic "Claude"          ;Any name you want
+  :stream t                             ;Streaming responses
+  :key (getenv "ANTHROPIC_API_KEY"))
+
+;; (gptel-make-gemini "Gemini"
+;;   :key (getenv "GEMINI_API_KEY")
+;;   :stream t)
+(setq gptel-model "gpt-4o")
+
+(with-eval-after-load 'gptel
+  (gptel-make-tool
+   :name "emacs-eval"
+   :function (lambda (code)
+               (condition-case err
+                   (let ((result (eval (car (read-from-string code)))))
+                     (format "%S" result))
+                 (error (format "Error: %S" err))))
+   :description "Evaluate Emacs Lisp code and return the result. Use this to execute Lisp expressions or query Emacs state."
+   :args (list '(:name "code"
+                       :type string
+                       :description "Emacs Lisp code to evaluate. Must be a valid Lisp expression like (+ 1 2) or (buffer-list)"))
+   :category "emacs")
+)
