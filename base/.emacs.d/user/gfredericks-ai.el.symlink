@@ -1,6 +1,7 @@
 (provide 'gfredericks-ai)
 
 (require 'gfredericks-longrunning)
+(require 'gfredericks-packages)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; gptel
