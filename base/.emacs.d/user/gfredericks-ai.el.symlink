@@ -21,7 +21,78 @@
 ;; (gptel-make-gemini "Gemini"
 ;;   :key (getenv "GEMINI_API_KEY")
 ;;   :stream t)
-(setq gptel-model "gpt-4o")
+(setq gptel-model 'gpt-4.1)
+
+(defun gfredericks-gptel-mode-external-system-message ()
+  (save-excursion
+    (goto-char (point-min))
+    (let ((system-file (org-entry-get nil "GPTEL_SYSTEM_FILE")))
+      (when system-file
+        (setq-local gptel--system-message
+                    (with-temp-buffer
+                      (insert-file-contents system-file)
+                      (buffer-string)))))))
+
+(add-hook 'gptel-mode-hook 'gfredericks-gptel-mode-external-system-message)
+
+(add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
+(add-hook 'gptel-post-response-functions 'gptel-end-of-response)
+
+(defun gfredericks-assistant-get-agenda ()
+  (with-current-buffer "agenda.org"
+    (goto-char (point-min))
+    ;; now go to the next occurrence of "Items"
+    (search-forward "Items" nil t)
+    (forward-line 2)
+    (let ((start (point)))
+      (search-forward " LATER ")
+      (beginning-of-line)
+      (let ((end (point)))
+        (buffer-substring-no-properties start end)))))
+
+(defun follow-only-matching-org-link (substring)
+  "Searches the current buffer for lines containing the given SUBSTRING.
+If there are zero or multiple such lines, signal an error. Otherwise,
+follow the Org link on that line."
+  (goto-char (point-min))
+  (let (match-lines)
+    (while (re-search-forward (regexp-quote substring) nil t)
+      (push (line-number-at-pos (point)) match-lines))
+    (setq match-lines (delete-dups match-lines))
+    (cond
+     ((= (length match-lines) 0)
+      (user-error "No line contains substring: %s" substring))
+     ((> (length match-lines) 1)
+      (user-error "Multiple lines contain substring: %s" substring))
+     (t
+      (goto-char (point-min))
+      (forward-line (1- (car match-lines)))
+      (let ((line (thing-at-point 'line t)))
+        (unless (string-match org-link-bracket-re line)
+          (user-error "No org link on the matching line"))
+        (let ((pos (string-match org-link-bracket-re line)))
+          (goto-char (line-beginning-position))
+          (forward-char pos)
+          (org-open-at-point)))))))
+
+(defun all-org-content-at-point ()
+  (let ((start (point)))
+    (org-next-visible-heading 1)
+    (buffer-substring-no-properties start (point))))
+
+(defun gfredericks-assistant-log-activity-update
+    (activity-description)
+  (save-window-excursion
+    (save-excursion
+      (find-file (concat (getenv "HOME") "/tmp/ai-activity-log.org"))
+      (end-of-buffer)
+      (if (not (eq (char-before) ?\n))
+          (insert "\n"))
+      (insert (format "- %s :: "
+                      (format-time-string "[%Y-%m-%d %a %H:%M]")))
+      (insert activity-description)
+      (insert "\n")
+      (save-buffer))))
 
 (with-eval-after-load 'gptel
   (gptel-make-tool
@@ -35,11 +106,13 @@
    :args (list '(:name "code"
                        :type string
                        :description "Emacs Lisp code to evaluate. Must be a valid Lisp expression like (+ 1 2) or (buffer-list)"))
+   :confirm t
    :category "emacs")
 
   (gptel-make-tool
    :name "emacs-read-lines"
    :function (lambda (buffer-name start-line end-line)
+               (message "AI tool reading buffer %s" buffer-name)
                (condition-case err
                    (let ((lines '()))
                      (with-current-buffer buffer-name
@@ -75,14 +148,10 @@
                (condition-case err
                    (with-current-buffer buffer-name
                      (save-excursion
-                       ;; NOCOMMIT: I think this has an off-by-one error
-                       ;; where it deletes too many lines; we might also
-                       ;; want to support a pure insert, maybe just by
-                       ;; changing end-line to be exclusive
                        (goto-char (point-min))
                        (forward-line (1- start-line))
                        (let ((start-point (line-beginning-position)))
-                         (forward-line (1+ (- end-line start-line)))
+                         (forward-line (- end-line start-line))
                          (let ((end-point (line-end-position)))
                            (delete-region start-point end-point)
                            (goto-char start-point)
@@ -94,12 +163,63 @@
                        :description "The name of the buffer to modify.")
                '(:name "start-line"
                        :type integer
-                       :description "The starting line number to replace.")
+                       :description "The starting line number to replace (inclusive).")
                '(:name "end-line"
                        :type integer
-                       :description "The ending line number to replace.")
+                       :description "The ending line number to replace (exclusive).")
                '(:name "replacement-string"
                        :type string
                        :description "The string to replace the specified lines."))
    :category "emacs")
+
+  (gptel-make-tool
+   :name "assistant-get-agenda"
+   :function #'gfredericks-assistant-get-agenda
+   :description "Returns the portion of the user's agenda representing active work to do."
+   :args ()
+   :category "org-assistant")
+
+  (gptel-make-tool
+   :name "assistant-get-agenda-details"
+   :function (lambda (item-substring)
+               (save-window-excursion
+                 (save-excursion
+                   (with-temp-buffer
+                     (org-mode)
+                     (insert (gfredericks-assistant-get-agenda))
+                     (follow-only-matching-org-link item-substring)
+                     (all-org-content-at-point)))))
+   :description "Returns more detail about a single agenda item"
+   :args (list '(:name "item-substring"
+                       :type string
+                       :description "A unique substring of an agenda item"))
+   :category "org-assistant")
+  (gptel-make-tool
+   :name "assistant-log-activity-update"
+   :function #'gfredericks-assistant-log-activity-update
+   :description "Saves a timestamped record of user activity"
+   :args (list '(:name "activity-description"
+                       :type string
+                       :description "A plain-english description of the activity (without timestamp)"))
+   :category "org-assistant")
+
+  (gptel-make-tool
+   :name "assistant-set-notes"
+   :function (lambda (item-substring notes)
+               (save-window-excursion
+                 (save-excursion
+                   (with-temp-buffer
+                     (org-mode)
+                     (insert (gfredericks-assistant-get-agenda))
+                     (follow-only-matching-org-link item-substring)
+                     (org-set-property "AI_ASSISTANT_NOTES" notes))))
+               (concat "Successfully added note: " notes))
+   :description "Saves the given notes for the specific agenda item"
+   :args (list '(:name "item-substring"
+                       :type string
+                       :description "A unique substring of an agenda item")
+               '(:name "notes"
+                       :type string
+                       :description "Arbitrary notes"))
+   :category "org-assistant")
   )
