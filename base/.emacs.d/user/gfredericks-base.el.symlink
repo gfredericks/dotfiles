@@ -84,7 +84,7 @@
       (message "Could not find git project root."))))
 (global-set-key (kbd "C-c C-t") 'neotree-toggle)
 
-(add-hook 'find-file-hook '
+(add-hook 'find-file-hook
           (lambda ()
             (display-line-numbers-mode)
             (setq display-line-numbers 'relative)
