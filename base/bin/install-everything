@@ -67,8 +67,8 @@ do
     # shallow because the emacs repo is super big/old
     git clone --shallow-since=2024-01-01 git://git.sv.gnu.org/emacs.git $BUILDDIR/git-repo
     cd $BUILDDIR/git-repo
-    # tag emacs-29.4
-    git checkout 6a299b3caceb2c73b932ba73849738faa8c5d975
+    # tag emacs-30.1
+    git checkout 8ac894e2246f25d2a2a97d866b10e6e0b0fede5a
     ./autogen.sh
     ./configure \
         --without-x \
