@@ -103,3 +103,17 @@
                        :description "The string to replace the specified lines."))
    :category "emacs")
   )
+
+(defun my-gptel-send-advice (&rest args)
+  (if (and (derived-mode-p 'org-mode)
+           (org-entry-get (point-min) "AI_ASSISTANT"))
+      (save-excursion
+        (let ((re "^\\*\\*\\* "))
+          (if (re-search-backward re nil t)
+              (progn
+                (goto-char (match-beginning 0))
+                (forward-char 4)
+                (insert (format-time-string "%H:%M -- ")))
+            (message "Can't find beginning of prompt"))))))
+
+(advice-add 'gptel-send :before #'my-gptel-send-advice)
