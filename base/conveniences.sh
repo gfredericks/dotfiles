@@ -69,6 +69,8 @@ alias head1='head -n $(( $(tput lines) - 3 ))'
 alias tail1='tail -n $(( $(tput lines) - 3 ))'
 alias head2='head -n $(( $(tput lines) / 2 ))'
 alias tail2='tail -n $(( $(tput lines) / 2 ))'
+alias head3='head -n $(( $(tput lines) / 3 ))'
+alias tail3='tail -n $(( $(tput lines) / 3 ))'
 
 mkcd(){ mkdir -p "$1"; cd "$1"; }
 tmp(){
