@@ -196,6 +196,10 @@ bar {
         status_command ~/.i3/my-status
         # 12  why did this start being too big on the macbook?
         font pango:Inconsolata 11
+        # turning this off because I almost never use it in a serious
+        # way and it is distracting for slack to tell me when I have
+        # unread messages when I'm trying to keep notifications off
+        tray_output none
 }
 
 # Print screen
