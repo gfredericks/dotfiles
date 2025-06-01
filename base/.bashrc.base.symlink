@@ -100,18 +100,13 @@ function make-completion-wrapper () {
 ( crontab -l | grep run-checks >/dev/null ) \
   || echo "ERROR: run-checks missing from crontab"\!
 
-GFREDERICKS_AI_PY_DIR="$(dirname "$SELF")"/ai
-ai(){
-  prompt=("$@")
-  (
-    "$GFREDERICKS_AI_PY_DIR"/go.sh chat "${prompt[@]}"
-  )
-}
-aiimg(){
-  prompt=("$@")
-  (
-    "$GFREDERICKS_AI_PY_DIR"/go.sh img "${prompt[@]}"
-  )
+ai() {
+  if [ $# -eq 0 ]; then
+    aichat -s -rdefault
+  else
+    prompt=("$@")
+    printf '%s\n' "${prompt[@]}" | aichat -rdefault
+  fi
 }
 
 if which fzf >/dev/null; then
