@@ -983,6 +983,12 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (org-set-property "Effort" duration)
   (display-parent-header))
 
+(defun scheduled-tmp-override ()
+  (interactive)
+  (org-set-property "SCHEDULED_TMP_OVERRIDE"
+                    (with-temp-buffer
+                      (org-insert-time-stamp (org-time-string-to-time (org-read-date)))
+                      (buffer-string))))
 
 ;; Decorate the TODO state change functionality so that we
 ;; preserve the previous SCHEDULED value

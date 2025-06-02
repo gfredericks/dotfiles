@@ -289,14 +289,16 @@
                                             header)
                                           header)
                     :ancestor-headers   ancestor-headers
-                    :scheduled          (:base scheduled)
+                    :scheduled          (if (:base scheduled)
+                                          (or (some-> (get properties "SCHEDULED_TMP_OVERRIDE")
+                                                      (parse-org-date-or-datetime))
+                                              (:base scheduled)))
                     :created-at         created-at
                     :deadline           deadline
                     :agenda-timestamp   (:base (get-timestamp agenda-timestamp-finder false true))
                     :closed-at          (:base (get-timestamp closed-finder false false))
 
-                    :last-repeat        (some-> props-with-ancestors
-                                                first
+                    :last-repeat        (some-> properties
                                                 (get "LAST_REPEAT")
                                                 parse-org-datetime)
                     ;; properties in general aren't inherited, but the
@@ -336,7 +338,7 @@
                     :properties         properties
                     :tags               tags
                     :own-tags           (set (first tags-with-ancestors))
-                    :own-properties     (first props-with-ancestors)
+                    :own-properties     properties
                     :effort             effort
                     :repeat?            (or scheduled-repeater? deadline-repeater?)}
                    {:raw-section section})
