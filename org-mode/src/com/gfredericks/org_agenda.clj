@@ -740,10 +740,6 @@
                                                "# "
                                                ""))
                                            (str
-                                            (if-let [bumps (some-> (get properties "BUMPS")
-                                                                   (Long/parseLong))]
-                                              (bold (format "(%d) " bumps))
-                                              "")
                                             (let [{:keys [tag->decoration]} cfg
                                                   s (->> tag->decoration
                                                          (map (fn [[tag decoration]]
