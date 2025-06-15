@@ -690,7 +690,10 @@
   (let [{:keys [today-date deadlines past backlog futurelog]} agenda
 
         format-todo (fn [{:keys [done todo priority-cookie agenda-header items-blocked inactionable?] :as item}]
-                      (format "%s %s%s%s%s%s"
+                      (format "%s%s %s%s%s%s"
+                              (if (:repeat? item)
+                                (blue "® ")
+                                "  ")
                               (->> [(if (not= "t" (get (:properties item) "DO_NOT_RENDER_AS_TODO"))
                                       (cond-> (or done
                                                   (if inactionable?
@@ -711,9 +714,6 @@
                               (if-let [notification (:notification item)]
                                 (str notification " ")
                                 "")
-                              (if (:repeat? item)
-                                (blue "® ")
-                                "  ")
                               (if (= "t" (get (:properties item) "AGENDA_NO_LINK"))
                                 agenda-header
                                 (make-org-link item agenda-header))))
