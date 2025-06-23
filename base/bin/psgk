@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -Eeou pipefail
+
+PATTERN="$1"
+
+LINE="$(ps -efww | grep "$PATTERN" | grep -v "grep $PATTERN" | fzf)"
+if [[ -n "$LINE" ]]; then
+    PID="$(echo "$LINE" | tr -s " " | cut -d ' ' -f 2)"
+    echo
+    echo kill "$PID"
+    kill "$PID"
+else
+    exit 3
+fi
