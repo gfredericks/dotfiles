@@ -259,14 +259,16 @@
                                                        (concat timestamp "Z")
                                                      timestamp)))
                            (float-time (date-to-time adjusted-timestamp))))))
-         (chicago-tz "America/Chicago")
-         (london-tz "Europe/London"))
+         (chicago-tz (current-time-zone epoch-time "America/Chicago"))
+         (london-tz (current-time-zone epoch-time "Europe/London")))
     (if epoch-time
         (let ((utc-time (format-time-string "%Y-%m-%dT%H:%M:%SZ" (seconds-to-time epoch-time) t))
-              (chicago-time (format-time-string "%Y-%m-%dT%H:%M:%S[America/Chicago]" (seconds-to-time epoch-time)
-                                                (current-time-zone nil chicago-tz)))
-              (london-time (format-time-string "%Y-%m-%dT%H:%M:%S[Europe/London]" (seconds-to-time epoch-time)
-                                               (current-time-zone nil london-tz))))
+              (chicago-time (format-time-string "%Y-%m-%dT%H:%M:%S[America/Chicago]"
+                                                (seconds-to-time epoch-time)
+                                                chicago-tz))
+              (london-time (format-time-string "%Y-%m-%dT%H:%M:%S[Europe/London]"
+                                               (seconds-to-time epoch-time)
+                                               london-tz)))
           ;; Put UTC time on the kill ring
           (kill-new utc-time)
           ;; Running this asynchronously because otherwise I don't see
