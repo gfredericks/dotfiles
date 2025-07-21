@@ -7,7 +7,9 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    '(lsp-java "async-await" async-await num3-mode company company-mode rust-mode dash-functional lsp-mode haskell-mode align-cljlet cider paredit yaml-mode workgroups window-numbering smex real-auto-save projectile neotree multiple-cursors markdown-mode magit htmlize git-timemachine clojure-mode))
- '(safe-local-variable-values '((display-line-numbers-width . 5))))
+ '(safe-local-variable-values
+   '((display-line-numbers-width . 4)
+     (display-line-numbers-width . 5))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
