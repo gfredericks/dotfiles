@@ -1,0 +1,19 @@
+#!/bin/bash
+
+TRASH_DIR="$HOME/trash"
+DATE=$(date +%Y-%m-%d)
+
+mkdir -p "$TRASH_DIR"
+
+for FILE in "$@"; do
+  BASENAME=$(basename "$FILE")
+  DEST="$TRASH_DIR/$BASENAME"
+  COUNT=1
+
+  while [ -e "$DEST" ]; do
+    DEST="$TRASH_DIR/$BASENAME.$DATE.$COUNT"
+    ((COUNT++))
+  done
+
+  mv "$FILE" "$DEST"
+done
