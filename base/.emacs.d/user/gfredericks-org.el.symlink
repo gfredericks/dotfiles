@@ -999,11 +999,19 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
          (s (replace-regexp-in-string ">" "]" s)))
     s))
 
+(defun gfredericks-string-max
+    (s1 s2)
+  (if (string< s1 s2) s2 s1))
+
 (defun gfredericks-store-last-scheduled (&rest args)
-  (let ((scheduled (org-entry-get nil "SCHEDULED")))
-    (when scheduled
+  (let* ((scheduled (org-entry-get nil "SCHEDULED"))
+         (scheduled-override (org-entry-get nil "SCHEDULED_TMP_OVERRIDE"))
+         (effective-scheduled (if (and scheduled scheduled-override)
+                                  (gfredericks-string-max scheduled scheduled-override )
+                                (or scheduled scheduled-override))))
+    (when effective-scheduled
       ;; convert the active timestamp to an inactive one so that emacs
       ;; doesn't change it when we TODO something
-      (org-entry-put nil "LAST_SCHEDULED" (gfredericks-inactivate-timestamp scheduled)))))
+      (org-entry-put nil "LAST_SCHEDULED" (gfredericks-inactivate-timestamp effective-scheduled)))))
 
 (advice-add 'org-auto-repeat-maybe :before #'gfredericks-store-last-scheduled)
