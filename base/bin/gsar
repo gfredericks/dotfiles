@@ -1,29 +1,47 @@
-#!/usr/bin/env ruby
-require 'pathname'
+#!/usr/bin/env python3
 
-if ARGV.length != 3
-  puts "Usage: gsar <dir> <matcher> <replacement>"
-  exit 1
-end
+import os
+import re
+import sys
+from pathlib import Path
+import subprocess
 
-dir, matcher, replacement = ARGV
+def hidden(filename):
+    # Check if the file is hidden by examining the basename
+    return Path(filename).name.startswith('.')
 
-# TODO: Also check if any parent directories are hidden!
-#
-# e.g., wouldn't want it mucking around in the .git directory
-# accidentally...
-def hidden? filename
-  Pathname.new(filename).basename.to_s =~ /^\./
-end
+def main():
+    if len(sys.argv) != 4:
+        print("Usage: gsar <dir> <matcher> <replacement>")
+        sys.exit(1)
 
-Dir.chdir dir do
-  filenames = `find . -type f -print0`.split("\0")
-  filenames.each do |filename|
-    next if hidden? filename
-    if(`grep -P #{matcher.inspect} #{filename.inspect}`.length > 0)
-      s = File.read filename
-      puts filename
-      open(filename,'w'){|f|f.write(s.gsub(matcher, replacement))}
-    end
-  end
-end
+    dir_, matcher, replacement = sys.argv[1], sys.argv[2], sys.argv[3]
+
+    # Change current directory
+    os.chdir(dir_)
+
+    for root, dirs, files in os.walk('.'):
+        for file in files:
+            filepath = os.path.join(root, file)
+            if hidden(filepath):
+                continue
+
+            try:
+                result = subprocess.run(
+                    ['grep', '-qE', matcher, filepath],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+            except Exception:
+                continue
+
+            if result.returncode == 0:
+                print(filepath)
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                new_content = re.sub(matcher, replacement, content)
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+
+if __name__ == "__main__":
+    main()
