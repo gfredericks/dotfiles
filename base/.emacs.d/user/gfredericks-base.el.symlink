@@ -98,8 +98,11 @@
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 ;; gonna try this out, seems cool
-(gfredericks-packages-install 'num3-mode)
-(global-num3-mode 1)
+;; scratch that, the face is really annoying in my terminal,
+;; so leaving it off until I want to bother figuring out how
+;; to pick a better face
+;; (gfredericks-packages-install 'num3-mode)
+;; (global-num3-mode 1)
 
 (setq ido-enable-flex-matching t)
 (setq ido-everywhere t)
