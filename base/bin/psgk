@@ -3,10 +3,15 @@
 set -Eeou pipefail
 
 PATTERN="$1"
+SCRIPT_PID="$$"
+TMPFILE=$(mktemp)
+trap "rm -f $TMPFILE" EXIT
 
-LINE="$(ps -efww | grep "$PATTERN" | grep -v "grep $PATTERN" | fzf)"
-if [[ -n "$LINE" ]]; then
-    PID="$(echo "$LINE" | tr -s " " | cut -d ' ' -f 2)"
+ps -efww | grep "$PATTERN" | grep -v "grep $PATTERN" | grep -v " $SCRIPT_PID " | fzf > "$TMPFILE"
+
+if [[ -s "$TMPFILE" ]]; then
+    LINE=$(cat "$TMPFILE")
+    PID=$(echo "$LINE" | tr -s " " | cut -d ' ' -f 2)
     echo
     echo kill "$PID"
     kill "$PID"
