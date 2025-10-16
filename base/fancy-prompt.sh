@@ -10,7 +10,9 @@ function timer_start {
 }
 
 function timer_stop {
-    the_seconds=$(($SECONDS - $timer))
+    # NOCOMMIT: does this (:-0) stop our prompt from getting into the weird
+    # syntax error thing?
+    the_seconds=$(($SECONDS - ${timer:-0}))
 
     __last_stopped_at=$SECONDS
 
