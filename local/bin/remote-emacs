@@ -132,10 +132,15 @@ go(){
     echo '$THE_PORT$' > ~/.remote-emacs-clipboard-browser-port
     echo $$ > ~/.remote-emacs.pid
     export PATH=$(echo ~/bin/* | tr " " :):$PATH
+    # There\'s a bug somewhere that causes the return value of
+    # (restore-longrunning-workgroup-setup) to get written to
+    # the terminal at whatever point the emacs cursor is at
+    # after everything is loaded; I have no idea why, and am
+    # not sure if there\'s any easy workaround.
     emacsclient -c -e \'(restore-longrunning-workgroup-setup)\'
     # For some reason, making emacsclient not the last thing causes
     # the server not to crash when we kill the client O_O
-    date > /tmp/this-should-not-be-necessary
+    date > /tmp/.remote-emacs.this-should-not-be-necessary
 '
 }
 
