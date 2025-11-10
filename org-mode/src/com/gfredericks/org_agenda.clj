@@ -129,6 +129,20 @@
                             ::org/line-number (::org/line-number (meta %))
                             ::filewide-category filewide-category)))))))
 
+(defn find-first-unchecked-item
+  [lines]
+  (loop [current nil
+         min-indent 0
+         lines lines]
+    (if-let [line (first lines)]
+      (if-let [[_ indent item] (re-matches #"(\s*)- \[ \] (.*)" line)]
+        (let [indent' (count indent)]
+          (if (< indent' min-indent)
+            current
+            (recur item indent' (rest lines))))
+        (recur current min-indent (rest lines)))
+      current)))
+
 (defn timestamp-finder
   [context-regex-format-string]
   (let [pattern (re-pattern (format context-regex-format-string org-timestamp-regex))]
@@ -210,7 +224,7 @@
       agenda-date-range-pattern
       #"<(\d{4}-\d\d-\d\d)(?: \w\w\w)?>--<(\d{4}-\d\d-\d\d)(?: \w\w\w)?>"
 
-]
+      ]
   (defn parse-section-for-agenda*
     [{::org/keys           [header prelude sections line-number]
       ::keys [tags-with-ancestors props-with-ancestors ancestor-headers filewide-category]
@@ -276,6 +290,7 @@
             created-at (:base (get-timestamp created-at-finder false false))
             scheduled-repeater? (:repeater scheduled)
             deadline-repeater? (:repeater deadline)
+            first-unchecked-item (find-first-unchecked-item prelude)
             base (with-meta
                    {:todo               (if (contains? DONE-states todo) nil todo)
                     :done               (if (contains? DONE-states todo) todo)
@@ -283,7 +298,7 @@
                     :header             header
                     :agenda-header      (if (contains? properties "DISPLAY_PARENT_HEADER")
                                           (if-let [ah (last ancestor-headers)]
-                                            (format "%s ~ %s"
+                                            (format "%s  ⬤  %s"
                                                     header
                                                     (-> ah parse-header :rest remove-tags))
                                             header)
@@ -335,12 +350,14 @@
                                               100)))
                     :inactionable-before (some-> (get properties "INACTIONABLE_BEFORE")
                                                  (LocalTime/parse))
+                    :props-with-ancestors props-with-ancestors
                     :properties         properties
                     :tags               tags
                     :own-tags           (set (first tags-with-ancestors))
                     :own-properties     properties
                     :effort             effort
-                    :repeat?            (or scheduled-repeater? deadline-repeater?)}
+                    :repeat?            (or scheduled-repeater? deadline-repeater?)
+                    :first-unchecked-item first-unchecked-item}
                    {:raw-section section})
             base (assoc base :updated-at (updated-at base logbook-timestamps))
             date-range (->> prelude
@@ -775,6 +792,10 @@
                             (printf "       %s   %s\n"
                                     (green ">>")
                                     fn))
+                          (when-let [ai-notes (get properties "AI_ASSISTANT_NOTES")]
+                            (printf "       %s   AI ASSISTANT NOTES: %s\n"
+                                    (blue ">>")
+                                    ai-notes))
                           (when (= "t" (get properties "DEBUG"))
                             (clojure.pprint/pprint item)))
         print-todos-with-header (fn [todos header-text opts]

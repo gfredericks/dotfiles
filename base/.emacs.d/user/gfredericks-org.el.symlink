@@ -940,14 +940,16 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 
 (defun gfredericks-restore-point-and-set-colors ()
   (gfredericks-apply-ansi-colors)
-  (run-at-time 0.01 nil
-               (lambda (window buffer)
-                 (with-current-buffer buffer
-                   (goto-line (nth 0 gfredericks-agenda-position))
-                   (move-to-column (nth 1 gfredericks-agenda-position))
-                   (set-window-start window (nth 2 gfredericks-agenda-position))))
-               (get-buffer-window (current-buffer))
-               (current-buffer)))
+  ;; this really doesn't work that well
+  ;; (run-at-time 0.01 nil
+  ;;              (lambda (window buffer)
+  ;;                (with-current-buffer buffer
+  ;;                  (goto-line (nth 0 gfredericks-agenda-position))
+  ;;                  (move-to-column (nth 1 gfredericks-agenda-position))
+  ;;                  (set-window-start window (nth 2 gfredericks-agenda-position))))
+  ;;              (get-buffer-window (current-buffer))
+  ;;              (current-buffer))
+  )
 
 (defun gfredericks-agenda-mode-setup ()
   (gfredericks-apply-ansi-colors)
@@ -1015,3 +1017,41 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
       (org-entry-put nil "LAST_SCHEDULED" (gfredericks-inactivate-timestamp effective-scheduled)))))
 
 (advice-add 'org-auto-repeat-maybe :before #'gfredericks-store-last-scheduled)
+
+(defun in-progress ()
+  (interactive)
+  (if (member "in_progress" (org-get-tags))
+      (org-toggle-tag "in_progress" 'off)
+    (org-toggle-tag "in_progress" 'on)))
+
+(defun in-progress-blocked ()
+  (interactive)
+  (let* ((blocked-by-script (org-entry-get nil "BLOCKED_BY_SCRIPT"))
+         (action (if blocked-by-script
+                     (completing-read "BLOCKED_BY_SCRIPT is set. Choose an action (delete, keep, overwrite): "
+                                      '("delete" "keep" "overwrite"))
+                   (completing-read "BLOCKED_BY_SCRIPT is not set. Choose an action (create, skip): "
+                                    '("create" "skip")))))
+    (cond
+     ((string-equal action "delete")
+      (org-entry-delete nil "BLOCKED_BY_SCRIPT"))
+     ((or (string-equal action "overwrite")
+          (string-equal action "create"))
+      (org-entry-put nil "BLOCKED_BY_SCRIPT" (read-string "Enter new value for BLOCKED_BY_SCRIPT: ")))))
+  (let* ((blocked-until (org-entry-get nil "BLOCKED_UNTIL"))
+         (action (if blocked-until
+                     (completing-read "BLOCKED_UNTIL is set. Choose an action (delete, keep, overwrite): "
+                                      '("delete" "keep" "overwrite"))
+                   (completing-read "BLOCKED_UNTIL is not set. Choose an action (create, skip): "
+                                    '("create" "skip")))))
+    (cond
+     ((string-equal action "delete")
+      (org-entry-delete nil "BLOCKED_UNTIL"))
+     ((or (string-equal action "overwrite")
+          (string-equal action "create"))
+      ;; could
+      (org-entry-put nil "BLOCKED_UNTIL"
+                     (concat
+                      "["
+                      (org-read-date nil nil nil "Enter new value for BLOCKED_UNTIL: ")
+                      "]"))))))

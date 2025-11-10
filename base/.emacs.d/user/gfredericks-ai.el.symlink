@@ -31,9 +31,30 @@
         (setq-local gptel--system-message
                     (with-temp-buffer
                       (insert-file-contents system-file)
-                      (buffer-string)))))))
+                      (buffer-string))))))
+  )
 
 (add-hook 'gptel-mode-hook 'gfredericks-gptel-mode-external-system-message)
+
+(setq gptel-log-level 'info) ;; nil, 'info, 'debug
+
+(defun gfredericks-gptel-add-agenda-context ()
+  (beginning-of-buffer)
+
+  (insert "<context>")
+  (insert (format-time-string "Current date/time: %Y-%m-%d %A %H:%M:%S %Z"))
+  (insert "\nCURRENT AGENDA:\n")
+  (insert (gfredericks-assistant-get-agenda))
+  (insert "\n</context>\n"))
+
+(defun gfredericks-gptel-add-agenda-context-hook ()
+  (save-excursion
+    (goto-char (point-min))
+    (let ((mode (org-entry-get nil "GFREDERICKS_AI_MODE")))
+      (when (string= mode "productivity-assistant")
+        (add-hook 'gptel-prompt-filter-hook 'gfredericks-gptel-add-agenda-context nil t)))))
+
+(add-hook 'gptel-mode-hook 'gfredericks-gptel-add-agenda-context-hook)
 
 (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
 (add-hook 'gptel-post-response-functions 'gptel-end-of-response)
@@ -80,11 +101,13 @@ follow the Org link on that line."
     (org-next-visible-heading 1)
     (buffer-substring-no-properties start (point))))
 
+(defvar gfredericks-assistant-activity-log-file)
+
 (defun gfredericks-assistant-log-activity-update
     (activity-description)
   (save-window-excursion
     (save-excursion
-      (find-file (concat (getenv "HOME") "/tmp/ai-activity-log.org"))
+      (find-file gfredericks-assistant-activity-log-file)
       (end-of-buffer)
       (if (not (eq (char-before) ?\n))
           (insert "\n"))
@@ -92,7 +115,16 @@ follow the Org link on that line."
                       (format-time-string "[%Y-%m-%d %a %H:%M]")))
       (insert activity-description)
       (insert "\n")
-      (save-buffer))))
+      (save-buffer)))
+  "Logged successfully")
+
+(defun assistant ()
+  (interactive)
+  (let ((today (format-time-string "%Y-%m-%d")))
+    (find-file (concat (getenv "HOME")
+                       "/dev/drw/drw/ai-assistant/"
+                       today
+                       ".org"))))
 
 (with-eval-after-load 'gptel
   (gptel-make-tool
@@ -172,6 +204,7 @@ follow the Org link on that line."
                        :description "The string to replace the specified lines."))
    :category "emacs")
 
+  ;; NOCOMMIT: delete this
   (gptel-make-tool
    :name "assistant-get-agenda"
    :function #'gfredericks-assistant-get-agenda
@@ -212,7 +245,8 @@ follow the Org link on that line."
                      (org-mode)
                      (insert (gfredericks-assistant-get-agenda))
                      (follow-only-matching-org-link item-substring)
-                     (org-set-property "AI_ASSISTANT_NOTES" notes))))
+                     (org-set-property "AI_ASSISTANT_NOTES" notes)
+                     (save-buffer))))
                (concat "Successfully added note: " notes))
    :description "Saves the given notes for the specific agenda item"
    :args (list '(:name "item-substring"
@@ -222,4 +256,90 @@ follow the Org link on that line."
                        :type string
                        :description "Arbitrary notes"))
    :category "org-assistant")
+
+  ;; NOCOMMIT: delete this
+  (gptel-make-tool
+   :name "assistant-read-recent-activity-log"
+   :function (lambda ()
+               (save-window-excursion
+                 (save-excursion
+                   (find-file gfredericks-assistant-activity-log-file)
+                   (let ((start (line-beginning-position (- 10)))
+                         (end (point-max)))
+                     (buffer-substring-no-properties start end)))))
+   :description "Returns the last ten lines in the activity log"
+   :args ()
+   :category "org-assistant")
+
+  (gptel-make-tool
+   :name "assistant-create-agenda-item"
+   :function (lambda (title)
+               (ubercapture title t
+                            (format-time-string "%Y-%m-%d")
+                            '(("CREATED_BY" . "AI_ASSISTANT"))))
+   :description "Creates a new item in the agenda"
+   :args (list '(:name "title"
+                 :type string
+                 :description "The title for the item"))
+   :category "org-assistant")
   )
+
+(defun prepend-current-time ()
+  (save-excursion
+    (let ((re "^\\*\\*\\* "))
+      (if (re-search-backward re nil t)
+          (progn
+            (goto-char (match-beginning 0))
+            (forward-char 4)
+            (insert (format-time-string "%H:%M -- ")))
+        (message "Can't find beginning of prompt")))))
+
+(defun gfredericks-before-gptel-send (&rest args)
+  (if (and (derived-mode-p 'org-mode)
+           (string= "productivity-assistant"
+                    (org-entry-get (point-min) "GFREDERICKS_AI_MODE")))
+      (prepend-current-time)))
+
+(advice-add 'gptel-send :before #'gfredericks-before-gptel-send)
+
+(defun gfredericks-ai-assistant-clock-in ()
+  (interactive)
+  (let ((buffer-end (buffer-substring-no-properties (- (point-max) 5) (point-max))))
+    (unless (string-equal buffer-end "*** \n")
+      (error "Failed to clock in"))
+    (goto-char (- (point-max) 1)))
+  (insert "CLOCK IN")
+  (gptel-send)
+  (save-buffer))
+
+(defun gfredericks-ai-assistant-clock-out ()
+  (interactive)
+  (let ((buffer-end (buffer-substring-no-properties (- (point-max) 5) (point-max))))
+    (unless (string-equal buffer-end "*** \n")
+      (error "Failed to clock out"))
+    (goto-char (- (point-max) 1)))
+  (insert "CLOCK OUT")
+  (prepend-current-time)
+  (end-of-buffer)
+  (insert "\n*** ")
+  (save-buffer))
+
+;; NOCOMMIT: I don't think we want this, but rather the two define-keys below
+;; (defun gfredericks-ai-assistant-clocking-functions ()
+;;   (local-set-key (kbd "C-c C-x C-i") 'gfredericks-ai-assistant-clock-in)
+;;   (local-set-key (kbd "C-c C-x C-o") 'gfredericks-ai-assistant-clock-out))
+;; (add-hook 'gptel-mode-hook 'gfredericks-ai-assistant-clocking-functions)
+
+(define-key gptel-mode-map (kbd "C-c C-x C-i") 'gfredericks-ai-assistant-clock-in)
+(define-key gptel-mode-map (kbd "C-c C-x C-o") 'gfredericks-ai-assistant-clock-out)
+
+
+(defun is-codex-running? (buffer-name)
+  (interactive)
+  "Returns true if the buffer given by buffer-name has the texts
+   \"Working\" and \"Esc to interrupt\" on its last line."
+  (with-current-buffer buffer-name
+    (save-excursion
+      (goto-char (point-max))
+      (let ((last-line (thing-at-point 'line t)))
+        (and (string-match "Working" last-line) t)))))
