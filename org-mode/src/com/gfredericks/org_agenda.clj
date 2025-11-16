@@ -890,24 +890,28 @@
             free-ungrouped (get free-grouped nil)]
         (doseq [[title todos render-inactionability?]
                 (concat
-                 (for [[section todos] (merge-with concat
-                                                   grouped
-                                                   (dissoc free-grouped nil))
-                       :when (not (nil? section))]
-                   [section todos true])
+                 (sort
+                  (for [[section todos] (merge-with concat
+                                                    grouped
+                                                    (dissoc free-grouped nil))
+                        :when (not (nil? section))]
+                    [section todos true]))
                  [["FREE" free-ungrouped true]
-                  ["TODAY" (:frontlog-today agenda) true]
-                  ["LATER" (:frontlog-later agenda) false]
-                  ["TRIAGE" (get grouped nil) false]])
+                  ["TODAY" (:frontlog-today agenda) true]])
+                :let [todos (filter :todo todos)]]
+          (print-todos-with-header todos title {:show-scheduled-date? false
+                                                :render-inactionability? render-inactionability?}))
+        (println (header "CALENDAR"))
+        (-> agenda
+            :calendar-events
+            (print-calendar))
+        (println)
+        (doseq [[title todos render-inactionability?]
+                [["LATER" (:frontlog-later agenda) false]
+                 ["TRIAGE" (get grouped nil) false]]
                 :let [todos (filter :todo todos)]]
           (print-todos-with-header todos title {:show-scheduled-date? false
                                                 :render-inactionability? render-inactionability?})))
-
-
-      (println (header "CALENDAR"))
-      (-> agenda
-          :calendar-events
-          (print-calendar))
 
       (when (seq backlog)
         (println "\n\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓")

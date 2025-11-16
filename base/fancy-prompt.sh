@@ -10,7 +10,7 @@ function timer_start {
 }
 
 function timer_stop {
-    the_seconds=$(($SECONDS - $timer))
+    the_seconds=$(($SECONDS - ${timer:-0}))
 
     __last_stopped_at=$SECONDS
 

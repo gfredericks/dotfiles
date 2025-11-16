@@ -58,3 +58,9 @@ for file in "$HOOKSDIR"/pre-commit.*; do
         fi
     fi
 done
+
+# I guess if I wanted to be really sane I'd add files in ~/.githooks
+# for all the other hook types as well
+if [[ -x .git/hooks/pre-commit ]]; then
+    .git/hooks/pre-commit
+fi
