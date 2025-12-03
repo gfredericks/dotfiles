@@ -60,16 +60,22 @@
 (add-hook 'gptel-post-response-functions 'gptel-end-of-response)
 
 (defun gfredericks-assistant-get-agenda ()
-  (with-current-buffer "agenda.org"
-    (goto-char (point-min))
-    ;; now go to the next occurrence of "Items"
-    (search-forward "Items" nil t)
-    (forward-line 2)
-    (let ((start (point)))
-      (search-forward " LATER ")
-      (beginning-of-line)
-      (let ((end (point)))
-        (buffer-substring-no-properties start end)))))
+  (concat (with-current-buffer "agenda.org"
+            (goto-char (point-min))
+            ;; now go to the next occurrence of "Items"
+            (re-search-forward " \\(FREE\\|MUSTDO\\) ")
+            (forward-line 2)
+            (let ((start (point)))
+              (search-forward " LATER ")
+              (beginning-of-line)
+              (let ((end (point)))
+                (buffer-substring-no-properties start end))))
+          "\n\n IN PROGRESS ITEMS:\n\n"
+          (with-current-buffer "context.org"
+            (goto-char (point-min))
+            (search-forward ";;;;;")
+            (forward-line -1)
+            (buffer-substring-no-properties (point-min) (point)))))
 
 (defun follow-only-matching-org-link (substring)
   "Searches the current buffer for lines containing the given SUBSTRING.
@@ -343,3 +349,13 @@ follow the Org link on that line."
       (goto-char (point-max))
       (let ((last-line (thing-at-point 'line t)))
         (and (string-match "Working" last-line) t)))))
+
+(defun is-bash-running? (buffer-name)
+  (interactive)
+  "Returns true if the buffer given by buffer-name has the text
+   \"$ \" on its last line"
+  (with-current-buffer buffer-name
+    (save-excursion
+      (goto-char (point-max))
+      (let ((last-line (thing-at-point 'line t)))
+        (not (string-match-p "^\\$[ \t\r\n]*$" last-line))))))

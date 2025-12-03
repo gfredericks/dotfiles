@@ -1020,9 +1020,7 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 
 (defun in-progress ()
   (interactive)
-  (if (member "in_progress" (org-get-tags))
-      (org-toggle-tag "in_progress" 'off)
-    (org-toggle-tag "in_progress" 'on)))
+  (org-set-property "IN_PROGRESS" "t"))
 
 (defun in-progress-blocked ()
   (interactive)
@@ -1055,3 +1053,19 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
                       "["
                       (org-read-date nil nil nil "Enter new value for BLOCKED_UNTIL: ")
                       "]"))))))
+
+(defun blocked-for (duration)
+  (interactive (list (read-string "Enter duration (e.g., 5m, 3h, 2h10m, 42) (defaults to minutes): ")))
+  (let ((now (current-time))
+        (minutes 0)
+        (hours 0))
+    (if (string-match "\\([0-9]+\\)h" duration)
+        (setq hours (string-to-number (match-string 1 duration))))
+    (if (string-match "\\([0-9]+\\)m" duration)
+        (setq minutes (string-to-number (match-string 1 duration))))
+    (if (and (> (length duration) 0) (string-match "^[0-9]+$" duration))
+        (setq minutes (string-to-number duration)))
+    (let* ((seconds (+ (* hours 3600) (* minutes 60)))
+           (blocked-until-time (time-add now (seconds-to-time seconds)))
+           (formatted-time (format-time-string (org-time-stamp-format t t) blocked-until-time)))
+      (org-entry-put nil "BLOCKED_UNTIL" formatted-time))))
