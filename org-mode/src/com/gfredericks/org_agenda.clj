@@ -131,17 +131,24 @@
 
 (defn find-first-unchecked-item
   [lines]
-  (loop [current nil
-         min-indent 0
-         lines lines]
-    (if-let [line (first lines)]
-      (if-let [[_ indent item] (re-matches #"(\s*)- \[ \] (.*)" line)]
-        (let [indent' (count indent)]
-          (if (< indent' min-indent)
-            current
-            (recur item indent' (rest lines))))
-        (recur current min-indent (rest lines)))
-      current)))
+  (let [parse-checkbox-line
+        (fn [line]
+          (if-let [[_ indent flag text] (re-matches #"(\s*)- \[([- X])\] (.*)" line)]
+            {:state ({" " :todo, "-" :in-progress, "X" :done} flag)
+             :text text
+             :indent (count indent)}))]
+    (:text
+     (reduce (fn [current-item item]
+               (if current-item
+                 (if (<= (:indent item) (:indent current-item))
+                   (reduced current-item)
+                   (if (= (:state item) :todo)
+                     item
+                     current-item))
+                 (if (= :todo (:state item))
+                   item)))
+             nil
+             (keep parse-checkbox-line lines)))))
 
 (defn timestamp-finder
   [context-regex-format-string]

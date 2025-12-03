@@ -33,7 +33,10 @@
                                    (:deadlines agenda-data)))
         in-progress (->> items
                          (filter #(= "TODO" (:todo %)))
-                         (filter #(contains? (:own-tags %) "in_progress"))
+                         (filter #(->> (:props-with-ancestors %)
+                                       (keep (fn [m] (get m "IN_PROGRESS")))
+                                       (first)
+                                       (= "t")))
                          (map (fn [{:keys [own-properties first-unchecked-item header] :as item}]
                                 (let [blocked-until-raw (get own-properties "BLOCKED_UNTIL")
                                       blocked-until (some-> blocked-until-raw parse-org-datetime)
@@ -74,6 +77,7 @@
                                                             (first))
                                                        (->> (cond->> (->> (:ancestor-headers item)
                                                                           (rest)
+                                                                          (reverse)
                                                                           (map (fn [s]
                                                                                  (second (re-matches #"\*+ (?:TODO )?(.*?)((  +:(\w+:)+)$)?" s)))))
                                                               first-unchecked-item
