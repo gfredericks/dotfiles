@@ -978,7 +978,7 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (interactive "sDuration: \n")
   (org-insert-heading-respect-content)
   (org-demote-subtree)
-  (insert "TODO Work on this for " duration)
+  (insert (format "TODO Do %s of" duration))
   (custom-id)
   (org-set-property "Effort" duration)
   (display-parent-header))
