@@ -2,17 +2,12 @@
 
 set -Eeou pipefail
 
-if [[ -n "${SKIP_NO_COMMIT_CHECK:-}" ]]; then
-    echo >&2 "Skipping NO""COMMIT check"
-    exit 0
-fi
-
 NO_COMMIT_IS_RUNNING=$(mktemp)
 
 (
     sleep 3
     if [[ -f "$NO_COMMIT_IS_RUNNING" ]]; then
-        echo "(to skip the NO ""COMMIT check, set SKIP_NO_COMMIT_CHECK=1)"
+        echo "(to skip the NO ""COMMIT check, run git commit with -n)"
         rm -f "$NO_COMMIT_IS_RUNNING"
     fi
 ) &

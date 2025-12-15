@@ -21,7 +21,8 @@
 ;; (gptel-make-gemini "Gemini"
 ;;   :key (getenv "GEMINI_API_KEY")
 ;;   :stream t)
-(setq gptel-model 'gpt-4.1)
+
+(setq gptel-model 'gpt-5)
 
 (defun gfredericks-gptel-mode-external-system-message ()
   (save-excursion

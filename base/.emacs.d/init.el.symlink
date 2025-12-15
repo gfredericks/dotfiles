@@ -11,6 +11,11 @@
 ;; Commented because it gets run in user/gfredericks-packages.el
 ;; (package-initialize)
 
+;; why do I need to do this? otherwise I get an error somewhere
+;; about something trying to use -when-let, but I don't know what
+;; it is
+(require 'dash)
+
 (let ((user-init-dir (concat user-emacs-directory "user/")))
   (add-to-list 'load-path user-init-dir)
   (dolist (file (sort (directory-files user-init-dir nil "^.*\\.el$") 'string<))
