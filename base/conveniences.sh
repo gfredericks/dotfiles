@@ -20,25 +20,31 @@ alias pd="pushd"
 alias dp="popd"
 
 _find_root_of_git_dir(){
-  (
-    while [[ (! -e .git) && "$PWD" != / ]]; do
-        cd ..
-    done
-
-    if [[ "$PWD" != / ]]; then
-        echo "$PWD"
-    fi
-  )
+    git rev-parse --show-toplevel 2>/dev/null
 }
 gcd(){
-  ROOT_OF_GIT_DIR="$(_find_root_of_git_dir)"
-  if [[ -n "$ROOT_OF_GIT_DIR" ]]; then
-    cd "$ROOT_OF_GIT_DIR"
-  else
-    echo "Not in a git repo"\!
-    return 1
-  fi
+    ROOT_OF_GIT_DIR="$(_find_root_of_git_dir)"
+    if [[ -n "$ROOT_OF_GIT_DIR" ]]; then
+        cd "$ROOT_OF_GIT_DIR"
+        [ -n "$1" ] && cd "$1"
+    else
+        echo "Not in a git repo"\!
+        return 1
+    fi
 }
+
+_gcd_completion() {
+    local cur
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    local repo_root
+    repo_root=$(_find_root_of_git_dir)
+    if [ -n "$repo_root" ]; then
+        COMPREPLY=($(cd "$repo_root" && compgen -d -- "$cur"))
+    fi
+}
+
+complete -F _gcd_completion gcd
+
 
 # git shortcuts
 alias gs="git status"
