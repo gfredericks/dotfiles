@@ -39,11 +39,12 @@ _gcd_completion() {
     local repo_root
     repo_root=$(_find_root_of_git_dir)
     if [ -n "$repo_root" ]; then
-        COMPREPLY=($(cd "$repo_root" && compgen -d -- "$cur"))
+        local IFS=$'\n'
+        COMPREPLY=($(cd "$repo_root" && compgen -S "/" -d -- "$cur"))
     fi
 }
 
-complete -F _gcd_completion gcd
+complete -o nospace -F _gcd_completion gcd
 
 
 # git shortcuts
