@@ -283,7 +283,7 @@
                     :header             header
                     :agenda-header      (if (contains? properties "DISPLAY_PARENT_HEADER")
                                           (if-let [ah (last ancestor-headers)]
-                                            (format "%s ~ %s"
+                                            (format "%s  ⬤  %s"
                                                     header
                                                     (-> ah parse-header :rest remove-tags))
                                             header)
