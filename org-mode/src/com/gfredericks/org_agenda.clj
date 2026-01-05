@@ -129,6 +129,27 @@
                             ::org/line-number (::org/line-number (meta %))
                             ::filewide-category filewide-category)))))))
 
+(defn find-first-unchecked-item
+  [lines]
+  (let [parse-checkbox-line
+        (fn [line]
+          (if-let [[_ indent flag text] (re-matches #"(\s*)- \[([- X])\] (.*)" line)]
+            {:state ({" " :todo, "-" :in-progress, "X" :done} flag)
+             :text text
+             :indent (count indent)}))]
+    (:text
+     (reduce (fn [current-item item]
+               (if current-item
+                 (if (<= (:indent item) (:indent current-item))
+                   (reduced current-item)
+                   (if (= (:state item) :todo)
+                     item
+                     current-item))
+                 (if (= :todo (:state item))
+                   item)))
+             nil
+             (keep parse-checkbox-line lines)))))
+
 (defn timestamp-finder
   [context-regex-format-string]
   (let [pattern (re-pattern (format context-regex-format-string org-timestamp-regex))]
@@ -276,6 +297,7 @@
             created-at (:base (get-timestamp created-at-finder false false))
             scheduled-repeater? (:repeater scheduled)
             deadline-repeater? (:repeater deadline)
+            first-unchecked-item (find-first-unchecked-item prelude)
             base (with-meta
                    {:todo               (if (contains? DONE-states todo) nil todo)
                     :done               (if (contains? DONE-states todo) todo)
@@ -335,12 +357,14 @@
                                               100)))
                     :inactionable-before (some-> (get properties "INACTIONABLE_BEFORE")
                                                  (LocalTime/parse))
+                    :props-with-ancestors props-with-ancestors
                     :properties         properties
                     :tags               tags
                     :own-tags           (set (first tags-with-ancestors))
                     :own-properties     properties
                     :effort             effort
-                    :repeat?            (or scheduled-repeater? deadline-repeater?)}
+                    :repeat?            (or scheduled-repeater? deadline-repeater?)
+                    :first-unchecked-item first-unchecked-item}
                    {:raw-section section})
             base (assoc base :updated-at (updated-at base logbook-timestamps))
             date-range (->> prelude
