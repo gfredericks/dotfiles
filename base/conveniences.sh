@@ -23,13 +23,17 @@ _find_root_of_git_dir(){
     git rev-parse --show-toplevel 2>/dev/null
 }
 gcd(){
-    ROOT_OF_GIT_DIR="$(_find_root_of_git_dir)"
-    if [[ -n "$ROOT_OF_GIT_DIR" ]]; then
-        cd "$ROOT_OF_GIT_DIR"
-        [ -n "$1" ] && cd "$1"
-    else
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         echo "Not in a git repo"\!
         return 1
+    fi
+
+    local cdup
+    cdup=$(git rev-parse --show-cdup)
+
+    cd "${cdup:-.}" || return
+    if [[ -n "$1" ]]; then
+        cd "$1" || return
     fi
 }
 
