@@ -210,7 +210,7 @@
       agenda-date-range-pattern
       #"<(\d{4}-\d\d-\d\d)(?: \w\w\w)?>--<(\d{4}-\d\d-\d\d)(?: \w\w\w)?>"
 
-]
+      ]
   (defn parse-section-for-agenda*
     [{::org/keys           [header prelude sections line-number]
       ::keys [tags-with-ancestors props-with-ancestors ancestor-headers filewide-category]
