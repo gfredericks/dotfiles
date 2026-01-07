@@ -799,10 +799,6 @@
                             (printf "       %s   %s\n"
                                     (green ">>")
                                     fn))
-                          (when-let [ai-notes (get properties "AI_ASSISTANT_NOTES")]
-                            (printf "       %s   AI ASSISTANT NOTES: %s\n"
-                                    (blue ">>")
-                                    ai-notes))
                           (when (= "t" (get properties "DEBUG"))
                             (clojure.pprint/pprint item)))
         print-todos-with-header (fn [todos header-text opts]

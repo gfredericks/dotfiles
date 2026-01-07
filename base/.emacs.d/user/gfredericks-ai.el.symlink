@@ -243,27 +243,6 @@ follow the Org link on that line."
                        :description "A plain-english description of the activity (without timestamp)"))
    :category "org-assistant")
 
-  (gptel-make-tool
-   :name "assistant-set-notes"
-   :function (lambda (item-substring notes)
-               (save-window-excursion
-                 (save-excursion
-                   (with-temp-buffer
-                     (org-mode)
-                     (insert (gfredericks-assistant-get-agenda))
-                     (follow-only-matching-org-link item-substring)
-                     (org-set-property "AI_ASSISTANT_NOTES" notes)
-                     (save-buffer))))
-               (concat "Successfully added note: " notes))
-   :description "Saves the given notes for the specific agenda item"
-   :args (list '(:name "item-substring"
-                       :type string
-                       :description "A unique substring of an agenda item")
-               '(:name "notes"
-                       :type string
-                       :description "Arbitrary notes"))
-   :category "org-assistant")
-
   ;; NOCOMMIT: delete this
   (gptel-make-tool
    :name "assistant-read-recent-activity-log"
