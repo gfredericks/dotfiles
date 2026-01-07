@@ -23,7 +23,6 @@
 ;;   :stream t)
 
 (setq gptel-model 'gpt-5)
-
 (defun gfredericks-gptel-mode-external-system-message ()
   (save-excursion
     (goto-char (point-min))
