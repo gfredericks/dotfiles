@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -Eeou pipefail
+
+if [ "$#" -lt 2 ]; then
+  echo "Usage: $0 timestamp command..." 1>&2
+  exit 1
+fi
+
+timestamp="$1"
+shift
+
+now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+set +e
+"$@"
+rc=$?
+set -e
+
+if [[ "$rc" -gt 0 ]] && [[ "$now" > "$timestamp" ]]; then
+    echo "timed out waiting for $@"
+    exit 0
+fi
+
+exit "$rc"
