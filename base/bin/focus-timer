@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+
+import time
+import sys
+import select
+
+# Check if the '-h' argument is supplied
+half_speed = '-h' in sys.argv
+
+def calculate_time_elapsed(start_time, adjust_seconds):
+    current_time = time.time() - start_time
+    adjusted_time = current_time * (0.5 if half_speed else 1) - adjust_seconds
+    return adjusted_time
+
+def formatted_time(secs):
+    hours = int(secs / 3600)
+    minutes = int((secs % 3600) / 60)
+    seconds = int(secs % 60)
+    return "{:02d}:{:02d}:{:02d}".format(hours, minutes, seconds)
+
+start = time.time()
+adjust_seconds = 0
+
+while True:
+    time.sleep(0.047)
+
+    # Check if there is any key pressed
+    if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+        input = sys.stdin.readline()
+        adjust_seconds += 60  # Deduct a minute if Enter key is pressed
+
+    elapsed_time = calculate_time_elapsed(start, adjust_seconds)
+
+    print("\r" + formatted_time(max(0, elapsed_time)), end="")
