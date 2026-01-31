@@ -21,14 +21,17 @@ def formatted_time(secs):
 start = time.time()
 adjust_seconds = 0
 
-while True:
-    time.sleep(0.047)
+try:
+    while True:
+        time.sleep(0.047)
 
-    # Check if there is any key pressed
-    if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-        input = sys.stdin.readline()
-        adjust_seconds += 60  # Deduct a minute if Enter key is pressed
+        # Check if there is any key pressed
+        if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+            input = sys.stdin.readline()
+            adjust_seconds += 60  # Deduct a minute if Enter key is pressed
 
-    elapsed_time = calculate_time_elapsed(start, adjust_seconds)
+        elapsed_time = calculate_time_elapsed(start, adjust_seconds)
 
-    print("\r" + formatted_time(max(0, elapsed_time)), end="")
+        print("\r" + formatted_time(max(0, elapsed_time)), end="")
+except KeyboardInterrupt:
+    print("\nOk!")
