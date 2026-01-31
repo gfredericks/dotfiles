@@ -240,6 +240,33 @@
         (setq end (point))
         (cons start end)))))
 
+(defun my-format-time-delta (delta-seconds)
+  "Return a human-readable description of DELTA-SECONDS.
+Uses coarse units (years through minutes) and at most two components."
+  (let* ((abs-seconds (abs delta-seconds))
+         (direction (if (> delta-seconds 0) "from now" "ago")))
+    (if (< abs-seconds 60)
+        (format "about <1m %s" direction)
+      (let ((units '((31536000 . "y")
+                     (2592000 . "mo")
+                     (604800 . "w")
+                     (86400 . "d")
+                     (3600 . "h")
+                     (60 . "m")))
+            (parts '())
+            (remaining abs-seconds))
+        (dolist (unit units)
+          (when (and (< (length parts) 2)
+                     (>= remaining (car unit)))
+            (let ((count (floor (/ remaining (car unit)))))
+              (when (> count 0)
+                (push (format "%d%s" count (cdr unit)) parts)
+                (setq remaining (- remaining (* count (car unit))))))))
+        (let ((formatted (if (null parts)
+                             "1m"
+                           (mapconcat #'identity (nreverse parts) ""))))
+          (format "about %s %s" formatted direction)))))
+
 (defun analyze-timestamp (&optional local-is-chicago)
   "Parse either an epoch integer or an ISO-8601 timestamp around point.
    Prints info about it in the minibuffer:
@@ -265,20 +292,21 @@
          (chicago-tz (current-time-zone epoch-time "America/Chicago"))
          (london-tz (current-time-zone epoch-time "Europe/London")))
     (if epoch-time
-        (let ((utc-time (format-time-string "%Y-%m-%dT%H:%M:%SZ" (seconds-to-time epoch-time) t))
-              (chicago-time (format-time-string "%Y-%m-%dT%H:%M:%S[America/Chicago]"
+        (let* ((utc-time (format-time-string "%Y-%m-%dT%H:%M:%SZ" (seconds-to-time epoch-time) t))
+               (chicago-time (format-time-string "%Y-%m-%dT%H:%M:%S[America/Chicago]"
+                                                 (seconds-to-time epoch-time)
+                                                 chicago-tz))
+               (london-time (format-time-string "%Y-%m-%dT%H:%M:%S[Europe/London]"
                                                 (seconds-to-time epoch-time)
-                                                chicago-tz))
-              (london-time (format-time-string "%Y-%m-%dT%H:%M:%S[Europe/London]"
-                                               (seconds-to-time epoch-time)
-                                               london-tz)))
+                                                london-tz))
+               (delta-description (my-format-time-delta (- epoch-time (float-time)))))
           ;; Put UTC time on the kill ring
           (kill-new utc-time)
           ;; Running this asynchronously because otherwise I don't see
           ;; it in the minibuffer for some reason
           (run-at-time "100 millisec" nil 'message
-                       "%s %s %s %d"
-                       utc-time chicago-time london-time (floor epoch-time)))
+                       "%s %s %s %d %s"
+                       utc-time chicago-time london-time (floor epoch-time) delta-description))
       (message "Invalid timestamp format"))))
 
 (defun gfredericks-goto-line (input)
