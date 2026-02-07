@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-for d in ~/tmp ~/Downloads ~/trash; do
+for d in ~/tmp ~/Downloads; do
     if [[ -d "$d" ]]; then
         # the -mindepth 1 prevents it from deleting the top level
         # directory; the maxdepth means we only delete whole
