@@ -309,6 +309,10 @@ Uses coarse units (years through minutes) and at most two components."
                        utc-time chicago-time london-time (floor epoch-time) delta-description))
       (message "Invalid timestamp format"))))
 
+(defun inst ()
+  (interactive)
+  (insert (format-time-string "%Y-%m-%dT%H:%M:%SZ" (current-time) t)))
+
 (defun gfredericks-goto-line (input)
   "Move to a specific line or a relative number of lines based on INPUT.
 If INPUT starts with '+' or '-', move relative to the current line.
