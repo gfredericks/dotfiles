@@ -349,3 +349,41 @@
       2/5 [:a :b]
       1/2 [:a :b :d]
       2/3 [:a :b :d :e])))
+
+(deftest agenda-frontlog-section-excluded-from-effort-queue
+  (let [now (ZonedDateTime/of 2023 4 5 7 37 15 0 oa/CHICAGO)
+        header-line (fn [title]
+                      (format "═════════✦ %s ✦═════════" title))
+        section-text (fn [agenda title next-title]
+                       (let [header (header-line title)
+                             start (.indexOf agenda header)]
+                         (is (not= -1 start)
+                             (format "Missing %s header" title))
+                         (let [after (+ start (count header) 1)
+                               end (if next-title
+                                     (let [next-header (header-line next-title)
+                                           idx (.indexOf agenda next-header)]
+                                       (is (not= -1 idx)
+                                           (format "Missing %s header" next-title))
+                                       idx)
+                                     (count agenda))]
+                           (subs agenda after end))))]
+    (do-integration
+     {"only-file.org"
+      (lines
+       "* TODO Hidden from queue"
+       "  :PROPERTIES:"
+       "  :Effort: 0:30"
+       "  :AGENDA_FRONTLOG_SECTION: Special"
+       "  :END:"
+       "* TODO Normal item"
+       "  :PROPERTIES:"
+       "  :Effort: 0:15"
+       "  :END:")}
+     now
+     (fn [agenda]
+       (let [today (section-text agenda "TODAY" "CALENDAR")
+             later (section-text agenda "LATER" "TRIAGE")]
+         (is (re-find #"TODO Normal item" today))
+         (is (not (re-find #"TODO Hidden from queue" today)))
+         (is (not (re-find #"TODO Hidden from queue" later))))))))
