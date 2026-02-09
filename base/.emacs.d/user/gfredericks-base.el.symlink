@@ -305,34 +305,57 @@ of fractional-second digits to display (clamped between 0 and 9)."
    - Epoch integer, in the lowest faithful resolution
    Additionally, it puts the UTC form on the kill ring."
   (interactive "P")
-  (let* (;;(bounds (bounds-of-thing-at-point 'symbol))
-         (bounds (my-find-timestamp-bounds))
+  (let* ((bounds (my-find-timestamp-bounds))
          (timestamp (buffer-substring-no-properties (car bounds) (cdr bounds)))
          (_ (message "DEBUG: Handling %s via %s" timestamp bounds))
-         (epoch-time (if (string-match-p "^[0-9]+$" timestamp)
-                         ;; TODO: support millis/etc. better, I guess
-                         (string-to-number (my-truncate-ts-to-seconds timestamp))
-                       (ignore-errors
-                         (let ((adjusted-timestamp (if (and (not (string-suffix-p "Z" timestamp))
-                                                            (not local-is-chicago))
-                                                       (concat timestamp "Z")
-                                                     timestamp)))
-                           (float-time (date-to-time adjusted-timestamp))))))
-         (chicago-tz (current-time-zone epoch-time "America/Chicago"))
-         (london-tz (current-time-zone epoch-time "Europe/London")))
+         (prefix-num (and prefix (prefix-numeric-value prefix)))
+         (insert-mode (cond
+                       ((null prefix) nil)
+                       ((= (or prefix-num 0) 4) 'utc)
+                       ((= (or prefix-num 0) 16) 'chicago)
+                       (t nil)))
+         (timestamp-is-digits (string-match-p "^[0-9]+$" timestamp))
+         (fraction-digits (cond
+                           (timestamp-is-digits
+                            (min 9 (max 0 (- (length timestamp) 10))))
+                           ((string-match "\\.\\([0-9]+\\)" timestamp)
+                            (min 9 (length (match-string 1 timestamp))))
+                           (t 0)))
+         (epoch-time
+          (if timestamp-is-digits
+              (let* ((len (length timestamp))
+                     (scale (expt 10 (max 0 (- len 10))))
+                     (num (string-to-number timestamp)))
+                (if (> len 10)
+                    (/ num (float scale))
+                  num))
+            (ignore-errors
+              (let* ((has-zone (or (string-match-p "[zZ]\\'" timestamp)
+                                   (string-match-p "[+-][0-9][0-9]:?[0-9][0-9]\\'" timestamp)))
+                     (adjusted (if has-zone timestamp (concat timestamp "Z"))))
+                (float-time (date-to-time adjusted))))))
+         (time-object (and epoch-time (seconds-to-time epoch-time)))
+         (chicago-tz (and epoch-time (current-time-zone epoch-time "America/Chicago")))
+         (london-tz (and epoch-time (current-time-zone epoch-time "Europe/London"))))
     (if epoch-time
-        (let* ((utc-time (format-time-string "%Y-%m-%dT%H:%M:%SZ" (seconds-to-time epoch-time) t))
+        (let* ((utc-time (my-format-iso8601 time-object t fraction-digits))
                (chicago-time (format-time-string "%Y-%m-%dT%H:%M:%S[America/Chicago]"
-                                                 (seconds-to-time epoch-time)
+                                                 time-object
                                                  chicago-tz))
                (london-time (format-time-string "%Y-%m-%dT%H:%M:%S[Europe/London]"
-                                                (seconds-to-time epoch-time)
+                                                time-object
                                                 london-tz))
-               (delta-description (my-format-time-delta (- epoch-time (float-time)))))
-          ;; Put UTC time on the kill ring
+               (delta-description (my-format-time-delta (- epoch-time (float-time))))
+               (insertion-text
+                (cond
+                 ((eq insert-mode 'utc) utc-time)
+                 ((eq insert-mode 'chicago)
+                  (my-format-iso8601 time-object chicago-tz fraction-digits))
+                 (t nil))))
+          (when insertion-text
+            (goto-char (cdr bounds))
+            (insert (format "(%s)" insertion-text)))
           (kill-new utc-time)
-          ;; Running this asynchronously because otherwise I don't see
-          ;; it in the minibuffer for some reason
           (run-at-time "100 millisec" nil 'message
                        "%s %s %s %d %s"
                        utc-time chicago-time london-time (floor epoch-time) delta-description))
