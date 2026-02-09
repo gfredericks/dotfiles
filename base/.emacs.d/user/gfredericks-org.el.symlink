@@ -1073,9 +1073,14 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
                                         "is-codex-running -i '%s'"
                                       "is-bash-running -i '%s'")))
                 (format format-string buffer-name))))))
-         (duration-string (if numeric-input?
-                              initial-duration
-                            (read-string "Enter duration (e.g., 5m, 3h, 2h10m, 42) (defaults to minutes): ")))
+         (raw-duration-string (if numeric-input?
+                                  initial-duration
+                                (read-string "Enter duration (e.g., 5m, 3h, 2h10m, 42) (defaults to minutes): ")))
+         (duration-string (if (and (member blocking-type '("bash" "codex"))
+                                   raw-duration-string
+                                   (= (length raw-duration-string) 0))
+                              "30m"
+                            raw-duration-string))
          (future-time (blocked--compute-future-time duration-string))
          (future-iso (format-time-string "%Y-%m-%dT%H:%M:%SZ" future-time t)))
     (org-entry-put nil "BLOCKED_SCRIPT"
