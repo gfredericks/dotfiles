@@ -940,14 +940,16 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 
 (defun gfredericks-restore-point-and-set-colors ()
   (gfredericks-apply-ansi-colors)
-  (run-at-time 0.01 nil
-               (lambda (window buffer)
-                 (with-current-buffer buffer
-                   (goto-line (nth 0 gfredericks-agenda-position))
-                   (move-to-column (nth 1 gfredericks-agenda-position))
-                   (set-window-start window (nth 2 gfredericks-agenda-position))))
-               (get-buffer-window (current-buffer))
-               (current-buffer)))
+  ;; this really doesn't work that well
+  ;; (run-at-time 0.01 nil
+  ;;              (lambda (window buffer)
+  ;;                (with-current-buffer buffer
+  ;;                  (goto-line (nth 0 gfredericks-agenda-position))
+  ;;                  (move-to-column (nth 1 gfredericks-agenda-position))
+  ;;                  (set-window-start window (nth 2 gfredericks-agenda-position))))
+  ;;              (get-buffer-window (current-buffer))
+  ;;              (current-buffer))
+  )
 
 (defun gfredericks-agenda-mode-setup ()
   (gfredericks-apply-ansi-colors)
