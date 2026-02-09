@@ -1109,10 +1109,11 @@
                                      :file
                                      :line-number)))
         [frontlog frontlog-free] ((juxt filter remove) :effort frontlog)
+        frontlog-for-queue (remove :agenda-frontlog-section frontlog)
         [frontlog-free triage] ((juxt filter remove) :scheduled frontlog-free)
 
         [frontlog-today frontlog-later]
-        (split-frontlog-by-effort frontlog
+        (split-frontlog-by-effort frontlog-for-queue
                                   ((:frontlog-effort-proportion cfg) today))
 
         sort-key (juxt (comp - priority) :created-at :file :line-number)]
