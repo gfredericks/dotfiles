@@ -267,7 +267,36 @@ Uses coarse units (years through minutes) and at most two components."
                            (mapconcat #'identity (nreverse parts) ""))))
           (format "about %s %s" formatted direction)))))
 
-(defun analyze-timestamp (&optional local-is-chicago)
+(defun my-format-iso8601 (time timezone digits)
+  "Format TIME (as returned by `seconds-to-time') in ISO-8601.
+TIMEZONE is passed to `format-time-string'. DIGITS controls the number
+of fractional-second digits to display (clamped between 0 and 9)."
+  (let* ((clamped-digits (min (max digits 0) 9))
+         (base (format-time-string "%Y-%m-%dT%H:%M:%S" time timezone))
+         (fraction
+          (if (> clamped-digits 0)
+              (let ((ns (format-time-string "%N" time timezone)))
+                (substring ns 0 clamped-digits))
+            ""))
+         (offset
+          (if (eq timezone t)
+              "Z"
+            (let* ((offset-str (format-time-string "%z" time timezone))
+                   (sign (substring offset-str 0 1))
+                   (hours (substring offset-str 1 3))
+                   (minutes (substring offset-str 3 5)))
+              (if (and (string-match-p "[+-]" sign)
+                       (string= hours "00")
+                       (string= minutes "00"))
+                  "Z"
+                (format "%s%s:%s" sign hours minutes))))))
+    (concat base
+            (if (> (length fraction) 0)
+                (concat "." fraction)
+              "")
+            offset))
+
+(defun analyze-timestamp (prefix)
   "Parse either an epoch integer or an ISO-8601 timestamp around point.
    Prints info about it in the minibuffer:
    - Chicago local time
