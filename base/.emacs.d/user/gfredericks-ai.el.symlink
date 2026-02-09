@@ -22,3 +22,24 @@
 ;;   :key (getenv "GEMINI_API_KEY")
 ;;   :stream t)
 (setq gptel-model 'gpt-5)
+
+
+(defun is-codex-running? (buffer-name)
+  (interactive)
+  "Returns true if the buffer given by buffer-name has the texts
+   \"Working\" and \"Esc to interrupt\" on its last line."
+  (with-current-buffer buffer-name
+    (save-excursion
+      (goto-char (point-max))
+      (let ((last-line (thing-at-point 'line t)))
+        (and (string-match "Working" last-line) t)))))
+
+(defun is-bash-running? (buffer-name)
+  (interactive)
+  "Returns true if the buffer given by buffer-name has the text
+   \"$ \" on its last line"
+  (with-current-buffer buffer-name
+    (save-excursion
+      (goto-char (point-max))
+      (let ((last-line (thing-at-point 'line t)))
+        (not (string-match-p "^\\$[ \t\r\n]*$" last-line))))))
