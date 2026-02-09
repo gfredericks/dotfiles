@@ -48,7 +48,7 @@ do
       sudo apt-get install -y tree htop texlive-latex-extra \
            python3-pygments xclip rlwrap xautolock moreutils \
            lilypond entr flameshot net-tools zstd sshfs ncal \
-           inotify-tools jq
+           inotify-tools jq trash-cli
   fi
 
   ###

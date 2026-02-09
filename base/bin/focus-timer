@@ -1,13 +1,29 @@
 #!/usr/bin/env python3
 
-import time
-import sys
+import argparse
 import select
+import sys
+import time
 
-# Check if the '-h' argument is supplied
-half_speed = '-h' in sys.argv
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Simple focus timer with optional half-speed mode.",
+        add_help=False,
+    )
+    parser.add_argument(
+        "-h",
+        "--half-speed",
+        action="store_true",
+        help="run timer at half speed",
+    )
+    parser.add_argument(
+        "--help",
+        action="help",
+        help="show this help message and exit",
+    )
+    return parser.parse_args()
 
-def calculate_time_elapsed(start_time, adjust_seconds):
+def calculate_time_elapsed(start_time, adjust_seconds, half_speed):
     current_time = time.time() - start_time
     adjusted_time = current_time * (0.5 if half_speed else 1) - adjust_seconds
     return adjusted_time
@@ -18,17 +34,21 @@ def formatted_time(secs):
     seconds = int(secs % 60)
     return "{:02d}:{:02d}:{:02d}".format(hours, minutes, seconds)
 
+args = parse_args()
 start = time.time()
 adjust_seconds = 0
 
-while True:
-    time.sleep(0.047)
+try:
+    while True:
+        time.sleep(0.047)
 
-    # Check if there is any key pressed
-    if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-        input = sys.stdin.readline()
-        adjust_seconds += 60  # Deduct a minute if Enter key is pressed
+        # Check if there is any key pressed
+        if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+            sys.stdin.readline()
+            adjust_seconds += 60  # Deduct a minute if Enter key is pressed
 
-    elapsed_time = calculate_time_elapsed(start, adjust_seconds)
+        elapsed_time = calculate_time_elapsed(start, adjust_seconds, args.half_speed)
 
-    print("\r" + formatted_time(max(0, elapsed_time)), end="")
+        print("\r" + formatted_time(max(0, elapsed_time)), end="")
+except KeyboardInterrupt:
+    print("\nOk!")
