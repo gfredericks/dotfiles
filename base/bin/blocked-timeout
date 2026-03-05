@@ -10,16 +10,22 @@ fi
 timestamp="$1"
 shift
 
-now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+if ! deadline_epoch=$(date -d "$timestamp" +%s 2>/dev/null); then
+  echo "Invalid timestamp: $timestamp" 1>&2
+  exit 1
+fi
 
 set +e
 "$@"
 rc=$?
 set -e
 
-if [[ "$rc" -gt 0 ]] && [[ "$now" > "$timestamp" ]]; then
-    echo "timed out waiting for $@"
-    exit 0
+if (( rc > 0 )); then
+    now_epoch=$(date +%s)
+    if (( now_epoch > deadline_epoch )); then
+        echo "timed out waiting for $@"
+        exit 0
+    fi
 fi
 
 exit "$rc"
