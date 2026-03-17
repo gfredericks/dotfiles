@@ -265,7 +265,7 @@ Uses coarse units (years through minutes) and at most two components."
         (let ((formatted (if (null parts)
                              "1m"
                            (mapconcat #'identity (nreverse parts) ""))))
-          (format "about %s %s" formatted direction)))))
+          (format "about %s %s" formatted direction))))))
 
 (defun my-format-iso8601 (time timezone digits)
   "Format TIME (as returned by `seconds-to-time') in ISO-8601.
@@ -294,7 +294,7 @@ of fractional-second digits to display (clamped between 0 and 9)."
             (if (> (length fraction) 0)
                 (concat "." fraction)
               "")
-            offset))
+            offset)))
 
 (defun analyze-timestamp (prefix)
   "Parse either an epoch integer or an ISO-8601 timestamp around point.
