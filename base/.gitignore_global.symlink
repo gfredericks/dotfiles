@@ -10,7 +10,7 @@ gitignored
 /_
 .git-cached-grep-staged-*
 *~
-/.conda*
+.conda
 /.devdir-deprioritize
 .cursorignore
 .cursorrules
