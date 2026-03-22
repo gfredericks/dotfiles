@@ -1,3 +1,8 @@
 #!/usr/bin/env bash
 
-ps -efww | grep "$1" | grep -v "grep $1"
+tmpfile=$(mktemp)
+trap 'rm -f "$tmpfile"' EXIT
+
+ps -efww > "$tmpfile"
+pid=$$
+grep -- "$1" "$tmpfile" | awk -v pid="$pid" '$2 != pid && $3 != pid'
