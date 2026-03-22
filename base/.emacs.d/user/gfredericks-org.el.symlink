@@ -1074,8 +1074,8 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
                    (format "blocked-timeout %s %s" future-iso test))))
 (defun blocked ()
   (interactive)
-  (let* ((blocking-types '("time" "bash" "codex" "update-timeout"))
-         (blocking-type-input (completing-read "Block using (time, bash, codex, update-timeout): "
+  (let* ((blocking-types '("time" "bash" "codex" "pull" "update-timeout"))
+         (blocking-type-input (completing-read "Block using (time, bash, codex, pull, update-timeout): "
                                                blocking-types
                                                nil nil nil nil "time"))
          (blocking-type-input (if (and blocking-type-input
@@ -1107,6 +1107,14 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
               (cond
                ((string-equal blocking-type "time")
                 "false")
+               ((string-equal blocking-type "pull")
+                (let* ((github-org (read-string "GitHub org: "))
+                       (github-repo (read-string "GitHub repo: "))
+                       (pr-number (read-string "PR number: ")))
+                  (format "is-pr-actionable %s %s %s"
+                          github-org
+                          github-repo
+                          pr-number)))
                (t
                 (let ((default-terminal-buffer nil)
                       (terminal-buffer-names '()))
@@ -1129,7 +1137,7 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
                                             "is-codex-running -i '%s'"
                                           "is-bash-running -i '%s'")))
                     (format format-string buffer-name))))))
-             (default-duration (and (member blocking-type '("bash" "codex")) "30m"))
+             (default-duration (and (member blocking-type '("bash" "codex" "pull")) "30m"))
              (duration-string (-gfredericks-blocked--read-duration duration-prompt
                                                                    initial-duration
                                                                    default-duration)))
