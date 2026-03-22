@@ -41,5 +41,8 @@
   (with-current-buffer buffer-name
     (save-excursion
       (goto-char (point-max))
+      ;; At one point I saw thing-at-point always returning a string
+      ;; with just a single newline here and I couldn't figure out
+      ;; why, but now I can't reproduce it anyhow
       (let ((last-line (thing-at-point 'line t)))
         (not (string-match-p "^\\$[ \t\r\n]*$" last-line))))))
