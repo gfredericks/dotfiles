@@ -1022,7 +1022,7 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (interactive)
   (org-set-property "IN_PROGRESS" "t"))
 
-(defun blocked--compute-future-time (duration-string)
+(defun -gfredericks-blocked--compute-future-time (duration-string)
   (let ((hours 0)
         (minutes 0))
     (when (string-match "\\([0-9]+\\)h" duration-string)
@@ -1035,53 +1035,102 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
     (let ((seconds (+ (* hours 3600) (* minutes 60))))
       (time-add (current-time) (seconds-to-time seconds)))))
 
+(defun -gfredericks-blocked--future-iso-from-duration (duration-string)
+  (format-time-string "%Y-%m-%dT%H:%M:%SZ"
+                      (-gfredericks-blocked--compute-future-time duration-string)
+                      t))
+
+(defun -gfredericks-blocked--read-duration (prompt &optional initial-duration default-duration)
+  (let ((raw-duration (if initial-duration
+                          initial-duration
+                        (read-string prompt))))
+    (if (and default-duration
+             raw-duration
+             (= (length raw-duration) 0))
+        default-duration
+      raw-duration)))
+
+(defun -gfredericks-blocked--match-blocking-type (blocking-type-input blocking-types)
+  (let ((matches '()))
+    (dolist (blocking-type blocking-types)
+      (when (and blocking-type-input
+                 (string-prefix-p blocking-type-input blocking-type t))
+        (push blocking-type matches)))
+    (setq matches (nreverse matches))
+    (cond
+     ((null matches) nil)
+     ((= (length matches) 1) (car matches))
+     (t (user-error "Ambiguous blocking type: %s" blocking-type-input)))))
+
+(defun -gfredericks-blocked--parse-blocked-script (blocked-script)
+  (when (and blocked-script
+             (string-match "^blocked-timeout \\([^ ]+\\) \\(.+\\)$" blocked-script))
+    (list (match-string 1 blocked-script)
+          (match-string 2 blocked-script))))
+
+(defun -gfredericks-blocked--set-blocked-script (test duration-string)
+  (let ((future-iso (-gfredericks-blocked--future-iso-from-duration duration-string)))
+    (org-entry-put nil "BLOCKED_SCRIPT"
+                   (format "blocked-timeout %s %s" future-iso test))))
 (defun blocked ()
   (interactive)
-  (let* ((blocking-type-input (completing-read "Block using (time, bash, codex): " '("time" "bash" "codex") nil nil nil nil "time"))
+  (let* ((blocking-types '("time" "bash" "codex" "update-timeout"))
+         (blocking-type-input (completing-read "Block using (time, bash, codex, update-timeout): "
+                                               blocking-types
+                                               nil nil nil nil "time"))
+         (blocking-type-input (if (and blocking-type-input
+                                       (= (length blocking-type-input) 0))
+                                  "time"
+                                blocking-type-input))
          (numeric-input? (and blocking-type-input
                               (> (length blocking-type-input) 0)
                               (string-match-p "^[0-9]" blocking-type-input)))
          (blocking-type (cond
                          (numeric-input? "time")
-                         ((member blocking-type-input '("time" "bash" "codex"))
-                          blocking-type-input)
-                         (t (user-error "Unknown blocking type: %s" blocking-type-input))))
-         (initial-duration (and numeric-input? blocking-type-input))
-         (test
-          (cond
-           ((string-equal blocking-type "time")
-            "false")
-           (t
-            (let ((default-terminal-buffer nil)
-                  (terminal-buffer-names '()))
-              (dolist (buffer (buffer-list))
-                (let ((name (buffer-name buffer)))
-                  (when (string-match "^\\*terminal-.*\\*$" name)
-                    (push name terminal-buffer-names)
-                    (unless default-terminal-buffer
-                      (setq default-terminal-buffer name)))))
-              (setq terminal-buffer-names (nreverse terminal-buffer-names))
-              (let* ((selected-buffer
-                      (completing-read "Terminal buffer: "
-                                       terminal-buffer-names
-                                       nil nil nil nil default-terminal-buffer))
-                     (buffer-name
-                      (if (and (string-equal selected-buffer "") default-terminal-buffer)
-                          default-terminal-buffer
-                        selected-buffer))
-                     (format-string (if (string-equal blocking-type "codex")
-                                        "is-codex-running -i '%s'"
-                                      "is-bash-running -i '%s'")))
-                (format format-string buffer-name))))))
-         (raw-duration-string (if numeric-input?
-                                  initial-duration
-                                (read-string "Enter duration (e.g., 5m, 3h, 2h10m, 42) (defaults to minutes): ")))
-         (duration-string (if (and (member blocking-type '("bash" "codex"))
-                                   raw-duration-string
-                                   (= (length raw-duration-string) 0))
-                              "30m"
-                            raw-duration-string))
-         (future-time (blocked--compute-future-time duration-string))
-         (future-iso (format-time-string "%Y-%m-%dT%H:%M:%SZ" future-time t)))
-    (org-entry-put nil "BLOCKED_SCRIPT"
-                   (format "blocked-timeout %s %s" future-iso test))))
+                         (t (or (-gfredericks-blocked--match-blocking-type blocking-type-input
+                                                                           blocking-types)
+                                (user-error "Unknown blocking type: %s" blocking-type-input)))))
+         (duration-prompt "Enter duration (e.g., 5m, 3h, 2h10m, 42) (defaults to minutes): ")
+         (initial-duration (and numeric-input? blocking-type-input)))
+    (if (string-equal blocking-type "update-timeout")
+        (let* ((blocked-script (org-entry-get nil "BLOCKED_SCRIPT"))
+               (parsed (-gfredericks-blocked--parse-blocked-script blocked-script)))
+          (unless parsed
+            (user-error "BLOCKED_SCRIPT is missing or malformed"))
+          (let* ((test (cadr parsed))
+                 (default-duration (unless (string-equal test "false") "30m"))
+                 (duration-string (-gfredericks-blocked--read-duration duration-prompt
+                                                                       nil
+                                                                       default-duration)))
+            (-gfredericks-blocked--set-blocked-script test duration-string)))
+      (let* ((test
+              (cond
+               ((string-equal blocking-type "time")
+                "false")
+               (t
+                (let ((default-terminal-buffer nil)
+                      (terminal-buffer-names '()))
+                  (dolist (buffer (buffer-list))
+                    (let ((name (buffer-name buffer)))
+                      (when (string-match "^\\*terminal-.*\\*$" name)
+                        (push name terminal-buffer-names)
+                        (unless default-terminal-buffer
+                          (setq default-terminal-buffer name)))))
+                  (setq terminal-buffer-names (nreverse terminal-buffer-names))
+                  (let* ((selected-buffer
+                          (completing-read "Terminal buffer: "
+                                           terminal-buffer-names
+                                           nil nil nil nil default-terminal-buffer))
+                         (buffer-name
+                          (if (and (string-equal selected-buffer "") default-terminal-buffer)
+                              default-terminal-buffer
+                            selected-buffer))
+                         (format-string (if (string-equal blocking-type "codex")
+                                            "is-codex-running -i '%s'"
+                                          "is-bash-running -i '%s'")))
+                    (format format-string buffer-name))))))
+             (default-duration (and (member blocking-type '("bash" "codex")) "30m"))
+             (duration-string (-gfredericks-blocked--read-duration duration-prompt
+                                                                   initial-duration
+                                                                   default-duration)))
+        (-gfredericks-blocked--set-blocked-script test duration-string)))))
