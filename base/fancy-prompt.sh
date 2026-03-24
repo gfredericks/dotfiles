@@ -39,6 +39,15 @@ parse_git_branch() {
     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
 }
 
+HAS_DONE_WALCOM=0
+
+# I believe this is an effective test for when we're creating a
+# bash session from org-babel
+if [[ -n "${INSIDE_EMACS:-}" ]] && [[ "$TERM" == dumb ]]; then
+  HAS_DONE_WALCOM=1
+  NO_FANCY_PROMPT=1
+fi
+
 if [ "$NO_FANCY_PROMPT" == "1" ]; then
   PS1="$ "
   PROMPT_COMMAND=
@@ -212,7 +221,24 @@ __prompt_command() {
     if [[ "$HAS_DONE_WALCOM" == "0" ]]; then
       if [[ $SHLVL == 1 ]]; then
         HAS_DONE_WALCOM=1
-        WALCOM="\n${Theme}▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n▰                      ▰\n▰  WALCOM!!1 TO BASH!  ▰\n▰                      ▰\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n$RCol"
+        local WALCOM_LINES=(
+          "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+          "▰                      ▰"
+          "▰  WALCOM!!1 TO BASH!  ▰"
+          "▰                      ▰"
+          "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+        )
+        local WALCOM_WIDTH="${#WALCOM_LINES[0]}"
+        local WALCOM_INDENT=""
+        if [[ -n "${COLUMNS:-}" ]] && [[ "$COLUMNS" -gt "$WALCOM_WIDTH" ]]; then
+          local INDENT_WIDTH=$(( (COLUMNS - WALCOM_WIDTH) / 2 ))
+          printf -v WALCOM_INDENT '%*s' "$INDENT_WIDTH" ""
+        fi
+        local WALCOM_BODY=""
+        for WALCOM_LINE in "${WALCOM_LINES[@]}"; do
+          WALCOM_BODY+="${WALCOM_INDENT}${WALCOM_LINE}\\n"
+        done
+        WALCOM="\n${Theme}${WALCOM_BODY}$RCol"
       fi
     fi
 
