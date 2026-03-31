@@ -1125,10 +1125,14 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
                         (unless default-terminal-buffer
                           (setq default-terminal-buffer name)))))
                   (setq terminal-buffer-names (nreverse terminal-buffer-names))
-                  (let* ((selected-buffer
-                          (completing-read "Terminal buffer: "
-                                           terminal-buffer-names
-                                           nil nil nil nil default-terminal-buffer))
+                  (let* ((read-buffer-fn (if (fboundp 'ido-completing-read)
+                                             #'ido-completing-read
+                                           #'completing-read))
+                         (selected-buffer
+                          (funcall read-buffer-fn
+                                   "Terminal buffer: "
+                                   terminal-buffer-names
+                                   nil nil nil nil default-terminal-buffer))
                          (buffer-name
                           (if (and (string-equal selected-buffer "") default-terminal-buffer)
                               default-terminal-buffer
