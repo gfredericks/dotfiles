@@ -1018,6 +1018,10 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 
 (advice-add 'org-auto-repeat-maybe :before #'gfredericks-store-last-scheduled)
 
+(defun reading-queue ()
+  (interactive)
+  (org-set-property "AGENDA_FRONTLOG_SECTION" "READING_QUEUE"))
+
 (defun in-progress ()
   (interactive)
   (org-set-property "IN_PROGRESS" "t"))
