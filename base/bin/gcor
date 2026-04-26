@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+recent_branches=$(git reflog | head -n 100 | sed -n 's/.*checkout: moving from \(.*\) to \(.*\)/\1\n\2/p' | grep -Fx -f <(git for-each-ref --format='%(refname:short)' refs/heads) | awk '!seen[$0]++')
+
+if [[ -z "$recent_branches" ]]; then
+  echo "No recent branches found." >&2
+  exit 1
+fi
+
+branch=$(printf '%s\n' "$recent_branches" | fzf)
+
+if [[ -z "$branch" ]]; then
+  exit 0
+fi
+
+git checkout "$branch"
