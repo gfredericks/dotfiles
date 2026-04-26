@@ -692,7 +692,7 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 (defun gfredericks-goto-agenda
     ()
   (interactive)
-  (if (not (= 0 (alist-get 'uid (wg-current-workgroup))))
+  (if (not (string= "org" (alist-get 'name (wg-current-workgroup))))
       (wg-switch-to-index-0))
   (delete-other-windows)
   (switch-to-buffer "agenda.org")
