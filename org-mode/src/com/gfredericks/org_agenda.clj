@@ -1108,7 +1108,11 @@
                                      scheduled-date
                                      :file
                                      :line-number)))
-        [frontlog frontlog-free] ((juxt filter remove) :effort frontlog)
+        [frontlog frontlog-free] ((juxt filter remove)
+                                  (fn [item]
+                                    (and (:effort item)
+                                         (not (:agenda-frontlog-section item))))
+                                  frontlog)
         frontlog-for-queue (remove :agenda-frontlog-section frontlog)
         [frontlog-free triage] ((juxt filter remove) :scheduled frontlog-free)
 
