@@ -14,3 +14,4 @@ gitignored
 /.devdir-deprioritize
 .cursorignore
 .cursorrules
+.claude
