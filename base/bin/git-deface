@@ -1,75 +1,269 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env python3
 
-# git-deface
-# Author: Gary Fredericks
-#
-# A script that tweaks the latest commit in a git repo until
-# the sha matches the provided regex.
+"""Tweak HEAD's commit object until its object id matches a regex."""
 
-require 'digest/sha1'
-require 'zlib'
+import argparse
+import hashlib
+import multiprocessing as mp
+import os
+import re
+import signal
+import subprocess
+import sys
+import time
 
-USAGE = "Usage: git-deface <regex>"
 
-def current_sha
-  `git log --format="%H" -n 1`.strip
-end
+USAGE = "Usage: git-deface [--workers N] <regex>"
+NONCE_BITS = 64
+NONCE_LEN = 64
+CHECK_INTERVAL = 4096
+HEX_CHARS = set("0123456789abcdef")
 
-def filename(id)
-  ".git/objects/#{id[0...2]}/#{id[2..-1]}"
-end
 
-def read_object(id)
-  Zlib::Inflate.inflate(File.read(filename(id)))
-end
+def git_output(*args, input_bytes=None):
+    return subprocess.check_output(["git", *args], input=input_bytes)
 
-def write_object(id, bytes)
-  `mkdir -p .git/objects/#{id[0...2]}` # boo
-  File.open(filename(id),'w') do |f|
-    f.write(Zlib::Deflate.deflate(bytes))
-  end
-end
 
-# mutates the object header
-def fix_header s
-  if s =~ /^commit (\d+)\0/
-    len = $1.to_i
-    actual = s.length - $&.length
-    if len != actual
-      s[7...(7 + $1.length)] = actual.to_s
-    end
-  else
-    raise "POOP"
-  end
-end
+def git_call(*args):
+    subprocess.check_call(["git", *args])
 
-def run(pred)
-  sha = current_sha
-  contents = read_object(sha)
-  while !pred.call(sha)
 
-    if contents[-64..-1] =~ /^[\t ]{64}$/
-      contents[-64..-1] = ""
-    end
+def current_sha():
+    return git_output("rev-parse", "--verify", "HEAD").decode("ascii").strip()
 
-    64.times do
-      contents << ["\t"," "][rand(2)]
-    end
 
-    fix_header contents
+def object_format():
+    try:
+        return git_output("rev-parse", "--show-object-format").decode("ascii").strip()
+    except subprocess.CalledProcessError:
+        return "sha1"
 
-    sha = Digest::SHA1.hexdigest contents
-  end
-  if sha != current_sha
-    write_object sha, contents
-    puts "git reset #{sha}"
-    `git reset #{sha}`
-  end
-  puts "Done: #{current_sha}"
-end
 
-if re = ARGV[0]
-  run lambda {|sha| sha =~ /#{re}/}
-else
-  puts USAGE
-end
+def read_head_commit():
+    return git_output("cat-file", "commit", "HEAD")
+
+
+def strip_old_nonce(commit_bytes):
+    if len(commit_bytes) < NONCE_LEN:
+        return commit_bytes
+    suffix = commit_bytes[-NONCE_LEN:]
+    if all(byte in (ord(" "), ord("\t")) for byte in suffix):
+        return commit_bytes[:-NONCE_LEN]
+    return commit_bytes
+
+
+def make_nonce_table():
+    table = []
+    for value in range(1 << 16):
+        table.append(
+            bytes(
+                ord("\t") if value & (1 << shift) else ord(" ")
+                for shift in range(15, -1, -1)
+            )
+        )
+    return table
+
+
+def nonce_bytes(value, table):
+    value &= (1 << NONCE_BITS) - 1
+    return b"".join(
+        (
+            table[(value >> 48) & 0xFFFF],
+            table[(value >> 32) & 0xFFFF],
+            table[(value >> 16) & 0xFFFF],
+            table[value & 0xFFFF],
+        )
+    )
+
+
+def anchored_hex_prefix(pattern):
+    if pattern.startswith("^"):
+        index = 1
+    elif pattern.startswith(r"\A"):
+        index = 2
+    else:
+        return None, False
+
+    start = index
+    while index < len(pattern) and pattern[index] in HEX_CHARS:
+        index += 1
+
+    if index == start:
+        return None, False
+    return pattern[start:index], index == len(pattern)
+
+
+def compile_matcher(pattern):
+    prefix, prefix_is_complete_pattern = anchored_hex_prefix(pattern)
+    prefix_bytes = b""
+    odd_prefix_nibble = None
+
+    if prefix:
+        full_bytes = len(prefix) // 2
+        if full_bytes:
+            prefix_bytes = bytes.fromhex(prefix[: full_bytes * 2])
+        if len(prefix) % 2:
+            odd_prefix_nibble = int(prefix[-1], 16)
+
+    regex_pattern = None if prefix_is_complete_pattern else pattern
+    if regex_pattern is not None:
+        re.compile(regex_pattern)
+
+    return prefix_bytes, odd_prefix_nibble, regex_pattern
+
+
+def digest_has_prefix(digest, prefix_bytes, odd_prefix_nibble):
+    if prefix_bytes and digest[: len(prefix_bytes)] != prefix_bytes:
+        return False
+    if odd_prefix_nibble is not None:
+        if len(digest) <= len(prefix_bytes):
+            return False
+        return digest[len(prefix_bytes)] >> 4 == odd_prefix_nibble
+    return True
+
+
+def digest_matches(digest, prefix_bytes, odd_prefix_nibble, regex):
+    if prefix_bytes or odd_prefix_nibble is not None:
+        if not digest_has_prefix(digest, prefix_bytes, odd_prefix_nibble):
+            return False
+        if regex is None:
+            return True
+    return regex.search(digest.hex()) is not None
+
+
+def worker(
+    worker_index,
+    worker_count,
+    hash_name,
+    object_prefix,
+    nonce_table,
+    prefix_bytes,
+    odd_prefix_nibble,
+    regex_pattern,
+    stop_event,
+    result_queue,
+):
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    base_hash = hashlib.new(hash_name)
+    base_hash.update(object_prefix)
+    regex = re.compile(regex_pattern) if regex_pattern is not None else None
+    nonce = worker_index
+    attempts = 0
+
+    while not stop_event.is_set():
+        for _ in range(CHECK_INTERVAL):
+            attempt_hash = base_hash.copy()
+            attempt_hash.update(nonce_bytes(nonce, nonce_table))
+            digest = attempt_hash.digest()
+
+            if digest_matches(digest, prefix_bytes, odd_prefix_nibble, regex):
+                stop_event.set()
+                result_queue.put((digest.hex(), nonce, attempts + 1))
+                return
+
+            nonce = (nonce + worker_count) & ((1 << NONCE_BITS) - 1)
+            attempts += 1
+
+
+def write_commit(commit_bytes):
+    return (
+        git_output("hash-object", "-t", "commit", "-w", "--stdin", input_bytes=commit_bytes)
+        .decode("ascii")
+        .strip()
+    )
+
+
+def parse_args(argv):
+    parser = argparse.ArgumentParser(
+        prog="git-deface",
+        usage=USAGE,
+        description="Tweak HEAD's commit object until its object id matches a regex.",
+    )
+    parser.add_argument("regex", help="Python regex matched against the lowercase object id")
+    parser.add_argument(
+        "-j",
+        "--workers",
+        type=int,
+        default=os.cpu_count() or 1,
+        help="number of worker processes to use; defaults to all CPUs",
+    )
+    return parser.parse_args(argv)
+
+
+def run(argv):
+    args = parse_args(argv)
+    if args.workers < 1:
+        raise SystemExit("--workers must be at least 1")
+
+    hash_name = object_format()
+    try:
+        hashlib.new(hash_name)
+    except ValueError as exc:
+        raise SystemExit(f"Unsupported Git object format: {hash_name}") from exc
+
+    prefix_bytes, odd_prefix_nibble, regex_pattern = compile_matcher(args.regex)
+    original_sha = current_sha()
+    base_commit = strip_old_nonce(read_head_commit())
+    final_len = len(base_commit) + NONCE_LEN
+    object_prefix = b"commit " + str(final_len).encode("ascii") + b"\0" + base_commit
+    nonce_table = make_nonce_table()
+
+    print(f"Searching with {args.workers} worker(s) from {original_sha}", file=sys.stderr)
+    started_at = time.monotonic()
+    stop_event = mp.Event()
+    result_queue = mp.Queue()
+    processes = [
+        mp.Process(
+            target=worker,
+            args=(
+                index,
+                args.workers,
+                hash_name,
+                object_prefix,
+                nonce_table,
+                prefix_bytes,
+                odd_prefix_nibble,
+                regex_pattern,
+                stop_event,
+                result_queue,
+            ),
+        )
+        for index in range(args.workers)
+    ]
+
+    try:
+        for process in processes:
+            process.start()
+
+        sha, nonce, attempts = result_queue.get()
+    except KeyboardInterrupt:
+        stop_event.set()
+        raise SystemExit(130) from None
+    finally:
+        stop_event.set()
+        for process in processes:
+            process.join(timeout=1)
+        for process in processes:
+            if process.is_alive():
+                process.terminate()
+                process.join()
+
+    elapsed = time.monotonic() - started_at
+    commit_bytes = base_commit + nonce_bytes(nonce, nonce_table)
+    written_sha = write_commit(commit_bytes)
+    if written_sha != sha:
+        raise SystemExit(f"Git wrote {written_sha}, but the search found {sha}")
+
+    if written_sha != original_sha:
+        print(f"git reset {written_sha}")
+        git_call("reset", written_sha)
+
+    print(f"Done: {current_sha()}")
+    print(f"Found after {attempts} attempt(s) in winning worker, {elapsed:.2f}s", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    try:
+        run(sys.argv[1:])
+    except KeyboardInterrupt:
+        raise SystemExit(130) from None
