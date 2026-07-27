@@ -15,3 +15,5 @@ gitignored
 .cursorignore
 .cursorrules
 .claude
+
+**/.claude/settings.local.json
