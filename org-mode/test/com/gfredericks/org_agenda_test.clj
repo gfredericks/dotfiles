@@ -326,6 +326,23 @@
             (recur xs' ys')
             (recur xs ys')))))
 
+(deftest urgency-test
+  (let [today (LD "2026-08-10")
+        item (fn [scheduled & [extra]]
+               (merge {:scheduled (LD scheduled)} extra))]
+    (is (= 5M (oa/urgency today (item "2026-08-05"))))
+    (is (= 5000M (oa/urgency today
+                             (item "2026-08-05" {:priority-cookie "[#A]"}))))
+    (is (= 12.5M (oa/urgency today
+                             (item "2026-08-05"
+                                   {:properties {"URGENCY_FACTOR" "2.5"}}))))
+    ;; An explicit property overrides the [#A] compatibility default.
+    (is (= 10M (oa/urgency today
+                           (item "2026-08-05"
+                                 {:priority-cookie "[#A]"
+                                  :properties {"URGENCY_FACTOR" "2"}}))))
+    (is (= 0M (oa/urgency today {})))))
+
 (deftest split-frontlog-by-effort-test
   (let [todos (for [[id minutes] [[:a 7]
                                   [:b 3]
