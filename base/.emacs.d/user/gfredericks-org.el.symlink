@@ -1160,3 +1160,16 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
                                                                    initial-duration
                                                                    default-duration)))
         (-gfredericks-blocked--set-blocked-script test duration-string)))))
+
+(defun gfredericks-mark-org-todo-done (buf line-number expected-header)
+  (with-current-buffer buf
+    (save-excursion
+      (goto-char (point-min))
+      (forward-line (1- line-number))
+      (org-back-to-heading t)
+      (if (string= expected-header
+                   (org-get-heading t t t t))
+          (progn
+            (org-todo 'done)
+            (save-buffer))
+        (user-error "Could not find heading")))))

@@ -1055,6 +1055,22 @@
           [x (concat ys xs)]
           (recur xs (conj ys x)))))))
 
+(defn urgency-factor
+  [item]
+  (if-let [factor (get-in item [:properties "URGENCY_FACTOR"])]
+    (bigdec factor)
+    (if (= "[#A]" (:priority-cookie item))
+      1000M
+      1M)))
+
+(defn urgency
+  [today item]
+  (let [days-past-scheduled (if-let [scheduled (scheduled-date item)]
+                              (- (.toEpochDay today)
+                                 (.toEpochDay scheduled))
+                              0)]
+    (* days-past-scheduled (urgency-factor item))))
+
 (defn split-frontlog-by-effort
   "todos is a sequence of todo items in priority order
   effort-proportion is a number between 0 and 1 (inclusive);
@@ -1099,12 +1115,7 @@
                       (concat past-log)
                       (remove scheduled-in-the-future?)
                       (sort-by (juxt (comp not some? :deadline)
-                                     ;; sort [#A] items to the top,
-                                     ;; just under deadlines; that
-                                     ;; is the entire function of
-                                     ;; [#A] in this context
-                                     (comp #(case % "[#A]" 0 1)
-                                           :priority-cookie)
+                                     (comp - (partial urgency today))
                                      scheduled-date
                                      :file
                                      :line-number)))
