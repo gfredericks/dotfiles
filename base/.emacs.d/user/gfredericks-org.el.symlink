@@ -1086,14 +1086,14 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
                    (format "blocked-timeout %s %s" future-iso test))))
 (defun blocked ()
   (interactive)
-  (let* ((blocking-types '("time" "bash" "codex" "pull" "update-timeout"))
-         (blocking-type-input (completing-read "Block using (time, bash, codex, pull, update-timeout): "
+  (let* ((blocking-types '("time" "bash" "codex" "claude" "pull" "update-timeout"))
+         (blocking-type-input (completing-read "Block using (time, bash, codex, claude, pull, update-timeout): "
                                                blocking-types
                                                nil nil nil nil "time"))
-         (blocking-type-input (if (and blocking-type-input
-                                       (= (length blocking-type-input) 0))
-                                  "time"
-                                blocking-type-input))
+         (blocking-type-input (cond
+                              ((equal blocking-type-input "") "time")
+                              ((equal blocking-type-input "c") "claude")
+                              (t blocking-type-input)))
          (numeric-input? (and blocking-type-input
                               (> (length blocking-type-input) 0)
                               (string-match-p "^[0-9]" blocking-type-input)))
@@ -1127,6 +1127,16 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
                           github-org
                           github-repo
                           pr-number)))
+               ((string-equal blocking-type "claude")
+                (let* ((session-names (gfredericks-claude-session-names))
+                       (read-fn (if (fboundp 'ido-completing-read)
+                                    #'ido-completing-read
+                                  #'completing-read))
+                       (selected (funcall read-fn
+                                          "Claude session: "
+                                          session-names
+                                          nil nil nil nil (car session-names))))
+                  (format "is-claude-running -i '%s'" selected)))
                (t
                 (let ((default-terminal-buffer nil)
                       (terminal-buffer-names '()))
@@ -1153,7 +1163,7 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
                                             "is-codex-running -i '%s'"
                                           "is-bash-running -i '%s'")))
                     (format format-string buffer-name))))))
-             (default-duration (and (member blocking-type '("bash" "codex" "pull")) "30m"))
+             (default-duration (and (member blocking-type '("bash" "codex" "claude" "pull")) "30m"))
              (duration-string (-gfredericks-blocked--read-duration duration-prompt
                                                                    initial-duration
                                                                    default-duration)))

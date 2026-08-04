@@ -34,6 +34,22 @@
       (let ((last-line (thing-at-point 'line t)))
         (and (string-match "Working" last-line) t)))))
 
+(defun gfredericks-claude-session-names ()
+  "Return a list of Claude session names from ~/.claude/sessions/*.json."
+  (let ((sessions-dir (expand-file-name "~/.claude/sessions")))
+    (when (file-directory-p sessions-dir)
+      (delq nil
+            (mapcar (lambda (f)
+                      (condition-case nil
+                          (let* ((json (json-read-file f))
+                                 (name (alist-get 'name json)))
+                            (or name
+                                (file-name-base
+                                 (directory-file-name
+                                  (alist-get 'cwd json "?")))))
+                        (error nil)))
+                    (directory-files sessions-dir t "\\.json$"))))))
+
 (defun is-bash-running? (buffer-name)
   (interactive)
   "Returns true if the buffer given by buffer-name has the text
