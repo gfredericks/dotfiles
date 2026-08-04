@@ -1069,7 +1069,7 @@
                               (- (.toEpochDay today)
                                  (.toEpochDay scheduled))
                               0)]
-    (* days-past-scheduled (urgency-factor item))))
+    (* (inc days-past-scheduled) (urgency-factor item))))
 
 (defn split-frontlog-by-effort
   "todos is a sequence of todo items in priority order

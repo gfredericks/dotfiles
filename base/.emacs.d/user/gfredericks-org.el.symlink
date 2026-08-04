@@ -780,6 +780,10 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (if (not (org-entry-get nil "Effort"))
       (let ((effort (read-string "Effort: ")))
         (org-set-property "Effort" effort)))
+  (if (not (org-entry-get nil "URGENCY_FACTOR"))
+      (let ((urgency-factor (read-string "Urgency factor: " "1")))
+        (if (not (string= urgency-factor "1"))
+            (org-set-property "URGENCY_FACTOR" urgency-factor))))
   (org-entry-delete nil "BACKLOG_SECTION")
   (org-entry-delete nil "AGENDA_SECTION")
   (org-entry-delete nil "BACKLOG_PRIORITY")
@@ -906,6 +910,10 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 (defun backlog-priority (priority)
   (interactive "nPriority: ")
   (org-set-property "BACKLOG_PRIORITY" (number-to-string priority)))
+
+(defun urgency-factor (urgency-factor)
+  (interactive "nUrgencey factor: ")
+  (org-set-property "URGENCY_FACTOR" (number-to-string urgency-factor)))
 
 ;; I don't like the default blank lines added by org-insert-item
 (defun never-add-blank-lines-between-org-list-items
