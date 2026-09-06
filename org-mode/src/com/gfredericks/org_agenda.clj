@@ -1096,8 +1096,18 @@
           (recur (conj today selected)
                  (- remaining-budget (.toMillis ^Duration (:effort selected)))
                  later)
-          (let [[high-prio low-prio] (split-with high-priority? later)]
-            [(concat today high-prio) low-prio]))))))
+          (let [[high-prio low-prio] (split-with high-priority? later)
+                today-with-high-prio (concat today high-prio)]
+            (if (and (empty? today-with-high-prio)
+                     (seq low-prio))
+              (let [lowest-effort (apply min-key
+                                         (comp #(.toMillis ^Duration %)
+                                               :effort)
+                                         low-prio)
+                    [_ remaining] (find-in-seq #(identical? lowest-effort %)
+                                               low-prio)]
+                [[lowest-effort] remaining])
+              [today-with-high-prio low-prio])))))))
 
 (defn calculate-agenda
   [deets-by-file cfg now]

@@ -359,7 +359,7 @@
                              (map :id todos))
                (subsequence? (map :id later)
                              (map :id todos))))
-      0 []
+      0 [:d]
       1/5 [:b :d]
       1/4 [:b :d]
       1/3 [:a :d]
@@ -367,7 +367,6 @@
       1/2 [:a :b :d]
       2/3 [:a :b :d :e])))
 
-#_ ;; TODO: debug this
 (deftest agenda-frontlog-section-excluded-from-effort-queue
   (let [now (ZonedDateTime/of 2023 4 5 7 37 15 0 oa/CHICAGO)
         header-line (fn [title]
@@ -402,6 +401,6 @@
      (fn [agenda]
        (let [today (section-text agenda "TODAY" "CALENDAR")
              later (section-text agenda "LATER" "TRIAGE")]
-         (is (re-find #"TODO Normal item" today))
-         (is (not (re-find #"TODO Hidden from queue" today)))
-         (is (not (re-find #"TODO Hidden from queue" later))))))))
+         (is (re-find #"TODO .*Normal item" today))
+         (is (not (re-find #"Hidden from queue" today)))
+         (is (not (re-find #"Hidden from queue" later))))))))
