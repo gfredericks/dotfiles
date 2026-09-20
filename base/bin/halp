@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -Eeou pipefail
+
+shopt -s nullglob
+
+files=()
+for file in "$HOME"/.halp*; do
+  [[ -f "$file" ]] && files+=("$file")
+done
+
+if (( ${#files[@]} == 0 )); then
+  echo "halp: no files matching ~/.halp*" >&2
+  exit 1
+fi
+
+cat "${files[@]}"
