@@ -327,6 +327,9 @@ do
       # Do we need to do any path things? it looks like rustup is
       # modifying the bashrc, which is not my favorite thing, but
       # maybe it will be fine
+
+      cargo install trunk
+      rustup target add wasm32-unknown-unknown
   fi
 
   ###
