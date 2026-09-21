@@ -938,26 +938,114 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
     (ansi-color-apply-on-region (point-min) (point-max))
     (not-modified)))
 
-(defvar gfredericks-agenda-position nil)
+(defvar-local gfredericks-agenda-revert-position nil)
+
+(defun gfredericks-agenda-make-position-anchor (position)
+  "Describe POSITION using nearby text, with its line number as a fallback."
+  (save-excursion
+    (goto-char position)
+    (let ((column (current-column))
+          (line-number (line-number-at-pos))
+          (line (buffer-substring-no-properties
+                 (line-beginning-position) (line-end-position)))
+          previous next)
+      (when (> (line-beginning-position) (point-min))
+        (forward-line -1)
+        (setq previous (buffer-substring-no-properties
+                        (line-beginning-position) (line-end-position)))
+        (forward-line 1))
+      (save-excursion
+        (forward-line 1)
+        (when (< (point) (point-max))
+          (setq next (buffer-substring-no-properties
+                      (line-beginning-position) (line-end-position)))))
+      (list :line line :previous previous :next next
+            :line-number line-number :column column))))
+
+(defun gfredericks-agenda-find-line-near (text expected-line)
+  "Find the occurrence of TEXT closest to EXPECTED-LINE, returning its start."
+  (when text
+    (save-excursion
+      (goto-char (point-min))
+      (let (best-position best-distance)
+        (while (< (point) (point-max))
+          (when (equal text
+                       (buffer-substring-no-properties
+                        (line-beginning-position) (line-end-position)))
+            (let ((distance (abs (- (line-number-at-pos) expected-line))))
+              (when (or (null best-distance) (< distance best-distance))
+                (setq best-position (line-beginning-position)
+                      best-distance distance))))
+          (forward-line 1))
+        best-position))))
+
+(defun gfredericks-agenda-resolve-position-anchor (anchor)
+  "Resolve ANCHOR after a revert, degrading to its former line number."
+  (let* ((expected-line (plist-get anchor :line-number))
+         (position
+          (or (gfredericks-agenda-find-line-near
+               (plist-get anchor :line) expected-line)
+              (let ((previous (gfredericks-agenda-find-line-near
+                               (plist-get anchor :previous) (1- expected-line))))
+                (when previous
+                  (save-excursion
+                    (goto-char previous)
+                    (forward-line 1)
+                    (point))))
+              (let ((next (gfredericks-agenda-find-line-near
+                           (plist-get anchor :next) (1+ expected-line))))
+                (when next
+                  (save-excursion
+                    (goto-char next)
+                    (forward-line -1)
+                    (point))))
+              (save-excursion
+                (goto-char (point-min))
+                (forward-line (1- expected-line))
+                (point)))))
+    (save-excursion
+      (goto-char position)
+      (move-to-column (plist-get anchor :column))
+      (point))))
 
 (defun gfredericks-save-point-etc ()
-  (setq gfredericks-agenda-position
-        (list (line-number-at-pos)
-              (current-column)
-              (window-start (get-buffer-window (current-buffer))))))
+  (setq gfredericks-agenda-revert-position
+        (list
+         :point (gfredericks-agenda-make-position-anchor (point))
+         :windows
+         (mapcar
+          (lambda (window)
+            (list :window window
+                  :point (gfredericks-agenda-make-position-anchor
+                          (window-point window))
+                  :start (gfredericks-agenda-make-position-anchor
+                          (window-start window))
+                  :hscroll (window-hscroll window)
+                  :vscroll (window-vscroll window t)))
+          (get-buffer-window-list (current-buffer) nil t)))))
 
 (defun gfredericks-restore-point-and-set-colors ()
+  ;; Do this first because removing ANSI escape sequences changes positions.
   (gfredericks-apply-ansi-colors)
-  ;; this really doesn't work that well
-  ;; (run-at-time 0.01 nil
-  ;;              (lambda (window buffer)
-  ;;                (with-current-buffer buffer
-  ;;                  (goto-line (nth 0 gfredericks-agenda-position))
-  ;;                  (move-to-column (nth 1 gfredericks-agenda-position))
-  ;;                  (set-window-start window (nth 2 gfredericks-agenda-position))))
-  ;;              (get-buffer-window (current-buffer))
-  ;;              (current-buffer))
-  )
+  (when gfredericks-agenda-revert-position
+    (goto-char (gfredericks-agenda-resolve-position-anchor
+                (plist-get gfredericks-agenda-revert-position :point)))
+    (dolist (saved-window
+             (plist-get gfredericks-agenda-revert-position :windows))
+      (let ((window (plist-get saved-window :window)))
+        (when (and (window-live-p window)
+                   (eq (window-buffer window) (current-buffer)))
+          (set-window-point
+           window
+           (gfredericks-agenda-resolve-position-anchor
+            (plist-get saved-window :point)))
+          (set-window-start
+           window
+           (gfredericks-agenda-resolve-position-anchor
+            (plist-get saved-window :start))
+           t)
+          (set-window-hscroll window (plist-get saved-window :hscroll))
+          (set-window-vscroll window (plist-get saved-window :vscroll) t))))))
 
 (defun gfredericks-agenda-mode-setup ()
   (gfredericks-apply-ansi-colors)
