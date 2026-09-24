@@ -19,13 +19,6 @@ fi
 sudo apt-get update
 sudo apt-get install -y wget build-essential unzip
 
-# wtf; using bsdtar instead of tar in this script because
-# of https://github.com/coreos/bugs/issues/1095
-# sudo apt-get install -y --no-install-recommends bsdtar
-bsdtar(){
-  tar "$@"
-}
-
 # sudo apt-get install -y wget build-essential asciidoc docbook2x libssl-dev \
 #      libcurl4-openssl-dev libexpat1-dev gettext &&
 # sudo apt-get install tree
@@ -127,7 +120,7 @@ do
     wget https://nodejs.org/dist/v${VERSION}/node-v${VERSION}-linux-x64.tar.xz
     echo "4d9482dc62f9b82279055637f2a92c7e8297d78be8d68e110ac3aae2e56d0ebc  node-v$VERSION-linux-x64.tar.xz" | \
         sha256sum -c
-    bsdtar xJf node-v${VERSION}-linux-x64.tar.xz
+    tar xJf node-v${VERSION}-linux-x64.tar.xz
     rm -f ~/bin/nodejs.bin
     ln -s $BUILDDIR/node-v${VERSION}-linux-x64/bin ~/bin/nodejs.bin
     ~/bin/nodejs.bin/npm install -g katex @mermaid-js/mermaid-cli
@@ -144,7 +137,7 @@ do
     wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
     echo '86dd9a4bf4aee45f1a84c9f61cf1947c1d6dce9b9e8d2a907105da7852460d2f  ./phantomjs-2.1.1-linux-x86_64.tar.bz2' | \
         sha256sum -c
-    bsdtar xf phantomjs-2.1.1-linux-x86_64.tar.bz2
+    tar xf phantomjs-2.1.1-linux-x86_64.tar.bz2
     rm -f ~/bin/phantomjs
     ln -s $BUILDDIR/phantomjs-2.1.1-linux-x86_64/bin/phantomjs ~/bin/phantomjs
   fi
@@ -197,7 +190,7 @@ do
               exit 1
           fi
           echo "$sha256  $tarball_path" | sha256sum -c >/dev/null
-          bsdtar xzf $tarball_path
+          tar xzf $tarball_path
           TARBALL="$(ls)"
           cd ..
           rm -rf $TARBALL
@@ -247,7 +240,7 @@ do
     wget https://archive.apache.org/dist/maven/maven-3/$VERSION/binaries/apache-maven-$VERSION-bin.tar.gz
     echo "26ad91d751b3a9a53087aefa743f4e16a17741d3915b219cf74112bf87a438c5  apache-maven-$VERSION-bin.tar.gz" | \
         sha256sum -c
-    bsdtar xzf apache-maven-$VERSION-bin.tar.gz
+    tar xzf apache-maven-$VERSION-bin.tar.gz
     rm -f ~/bin/mvn
     ln -s $BUILDDIR/apache-maven-$VERSION/bin/mvn ~/bin/mvn
   fi
