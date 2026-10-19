@@ -103,3 +103,59 @@ tmpshm(){ pushd `mktemp -d --tmpdir=/dev/shm`; }
 -cd(){
   ( cd "$1"; bash; )
 }
+
+cdgwt() {
+    local current_root
+    current_root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "Not in a git repo"; return 1; }
+
+    local rel_path
+    rel_path=$(git rev-parse --show-prefix)
+    rel_path="${rel_path%/}"
+
+    local worktree_list="" is_first=1
+    local path="" head_sha="" branch="" is_detached=0
+
+    _cdgwt_emit() {
+        [[ -z "$path" ]] && return
+        [[ ! -d "$path" ]] && { path="" head_sha="" branch="" is_detached=0; return; }
+        local wt_name branch_display
+        if [[ $is_first == 1 ]]; then
+            wt_name="(root)"
+            is_first=0
+        else
+            wt_name=$(basename "$path")
+        fi
+        if [[ $is_detached == 1 ]]; then
+            branch_display=$(git -C "$path" log -1 --format="%h %s" 2>/dev/null)
+        else
+            branch_display="$branch"
+        fi
+        worktree_list+="${wt_name}: ${branch_display}"$'\t'"${path}"$'\n'
+        path="" head_sha="" branch="" is_detached=0
+    }
+
+    while IFS= read -r line; do
+        case "$line" in
+            "worktree "*) path="${line#worktree }" ;;
+            "HEAD "*)     head_sha="${line#HEAD }" ;;
+            "branch "*)   branch="${line#branch refs/heads/}" ;;
+            "detached")   is_detached=1 ;;
+            "")           _cdgwt_emit ;;
+        esac
+    done < <(git worktree list --porcelain)
+    _cdgwt_emit
+    unset -f _cdgwt_emit
+
+    local selection
+    selection=$(printf '%s' "$worktree_list" | fzf --delimiter=$'\t' --with-nth=1) || return 0
+    [[ -z "$selection" ]] && return 0
+
+    local target_root
+    target_root=$(printf '%s' "$selection" | cut -f2)
+
+    local target_dir="$target_root${rel_path:+/$rel_path}"
+    while [[ "$target_dir" != "$target_root" ]] && [[ ! -d "$target_dir" ]]; do
+        target_dir="${target_dir%/*}"
+    done
+    cd "$target_dir"
+}
