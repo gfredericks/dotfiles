@@ -42,9 +42,10 @@ d(){
   ( d "$1"; bash; )
 }
 
-# Assemble ssh config from components
+# Assemble ssh config and global gitignore from components
 cat ~/.ssh/config.* > ~/.ssh/config
 chmod 600 ~/.ssh/config
+cat ~/.gitignore_global.* > ~/.gitignore_global
 
 function when-did-that-happen? {
   ___what=$(($SECONDS - $__last_stopped_at))
