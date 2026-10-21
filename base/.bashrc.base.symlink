@@ -92,15 +92,6 @@ function make-completion-wrapper () {
 ( crontab -l | grep run-checks >/dev/null ) \
   || echo "ERROR: run-checks missing from crontab"\!
 
-ai() {
-  if [ $# -eq 0 ]; then
-    aichat -s -rdefault
-  else
-    prompt=("$@")
-    printf '%s\n' "${prompt[@]}" | aichat -rdefault
-  fi
-}
-
 if which fzf >/dev/null; then
     FZF_KEYBINDINGS_FILE=/usr/share/doc/fzf/examples/key-bindings.bash
     FZF_HASH="$(md5sum "$FZF_KEYBINDINGS_FILE" | awk '{print $1}')"

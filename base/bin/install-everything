@@ -345,23 +345,6 @@ do
   fi
 
   ###
-  ### aichat
-  ###
-
-  if [ "$1" == "all" -o "$1" == "aichat" ]
-  then
-    BUILDDIR=$BUILDDIRBASE/aichat
-    rm -rf $BUILDDIR
-    git clone https://github.com/sigoden/aichat.git $BUILDDIR
-    cd $BUILDDIR
-    git checkout 12246c6d27edde1d6ea8aa684248e33890caef86
-    cargo build --release  # requires the rust section to have run already
-    rm -f ~/bin/aichat
-    ln -s $BUILDDIR/target/release/aichat ~/bin/aichat
-  fi
-
-
-  ###
   ### i3lock-color
   ###
 
