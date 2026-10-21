@@ -705,6 +705,10 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
           (lambda ()
             (define-key term-mode-map "\C-c\C-a" nil)))
 (global-set-key "\C-c\C-a" 'gfredericks-goto-agenda)
+;; without this the binding on the prior line gets overridden in java
+;; (and presumably similar) buffers to "c-toggle-auto-newline"
+(with-eval-after-load 'cc-mode
+  (define-key c-mode-base-map (kbd "C-c C-a") nil))
 
 ;; one time my emacs got in a weird state where C-c C-a
 ;; stopped working in term-raw mode, and this fixed it
