@@ -52,7 +52,7 @@
           (spit (str dir "/" filename) contents))
         (oa/do-once {:directory (str dir)
                      :agenda-file (str agenda)
-                     :frontlog-effort-proportion (constantly 1/3)}
+                     :frontlog-effort-specs (constantly [{:budget 1/3}])}
                     now)
         (-> agenda
             str
@@ -351,7 +351,7 @@
                                   [:e 5]]]
                 {:id id, :effort (Duration/ofMinutes minutes)})]
     (are [proportion chosen-ids]
-        (let [[today later] (oa/split-frontlog-by-effort todos proportion)]
+        (let [[today later] (oa/split-frontlog-by-effort todos [{:budget proportion}])]
           (and (= chosen-ids (map :id today))
                (= (set (map :id todos))
                   (set (map :id (concat today later))))
@@ -404,3 +404,85 @@
          (is (re-find #"TODO .*Normal item" today))
          (is (not (re-find #"Hidden from queue" today)))
          (is (not (re-find #"Hidden from queue" later))))))))
+
+(deftest configurable-agenda-date-test
+  (let [now (ZonedDateTime/of 2026 10 19 2 59 0 0 oa/CHICAGO)
+        date-fn (fn [now] (if (< (.getHour now) 3)
+                            (.minusDays (.toLocalDate now) 1)
+                            (.toLocalDate now)))
+        seen (atom [])
+        cfg {:agenda-date-fn date-fn
+             :frontlog-effort-specs (fn [date]
+                                      (swap! seen conj date)
+                                      [{:budget 0}])}]
+    (is (= (LD "2026-10-18") (:today-date (oa/calculate-agenda {} cfg now))))
+    (is (= [(LD "2026-10-18")] @seen))
+    (is (= (LD "2026-10-19")
+           (:today-date (oa/calculate-agenda {} cfg (.plusMinutes now 1)))))
+    (is (= (LD "2026-10-19")
+           (:today-date (oa/calculate-agenda {} (dissoc cfg :agenda-date-fn) now))))
+    ;; The one-shot path must parse files using the same agenda date.
+    (let [dir (Files/createTempDirectory "org-agenda-date-" (make-array java.nio.file.attribute.FileAttribute 0))
+          file (.resolve dir "test.org")
+          output (Files/createTempFile "org-agenda-date-" ".org" (make-array java.nio.file.attribute.FileAttribute 0))]
+      (try
+        (spit (str file) "* Event <2026-10-18 Sun>\n")
+        (oa/do-once (assoc cfg :directory (str dir) :agenda-file (str output)) now)
+        (is (re-find #"Event" (slurp (str output))))
+        (finally
+          (Files/delete file)
+          (Files/delete dir)
+          (Files/delete output))))))
+
+(deftest frontlog-effort-specs-test
+  (let [mk (fn [id minutes tags]
+             {:id id :effort (Duration/ofMinutes minutes) :own-tags (set tags)})
+        home (mk :home 30 ["home-only"])
+        away (mk :away 30 [])
+        specs [{:budget (Duration/ofMinutes 30)}
+               {:budget (Duration/ofHours 2)
+                :item-allowed? #(not (contains? (:own-tags %) "home-only"))}]]
+    (is (= [[:away :home] []]
+           (mapv #(mapv :id %) (oa/split-frontlog-by-effort [away home] specs))))
+    (is (= [[:home] [:away]]
+           (mapv #(mapv :id %)
+                 (oa/split-frontlog-by-effort
+                  [(assoc home :deadline true) away]
+                  [{:budget (Duration/ZERO)}]))))
+    (is (= [[:away] [:home]]
+           (mapv #(mapv :id %)
+                 (oa/split-frontlog-by-effort
+                  [away (assoc home :deadline true)]
+                  [{:budget (Duration/ofMinutes 30)
+                    :item-allowed? #(not (contains? (:own-tags %) "home-only"))}]))))
+    (is (= [[] [:home]]
+           (mapv #(mapv :id %)
+                 (oa/split-frontlog-by-effort
+                  [(assoc home :priority-cookie "[#A]")]
+                  [{:budget 0 :item-allowed? #(not (contains? (:own-tags %) "home-only"))}]))))
+    (is (= [[:away] []]
+           (mapv #(mapv :id %)
+                 (oa/split-frontlog-by-effort [away] [{:budget 1/2}]))))
+    (is (= [[:home] []]
+           (mapv #(mapv :id %)
+                 (oa/split-frontlog-by-effort [home] [{:budget (Duration/ZERO)}]))))
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (oa/split-frontlog-by-effort [home] [{:budget 2}])))))
+
+(deftest five-minute-budget-with-earlier-eligible-item-test
+  (let [mk (fn [id minutes]
+             {:id id :effort (Duration/ofMinutes minutes) :own-tags #{}})
+        earlier (mk :earlier 3)
+        three (mk :three 3)
+        two (mk :two 2)
+        ids (fn [budget todos]
+              (mapv #(mapv :id %)
+                    (oa/split-frontlog-by-effort
+                     todos [{:budget (Duration/ofMinutes budget)
+                             :item-allowed? #(not (contains? (:own-tags %) "agenda_context_home"))}])))]
+    ;; Two eligible tasks really do fit in five minutes in isolation.
+    (is (= [[:three :two] []] (ids 5 [three two])))
+    ;; A preceding eligible three-minute task takes priority. All three
+    ;; cannot appear together until the budget reaches eight minutes.
+    (is (= [[:earlier :two] [:three]] (ids 5 [earlier three two])))
+    (is (= [[:earlier :three :two] []] (ids 8 [earlier three two])))))

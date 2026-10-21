@@ -7,6 +7,7 @@
    [clojure.tools.logging :as log]
    [com.gfredericks.compare :as compare]
    [com.gfredericks.org-editor :as org]
+   [com.gfredericks.org-agenda.task-selection :as task-selection]
    [me.raynes.fs :as fs]
    [juxt.dirwatch :refer [close-watcher watch-dir]])
   (:import
@@ -1072,46 +1073,51 @@
     (* (inc days-past-scheduled) (urgency-factor item))))
 
 (defn split-frontlog-by-effort
-  "todos is a sequence of todo items in priority order
-  effort-proportion is a number between 0 and 1 (inclusive);
+  "Split priority-ordered todos into [today later].
 
-  Returns a pair of lists of [today later]."
-  [todos effort-proportion]
-  ;; intermediate durations measured in millis
-  (let [total (->> todos
-                   (map :effort)
-                   (map (fn [^Duration effort] (.toMillis effort)))
-                   (reduce +))
-        target (Math/ceil (* total effort-proportion))
+  Each spec has an optional :item-allowed? predicate (default: always true)
+  and a :budget: either a Duration or a fraction of the total effort in
+  todos (a number between 0 and 1). Pools are additive; effort may be
+  divided between pools that allow the item. Unavailable items stay later,
+  even when high-priority. Deadline / [#A] items may exceed budgets, and
+  if nothing fits, the shortest available item is selected."
+  [todos specs]
+  (let [todos (vec todos)
+        total (reduce + 0 (map #(.toMillis ^Duration (:effort %)) todos))
+        specs (mapv (fn [{:keys [budget] :as spec}]
+                      (assoc spec :budget
+                             (cond
+                               (instance? Duration budget) budget
+                               (and (number? budget) (<= 0 budget 1))
+                               (Duration/ofMillis (long (Math/ceil (* total (double budget)))))
+                               :else (throw (ex-info "Budget must be a Duration or a proportion between 0 and 1"
+                                                     {:budget budget})))))
+                    specs)
+        available? (fn [item]
+                     (some #((or (:item-allowed? %) (constantly true)) item) specs))
         high-priority? #(or (:deadline %)
-                            (= "[#A]" (:priority-cookie %)))]
-    (loop [today []
-           remaining-budget target
-           later todos]
-      (let [[selected later] (find-in-seq (fn [todo]
-                                            (<= (.toMillis ^Duration (:effort todo))
-                                                remaining-budget))
-                                          later)]
-        (if selected
-          (recur (conj today selected)
-                 (- remaining-budget (.toMillis ^Duration (:effort selected)))
-                 later)
-          (let [[high-prio low-prio] (split-with high-priority? later)
-                today-with-high-prio (concat today high-prio)]
-            (if (and (empty? today-with-high-prio)
-                     (seq low-prio))
-              (let [lowest-effort (apply min-key
-                                         (comp #(.toMillis ^Duration %)
-                                               :effort)
-                                         low-prio)
-                    [_ remaining] (find-in-seq #(identical? lowest-effort %)
-                                               low-prio)]
-                [[lowest-effort] remaining])
-              [today-with-high-prio low-prio])))))))
+                            (= "[#A]" (:priority-cookie %)))
+        [today later] (task-selection/select-tasks specs todos)
+        [high-prio low-prio] ((juxt filter remove)
+                              #(and (available? %) (high-priority? %)) later)
+        today (into today high-prio)]
+    (if (and (empty? today) (seq low-prio))
+      (if-let [shortest (->> low-prio
+                             (filter available?)
+                             (sort-by #(.toMillis ^Duration (:effort %)))
+                             first)]
+        (let [[_ remaining] (find-in-seq #(identical? shortest %) low-prio)]
+          [[shortest] remaining])
+        [today low-prio])
+      [today low-prio])))
+
+(defn- agenda-date-for
+  [cfg ^ZonedDateTime now]
+  ((or (:agenda-date-fn cfg) #(.toLocalDate ^ZonedDateTime %)) now))
 
 (defn calculate-agenda
   [deets-by-file cfg now]
-  (let [today (.toLocalDate now)
+  (let [today (agenda-date-for cfg now)
         {:keys [deadlines todos past-log backlog calendar-events]} (synthesize-agenda deets-by-file today)
         custom-prefix (:custom-prefix cfg (constantly nil))
         scheduled-in-the-future? #(if-let [d (scheduled-date %)]
@@ -1139,7 +1145,7 @@
 
         [frontlog-today frontlog-later]
         (split-frontlog-by-effort frontlog-for-queue
-                                  ((:frontlog-effort-proportion cfg) today))
+                                  ((:frontlog-effort-specs cfg) today))
 
         sort-key (juxt (comp - priority) :created-at :file :line-number)]
     {:deadlines      (sort-by sort-key deadlines)
@@ -1169,13 +1175,14 @@
                                     ((fn [todo] (assoc todo :staleness-days (staleness-days todo)))))))}))
 
 (defn all-agenda-data
-  [directory now]
-  (into {} (for [file (all-org-files directory)]
-             [file (agenda-data-for-file file (.toLocalDate now))])))
+  ([directory now] (all-agenda-data directory now {}))
+  ([directory now cfg]
+   (into {} (for [file (all-org-files directory)]
+              [file (agenda-data-for-file file (agenda-date-for cfg now))]))))
 
 (defn do-once
   [{:keys [directory] :as cfg} now]
-  (let [by-file (all-agenda-data directory now)]
+  (let [by-file (all-agenda-data directory now cfg)]
     (write-to-agenda-file (calculate-agenda by-file cfg now) cfg)))
 
 (defn watch-abstract
@@ -1187,7 +1194,7 @@
   :output-fn        fn of synthesize-fn-output
   :max-staleness    java.time.Duration, optional, default 5 minutes"
   [{:keys [directory map-fn synthesize-fn output-fn reset-all-file max-staleness]
-    :or {max-staleness (Duration/ofMinutes 5)}}]
+    :or {max-staleness (Duration/ofMinutes 5)} :as cfg}]
   (let [q (LinkedBlockingQueue.)
         max-staleness-ms (.toMillis max-staleness)]
     (run! #(.add q %) (all-org-files directory))
@@ -1203,10 +1210,10 @@
                              (fs/parent (io/file reset-all-file)))]
       (try
         (loop [by-file {}
-               today (LocalDate/now CHICAGO)]
+               today (agenda-date-for cfg (ZonedDateTime/now CHICAGO))]
           (let [x (.poll q max-staleness-ms TimeUnit/MILLISECONDS)
                 old-today today
-                today (LocalDate/now CHICAGO)]
+                today (agenda-date-for cfg (ZonedDateTime/now CHICAGO))]
             (when (not= today old-today) (do-refresh-all))
             (let [start (System/currentTimeMillis)
                   now (ZonedDateTime/now CHICAGO)
@@ -1263,6 +1270,7 @@
   (try
     (watch-abstract
      {:directory directory
+      :agenda-date-fn (:agenda-date-fn cfg)
       :map-fn #'agenda-data-for-file
       :synthesize-fn (fn [by-file today]
                        (calculate-agenda by-file cfg (ZonedDateTime/now CHICAGO)))
