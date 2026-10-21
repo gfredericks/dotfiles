@@ -626,6 +626,8 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
 (defun ubercapture
     (s is-todo? scheduled-date props)
   (with-current-buffer ubercapture-buffer
+    (unless (verify-visited-file-modtime)
+      (error "Cannot ubercapture: %s has changed on disk" (buffer-file-name)))
     (save-excursion
       (goto-char (point-max))
       (if (not (= 10 (preceding-char)))
