@@ -115,33 +115,41 @@ EOF
 PYTHON_PID=$!
 trap "kill $PYTHON_PID" EXIT
 
-go(){
-  ssh \
-      -A \
-      -R $THE_PORT:127.0.0.1:$THE_PORT \
-      -o "ExitOnForwardFailure yes" \
-      "$HOST" -t /usr/bin/env bash -l -c $'
+REMOTE_BASH="$(cat <<'EOF'
     # Kill/cleanup other connections
-    PID=`cat ~/.remote-emacs.pid`
+    PIDFILE=~/.remote-emacs.pid
+    PID="$(cat "$PIDFILE")"
     if [ ! -z "$PID" ]; then
       if pstree $PID | grep -q emacsclient; then
         kill $PID > /dev/null
       fi
     fi
 
-    echo '$THE_PORT$' > ~/.remote-emacs-clipboard-browser-port
-    echo $$ > ~/.remote-emacs.pid
+    echo %s > ~/.remote-emacs-clipboard-browser-port
+    echo $$ > "$PIDFILE"
     export PATH=$(echo ~/bin/* | tr " " :):$PATH
-    # There\'s a bug somewhere that causes the return value of
+    # There's a bug somewhere that causes the return value of
     # (restore-longrunning-workgroup-setup) to get written to
     # the terminal at whatever point the emacs cursor is at
     # after everything is loaded; I have no idea why, and am
-    # not sure if there\'s any easy workaround.
-    emacsclient -c -e \'(restore-longrunning-workgroup-setup)\'
+    # not sure if there's any easy workaround.
+    emacsclient -c -e '(restore-longrunning-workgroup-setup)'
     # For some reason, making emacsclient not the last thing causes
     # the server not to crash when we kill the client O_O
     date > /tmp/.remote-emacs.this-should-not-be-necessary
-'
+EOF
+)"
+
+printf -v REMOTE_BASH_WITH_PORT "$REMOTE_BASH" "$THE_PORT"
+printf -v QUOTED_REMOTE_BASH '%q' "$REMOTE_BASH_WITH_PORT"
+
+go(){
+  ssh \
+      -A \
+      -R $THE_PORT:127.0.0.1:$THE_PORT \
+      -o "ExitOnForwardFailure yes" \
+      -t \
+      "$HOST" /usr/bin/env bash -l -c "$QUOTED_REMOTE_BASH"
 }
 
 STARTED_AT=$SECONDS
