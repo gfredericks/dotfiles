@@ -125,7 +125,7 @@ REMOTE_BASH="$(cat <<'EOF'
       fi
     fi
 
-    echo %s > ~/.remote-emacs-clipboard-browser-port
+    echo __PORT__ > ~/.remote-emacs-clipboard-browser-port
     echo $$ > "$PIDFILE"
     export PATH=$(echo ~/bin/* | tr " " :):$PATH
     # There's a bug somewhere that causes the return value of
@@ -140,7 +140,7 @@ REMOTE_BASH="$(cat <<'EOF'
 EOF
 )"
 
-printf -v REMOTE_BASH_WITH_PORT "$REMOTE_BASH" "$THE_PORT"
+REMOTE_BASH_WITH_PORT=${REMOTE_BASH//__PORT__/$THE_PORT}
 printf -v QUOTED_REMOTE_BASH '%q' "$REMOTE_BASH_WITH_PORT"
 
 go(){
@@ -155,12 +155,11 @@ go(){
 STARTED_AT=$SECONDS
 
 go
+status=$?
 
-if (( SECONDS - STARTED_AT < 10 )); then
-  if [ $? -eq 255 ] || [ $? -eq 1 ]; then
-    echo "Assuming port forwarding failed, doing ssh+kill and trying again..." >&2
-    ssh "$HOST" $'sudo netstat -tulpn | grep '$THE_PORT$' | grep -oP \'\d+/\S+\' | cut -f 1 -d / | head -1 | xargs --no-run-if-empty kill'
+if (( SECONDS - STARTED_AT < 10 && (status == 255 || status == 1) )); then
+  echo "Assuming port forwarding failed, doing ssh+kill and trying again..." >&2
+  ssh "$HOST" $'sudo netstat -tulpn | grep '$THE_PORT$' | grep -oP \'\d+/\S+\' | cut -f 1 -d / | head -1 | xargs --no-run-if-empty kill'
 
-    go
-  fi
+  go
 fi
