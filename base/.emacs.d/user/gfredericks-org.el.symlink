@@ -802,7 +802,8 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (re-search-forward "✦ TRIAGE ✦")
   (setq current-prefix-arg 1)
   (call-interactively 'recenter-top-bottom)
-  (beginning-of-line))
+  (beginning-of-line)
+  (next-line))
 
 (defun gfredericks-agenda-mode-find-today
     ()
@@ -811,7 +812,9 @@ If AGENDA-BUFFER-NAME, use this as the buffer name for the agenda to write."
   (re-search-forward "✦ TODAY ✦")
   (setq current-prefix-arg 1)
   (call-interactively 'recenter-top-bottom)
-  (beginning-of-line))
+  (beginning-of-line)
+  (next-line)
+  (next-line))
 
 (defun gfredericks-agenda-mode-find-calendar
     ()
